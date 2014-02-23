@@ -66,6 +66,12 @@ Bundle 'sjl/gundo.vim'
 Bundle 'scrooloose/syntastic.git'
 Bundle 'flazz/vim-colorschemes'
 Bundle 'Valloric/YouCompleteMe'
+Bundle 'gregsexton/MatchTag'
+Bundle 'vim-scripts/sql.vim--Stinson'
+Bundle 'vim-scripts/dbext.vim'
+Bundle 'krisajenkins/vim-pipe'
+"Bundle 'kien/rainbow_parentheses.vim' 
+Bundle 'tpope/vim-speeddating'
 
 "Custom key shortcuts
 map <C-n> :NERDTreeToggle<CR>
@@ -77,7 +83,12 @@ nnoremap j gj
 nnoremap k gk
 cmap w!! w !sudo tee > /dev/null %
 "Plugin config
-let g:ctrlp_switch_buffer = 0 "we tell CtrlP to always open files in new buffers
+let g:ctrlp_by_filename = 1
+let g:ctrlp_switch_buffer = 'Et'
+let g:ctrlp_open_new_file = 't'
+let g:ctrlp_prompt_mappings = { 'AcceptSelection("e")': [],
+  \ 'AcceptSelection("t")': ['<cr>', '<c-m>'],
+  \ }
  "backup/persistance settings
 set undodir=~/.vim/tmp/undo//
 set backupdir=~/.vim/tmp/backup//
