@@ -110,3 +110,9 @@ if ! shopt -oq posix; then
 fi
 alias tmux="TERM=screen-256color-bce tmux"
 set -o vi
+portal() {
+    cd ~/devel/projects/portal
+}
+pb() {
+    cd ~/devel/pb
+}

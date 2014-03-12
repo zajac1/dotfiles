@@ -38,7 +38,7 @@ set laststatus=2
 
 "Bundles
 Bundle 'scrooloose/nerdtree'      
-Bundle 'kien/ctrlp.vim'           
+Bundle 'kien/ctrlp.vim'
 Bundle 'scrooloose/nerdcommenter' 
 Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
 Bundle 'sjl/gundo.vim'
@@ -63,13 +63,8 @@ nnoremap j gj
 nnoremap k gk
 cmap w!! w !sudo tee > /dev/null %
 "Plugin config
-let g:ctrlp_by_filename = 1
-let g:ctrlp_switch_buffer = 'Et'
-let g:ctrlp_open_new_file = 't'
-let g:ctrlp_prompt_mappings = { 'AcceptSelection("e")': [],
-  \ 'AcceptSelection("t")': ['<cr>', '<c-m>'],
-  \ }
 source ~/.vim/startify.vim
+source ~/.vim/ctrlp.vim
  "backup/persistance settings
 set undodir=~/.vim/tmp/undo//
 set backupdir=~/.vim/tmp/backup//
