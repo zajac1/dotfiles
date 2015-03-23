@@ -129,6 +129,9 @@ alias init='tmuxinator init'
 svnc(){
     svn commit `svn status | grep $1`
 }
+howto() {
+less ~/howto/"$1".txt
+}
 
 search() {
 find . -type f -not -path "*/.svn/*" -not -path "*/cache/*" -print0 | xargs -0 grep "$1"
