@@ -2,6 +2,7 @@
 add-apt-repository "deb http://dl.google.com/linux/chrome/deb/ stable main";
 add-apt-repository "deb http://repository-origin.spotify.com stable non-free";
 add-apt-repository "ppa:numix/ppa";
+add-apt-repository ppa:jerzy-kozera/zeal-ppa;
 apt-get update
 apt-get install git;
 apt-get install spotify-client;
