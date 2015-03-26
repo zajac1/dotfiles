@@ -12,8 +12,8 @@ apt-get install tmux;
 apt-get install php5-cli;
 apt-get install imagemagick;
 apt-get install python3;
-apt-get install python-pip
-apt-get install zeal
+apt-get install python-pip;
+apt-get install zeal;
 git clone https://github.com/gmarik/Vundle.vim.git ~/.vim/bundle/Vundle.vim
 git clone https://github.com/zajac1/dotfiles/tree/master/ubuntu/.bashrc
 git clone https://github.com/zajac1/dotfiles/tree/master/ubuntu/.vimrc
