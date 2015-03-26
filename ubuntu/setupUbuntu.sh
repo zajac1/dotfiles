@@ -4,7 +4,7 @@ add-apt-repository "deb http://repository-origin.spotify.com stable non-free";
 add-apt-repository "ppa:numix/ppa";
 apt-get update
 apt-get install git;
-apt-get install spotify;
+apt-get install spotify-client;
 apt-get install nodejs;
 apt-get install ngrok-server;
 apt-get install google-chrome-stable;
