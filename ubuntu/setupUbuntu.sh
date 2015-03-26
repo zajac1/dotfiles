@@ -1,3 +1,4 @@
+#remember about public keys!
 add-apt-repository "deb http://dl.google.com/linux/chrome/deb/ stable main";
 add-apt-repository "deb http://repository-origin.spotify.com stable non-free";
 add-apt-repository "ppa:numix/ppa";
