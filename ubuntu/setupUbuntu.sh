@@ -1,10 +1,14 @@
 #remember about public keys!
+wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - ;
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 94558F59;
 add-apt-repository "deb http://dl.google.com/linux/chrome/deb/ stable main";
 add-apt-repository "deb http://repository-origin.spotify.com stable non-free";
 add-apt-repository "ppa:numix/ppa";
+add-apt-repository "ppa:tualatrix/ppa";
 add-apt-repository ppa:jerzy-kozera/zeal-ppa;
 apt-get update
 apt-get install git;
+apt-get install ubuntu-tweak;
 apt-get install spotify-client;
 apt-get install nodejs;
 apt-get install ngrok-server;
