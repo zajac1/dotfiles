@@ -1,0 +1,89 @@
+-- Only required if you have packer configured as `opt`
+vim.cmd [[packadd packer.nvim]]
+
+local ensure_packer = function()
+    local fn = vim.fn
+    local install_path = fn.stdpath('data') .. '/site/pack/packer/start/packer.nvim'
+    if fn.empty(fn.glob(install_path)) > 0 then
+        fn.system({ 'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path })
+        vim.cmd [[packadd packer.nvim]]
+        return true
+    end
+    return false
+end
+
+local packer_bootstrap = ensure_packer()
+
+return require('packer').startup(function(use)
+    use 'wbthomason/packer.nvim'
+
+    use {
+        'nvim-telescope/telescope.nvim', tag = '0.1.2',
+        requires = { { 'nvim-lua/plenary.nvim' } }
+    }
+
+
+    use({
+        "neanias/everforest-nvim",
+        config = function()
+            vim.cmd("colorscheme everforest")
+        end,
+    })
+
+    use {
+        'nvim-treesitter/nvim-treesitter',
+        run = ':TSUpdate'
+    }
+
+    use 'lewis6991/gitsigns.nvim' -- OPTIONAL: for git status
+    use 'romgrk/barbar.nvim'
+    use 'mbbill/undotree'
+    use 'kyazdani42/nvim-web-devicons'
+    use 'kyazdani42/nvim-tree.lua'
+
+    use {
+        'VonHeikemen/lsp-zero.nvim',
+        branch = 'v2.x',
+        requires = {
+            -- LSP Support
+            { 'neovim/nvim-lspconfig' },             -- Required
+            { 'williamboman/mason.nvim' },           -- Optional
+            { 'williamboman/mason-lspconfig.nvim' }, -- Optional
+
+            -- Autocompletion
+            { 'hrsh7th/nvim-cmp' },     -- Required
+            { 'hrsh7th/cmp-nvim-lsp' }, -- Required
+            { 'L3MON4D3/LuaSnip' },     -- Required
+        }
+    }
+
+    use 'echasnovski/mini.animate'
+    use 'echasnovski/mini.comment'
+    use 'echasnovski/mini.surround'
+    use { 'folke/noice.nvim', requires = {
+        'MunifTanjim/nui.nvim' } }
+    use 'folke/which-key.nvim'
+    use "smartpde/telescope-recent-files"
+    use {
+        'rmagatti/auto-session',
+        config = function()
+            require("auto-session").setup()
+        end
+    }
+    use({
+        "kdheepak/lazygit.nvim",
+        -- optional for floating window border decoration
+        requires = {
+            "nvim-lua/plenary.nvim",
+        },
+    })
+
+    use({
+        'weilbith/nvim-code-action-menu',
+        cmd = 'CodeActionMenu',
+    })
+
+    if packer_bootstrap then
+        require('packer').sync()
+    end
+end)
