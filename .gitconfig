@@ -1,2 +1,0 @@
-[alias]
-  last-branches = for-each-ref --sort=committerdate refs/heads/ --format="%(authordate:relative)%09%(objectname:short)%09%1B[0;33m%(refname:short)%1B[m%09"
