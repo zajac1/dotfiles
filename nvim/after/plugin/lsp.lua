@@ -83,5 +83,6 @@ lsp.setup_nvim_cmp({
 })
 local lua_opts = lsp.nvim_lua_ls()
 
-lsp.setup(lua_opts)
+require('lspconfig').lua_ls.setup(lua_opts)
+lsp.setup()
 
