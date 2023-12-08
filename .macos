@@ -1,0 +1,49 @@
+# Disable the display of thumbnails when taking screenshots
+defaults write com.apple.screencapture show-thumbnail -bool false
+
+# Enable auto-hide for the Dock
+defaults write com.apple.dock "autohide" -bool TRUE
+
+# Set the auto-hide delay for the Dock to 0 seconds
+defaults write com.apple.dock autohide-delay -float 0
+
+# Configure TextEdit to open and save files as plain text instead of rich text
+defaults write com.apple.TextEdit "RichText" -int 0
+defaults write com.apple.TextEdit "PlainTextEncoding" -int 4
+defaults write com.apple.TextEdit "PlainTextEncodingForWrite" -int 4
+
+# Disable automatic spelling correction in system-wide and web applications
+defaults write NSGlobalDomain "NSAutomaticSpellingCorrectionEnabled" -bool FALSE
+defaults write NSGlobalDomain "WebAutomaticSpellingCorrectionEnabled" -bool FALSE
+
+# Disable automatic capitalization in system-wide
+defaults write NSGlobalDomain "NSAutomaticCapitalizationEnabled" -bool FALSE
+
+# Disable automatic period substitution in system-wide
+defaults write NSGlobalDomain "NSAutomaticPeriodSubstitutionEnabled" -bool FALSE
+
+# Configure screenshots to be saved as .jpg files (usually smaller size) instead of .png
+defaults write http://com.apple.screencapture type jpg
+
+# Set the location for saving screenshots to the Desktop/Screenshots folder
+defaults write http://com.apple.screencapture location -string "$HOME/Desktop/Screenshots"
+
+# Clear the persistent apps in the Dock (remove all apps)
+defaults write http://com.apple.dock persistent-apps -array
+
+# Don’t display the annoying prompt when quitting iTerm
+defaults write com.googlecode.iterm2 PromptOnQuit -bool false
+
+# Use current directory as default search scope in Finder.
+defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
+
+# Allow selecting text in Quick Look.
+defaults write com.apple.finder QLEnableTextSelection -bool true
+
+# Disable the all too sensitive backswipe on trackpads
+defaults write com.google.Chrome AppleEnableSwipeNavigateWithScrolls -bool false
+defaults write com.google.Chrome.canary AppleEnableSwipeNavigateWithScrolls -bool false
+
+# Disable the bottom-right hot corner 
+defaults write com.apple.dock wvous-br-corner -int 0
+
