@@ -12,5 +12,6 @@ vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]], { desc = 'Copy to system clib
 vim.keymap.set({ "n", "v" }, "<leader>d", [["_d]], { desc = 'Delete without copying content to buffer' })
 vim.keymap.set("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]], { desc = 'Search and replace' })
 vim.keymap.set("n", "<leader>w", "<C-w>", { desc = 'Pane navigation' })
-vim.keymap.set('v', '=', vim.lsp.buf.format)
+vim.keymap.set({ "n", "v" }, '=', vim.lsp.buf.format)
 vim.keymap.set("n", "<leader>gg", vim.cmd.LazyGit, { desc = 'Show LazyGit panel' })
+vim.keymap.set("n", "<leader>=", vim.cmd.EslintFixAll, { desc = 'Fix everything in file using eslint' })
