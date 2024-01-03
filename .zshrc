@@ -65,3 +65,5 @@ alias la='exa -a --icons --color=always --group-directories-first'
 alias l='exa -F --icons --color=always --group-directories-first'
 alias l.='exa -a | egrep "^\."'
 alias ps='procs'
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

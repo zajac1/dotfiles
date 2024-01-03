@@ -20,7 +20,7 @@ map('n', 'g0', '<Cmd>BufferLast<CR>', opts)
 -- Pin/unpin buffer
 map('n', 'gp', '<Cmd>BufferPin<CR>', opts)
 -- Close buffer
-map('n', 'gc', '<Cmd>BufferClose<CR>', opts)
+map('n', 'gx', '<Cmd>BufferClose<CR>', opts)
 -- Magic buffer-picking mode
 map('n', '<Leader>p', '<Cmd>BufferPick<CR>', opts)
 -- Sort automatically by...

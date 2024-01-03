@@ -47,9 +47,6 @@ local icons = {
 }
 
 lsp.preset('recommended')
-lsp.ensure_installed({
-    'tsserver',
-})
 
 vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover()<cr>', { desc = 'Preview symbol definition' })
 vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<cr>', { desc = 'Go to definition' })
