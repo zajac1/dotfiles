@@ -19,6 +19,7 @@ brew "z"
 brew "responsively"
 brew "jesseduffield/lazygit/lazygit"
 brew "shellcheck"
+brew "git-delta"
 
 cask "raycast"
 cask "firefox"

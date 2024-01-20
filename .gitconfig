@@ -1,0 +1,11 @@
+[include]
+  path = "~/.delta_themes.gitconfig"
+[core]
+  pager = "delta"
+[merge]
+  conflictstyle = diff3
+[delta]
+  line-numbers = true
+  side-by-side = true
+  theme = 'Forest Night'
+  features = colibri
