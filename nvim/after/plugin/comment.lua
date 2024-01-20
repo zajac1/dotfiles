@@ -1,8 +1,8 @@
-require('mini.comment').setup(
-{
-    mappings = {
-        comment = '<leader>/',
-        comment_visual = '<leader>/'
-    }
-}
-)
+require('Comment').setup({
+  toggler = {
+        line = '<leader>/',
+    },
+    opleader = {
+      block = '<leader>/'
+    },
+})
