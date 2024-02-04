@@ -1,11 +1,27 @@
+[user]
+  name = Adam Zając
+  email = adam.zajac@nordsec.com
+[pull]
+  rebase = true
+[push]
+  autoSetupRemote = true
 [include]
   path = "~/.delta_themes.gitconfig"
+  path = ~/.ssh/priv.conf
+[includeIf "gitdir:~/projects/"]
+  path = ~/.ssh/prof.conf
+[interactive]
+    diffFilter = delta --color-only
 [core]
-  pager = "delta"
+	pager = delta
 [merge]
   conflictstyle = diff3
 [delta]
+  navigate = true
   line-numbers = true
   side-by-side = true
-  theme = 'Forest Night'
   features = colibri
+  hunk-header-style = "omit"
+[diff]
+  colorMoved = default
+  tool = delta --color-only

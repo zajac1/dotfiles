@@ -55,7 +55,7 @@ source $ZSH/oh-my-zsh.sh
 # fi
 
 
-alias vim='nvim'
+alias vim='nvim --listen /tmp/nvim-server.pipe'
 alias rm=trash
 alias cat="bat --theme=\$(defaults read -globalDomain AppleInterfaceStyle &> /dev/null && echo default || echo GitHub)"
 # Changing "ls" to "exa"
@@ -65,5 +65,7 @@ alias la='exa -a --icons --color=always --group-directories-first'
 alias l='exa -F --icons --color=always --group-directories-first'
 alias l.='exa -a | egrep "^\."'
 alias ps='procs'
+
+set -o vi
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
