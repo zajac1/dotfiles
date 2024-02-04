@@ -21,10 +21,7 @@ map('n', 'g0', '<Cmd>BufferLast<CR>', opts)
 map('n', 'gp', '<Cmd>BufferPin<CR>', opts)
 -- Close buffer
 map('n', 'gx', '<Cmd>BufferClose<CR>', opts)
+-- Close all but current buffer
+map('n', 'gX', '<Cmd>BufferCloseAllButCurrentOrPinned<CR>', opts)
 -- Magic buffer-picking mode
-map('n', '<Leader>p', '<Cmd>BufferPick<CR>', opts)
--- Sort automatically by...
-map('n', '<Leader>bb', '<Cmd>BufferOrderByBufferNumber<CR>', opts)
-map('n', '<Leader>bd', '<Cmd>BufferOrderByDirectory<CR>', opts)
-map('n', '<Leader>bl', '<Cmd>BufferOrderByLanguage<CR>', opts)
-map('n', '<Leader>bw', '<Cmd>BufferOrderByWindowNumber<CR>', opts)
+map('n', 'g;', '<Cmd>BufferPick<CR>', opts)

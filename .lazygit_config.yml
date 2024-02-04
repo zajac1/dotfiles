@@ -1,3 +1,11 @@
 git:
   paging:
-    pager: "delta --file-style=omit"
+    colorArg: always
+    pager: delta --dark --paging=never --file-style=omit --24-bit-color=never 
+os:
+  edit: 'nvim --server "$NVIM" --remote-tab {{filename}}'
+  editAtLine: 'nvim --server "$NVIM" --remote-tab {{filename}}; [ -z "$NVIM" ] || nvim --server "$NVIM" --remote-send ":{{line}}<CR>"'
+  editAtLineAndWait: 'nvim +{{line}} {{filename}}'
+promptToReturnFromSubprocess: false
+quitOnTopLevelReturn: true  
+nerdFontsVersion: 3  
