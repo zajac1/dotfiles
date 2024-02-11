@@ -84,6 +84,8 @@ return require('packer').startup(function(use)
   })
 
   use('MunifTanjim/prettier.nvim')
+  use('onsails/lspkind.nvim');
+  use('ggandor/leap.nvim');
 
   if packer_bootstrap then
     require('packer').sync()
