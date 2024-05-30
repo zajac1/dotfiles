@@ -86,6 +86,15 @@ return require('packer').startup(function(use)
   use('MunifTanjim/prettier.nvim')
   use('onsails/lspkind.nvim');
   use('ggandor/leap.nvim');
+  use {
+    "pmizio/typescript-tools.nvim",
+    requires = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+    config = function()
+      require("typescript-tools").setup {}
+    end,
+  }
+
+  use { 'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
 
   if packer_bootstrap then
     require('packer').sync()

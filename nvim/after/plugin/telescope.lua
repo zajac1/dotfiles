@@ -12,7 +12,6 @@ local delta = previewers.new_termopen_previewer({
   end
 })
 
-telescope.load_extension("recent_files")
 telescope.setup({
   defaults = {
     prompt_prefix = "  󰭎  ",
@@ -20,6 +19,8 @@ telescope.setup({
     entry_prefix = "   ",
   },
 })
+telescope.load_extension("recent_files")
+telescope.load_extension('fzf')
 
 vim.keymap.set('n', '<leader>p', builtin.git_files, { desc = 'Omnisearch for all *git* files' })
 vim.keymap.set('n', '<leader>f', builtin.live_grep, { desc = 'Grep through *all* files' })

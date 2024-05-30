@@ -16,3 +16,4 @@ os:
 promptToReturnFromSubprocess: false
 quitOnTopLevelReturn: true  
 nerdFontsVersion: 3  
+
