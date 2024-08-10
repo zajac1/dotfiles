@@ -18,9 +18,15 @@ telescope.setup({
     selection_caret = " ❯ ",
     entry_prefix = "   ",
   },
+   extensions = {
+    ["ui-select"] = {
+      require("telescope.themes").get_dropdown{}
+    }
+  }
 })
 telescope.load_extension("recent_files")
 telescope.load_extension('fzf')
+telescope.load_extension('ui-select')
 
 vim.keymap.set('n', '<leader>p', builtin.git_files, { desc = 'Omnisearch for all *git* files' })
 vim.keymap.set('n', '<leader>f', builtin.live_grep, { desc = 'Grep through *all* files' })
