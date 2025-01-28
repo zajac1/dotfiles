@@ -1,6 +1,6 @@
 vim.g.mapleader = " "
 
-vim.keymap.set("n", "<leader><CR>", vim.cmd.NvimTreeFindFile, { desc = 'Toggle file tree' })
+vim.api.nvim_set_keymap('n', '<leader><CR>', ':Oil --float<CR>', { desc = 'Toggle Oil filetree' })
 vim.keymap.set("n", "<leader>u", vim.cmd.UndotreeToggle, { desc = 'Toggle Undotree' })
 vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = 'Move selected lines down in visual mode' })
 vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = 'Move selected lines up in visual mode' })
