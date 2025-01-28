@@ -15,10 +15,12 @@ vim.opt.hlsearch = false
 vim.opt.incsearch = true
 vim.opt.termguicolors = true
 vim.opt.ph = 10;
+vim.cmd.colorscheme "catppuccin"
 
 vim.filetype.add({
   extension = {
     mdx = "markdown",
+    cjs = "javascript",
   }
 })
 
