@@ -66,7 +66,7 @@ use { "catppuccin/nvim", as = "catppuccin" }
   use 'echasnovski/mini.surround'
   use { 'folke/noice.nvim', requires = {
     'MunifTanjim/nui.nvim' } }
-  use 'folke/which-key.nvim'
+  use { 'folke/which-key.nvim' }
   use 'numToStr/Comment.nvim'
   use "smartpde/telescope-recent-files"
   use {
@@ -91,19 +91,19 @@ use { "catppuccin/nvim", as = "catppuccin" }
   use('MunifTanjim/prettier.nvim')
   use('onsails/lspkind.nvim');
   use('ggandor/leap.nvim');
-  use {
+  --[[ use {
     "pmizio/typescript-tools.nvim",
     requires = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
     config = function()
       require("typescript-tools").setup {}
     end,
-  }
+  } ]]
 
   use { 'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
   use {'nvim-telescope/telescope-ui-select.nvim' }
 
   use {
-    'akinsho/git-conflict.nvim', tag = "*", config = function()
+    'akinsho/git-conflict.nvim', config = function()
       require('git-conflict').setup()
     end
   }
