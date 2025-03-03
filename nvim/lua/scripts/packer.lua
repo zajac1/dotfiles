@@ -103,6 +103,11 @@ use { "catppuccin/nvim", as = "catppuccin" }
   use {'nvim-telescope/telescope-ui-select.nvim' }
 
   use {
+    'nvim-lualine/lualine.nvim',
+    requires = { 'nvim-tree/nvim-web-devicons', opt = true }
+  }
+
+  use {
     'akinsho/git-conflict.nvim', config = function()
       require('git-conflict').setup()
     end
