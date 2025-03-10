@@ -41,6 +41,8 @@ local lua_opts = lsp.nvim_lua_ls()
 
 lspconfig.biome.setup({ on_attach = on_attach })
 lspconfig.eslint.setup({ on_attach = on_attach })
+lspconfig.svelte.setup({ on_attach = on_attach })
+lspconfig.cssls.setup({ on_attach = on_attach })
 lspconfig.lua_ls.setup(lua_opts)
 lsp.setup()
 

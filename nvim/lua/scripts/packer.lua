@@ -113,6 +113,17 @@ use { "catppuccin/nvim", as = "catppuccin" }
     end
   }
 
+  use {
+    'uga-rosa/ccc.nvim', config = function ()
+      require('ccc').setup({
+        highlighter = {
+          auto_enable = true,
+          lsp = true,
+        }
+      })
+    end
+  }
+
   if packer_bootstrap then
     require('packer').sync()
   end
