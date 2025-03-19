@@ -1,22 +1,13 @@
 local lsp = require('lsp-zero')
 local lspconfig = require("lspconfig")
 
-local function on_attach(client, bufnr)
-  if client.name == "eslint" then
-    -- Use EslintFixAll for ESLint
-    vim.api.nvim_create_autocmd("BufWritePre", {
-      buffer = bufnr,
-      command = "EslintFixAll",
-    })
-  else
-    -- Use LSP formatting for other formatters (Biome, Prettier, etc.)
-    vim.api.nvim_create_autocmd("BufWritePre", {
-      buffer = bufnr,
-      callback = function()
-        vim.lsp.buf.format({ async = false })
-      end,
-    })
-  end
+local function on_attach(_, bufnr)
+  vim.api.nvim_create_autocmd("BufWritePre", {
+    buffer = bufnr,
+    callback = function()
+      vim.lsp.buf.format({ async = false })
+    end,
+  })
 end
 
 lsp.preset('recommended')
@@ -45,4 +36,3 @@ lspconfig.svelte.setup({ on_attach = on_attach })
 lspconfig.cssls.setup({ on_attach = on_attach })
 lspconfig.lua_ls.setup(lua_opts)
 lsp.setup()
-
