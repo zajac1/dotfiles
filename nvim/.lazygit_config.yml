@@ -1,19 +1,18 @@
 git:
   commitPrefixes:
-    desktop-app: 
-      pattern: "^(\\w+)\\/(\\w+)-(\\d+)-(.*)"
-      replace: '$1: [$2-$3] '
-    nordpass-ui: 
-      pattern: "^(\\w+)\\/(\\w+)-(\\d+)-(.*)"
-      replace: '$1: [$2-$3] '
+    desktop-app:
+      - pattern: "^(\\w+)\\/(\\w+)-(\\d+)-(.*)"
+        replace: '$1: [$2-$3] '
+    nordpass-ui:
+      - pattern: "^(\\w+)\\/(\\w+)-(\\d+)-(.*)"
+        replace: '$1: [$2-$3] '
   paging:
     colorArg: always
-    pager: delta --dark --paging=never --file-style=omit --24-bit-color=never 
+    pager: delta --dark --paging=never --file-style=omit --24-bit-color=never
 os:
   edit: 'nvim --server "$NVIM" --remote-tab {{filename}}'
   editAtLine: 'nvim --server "$NVIM" --remote-tab {{filename}}; [ -z "$NVIM" ] || nvim --server "$NVIM" --remote-send ":{{line}}<CR>"'
   editAtLineAndWait: 'nvim +{{line}} {{filename}}'
 promptToReturnFromSubprocess: false
-quitOnTopLevelReturn: true  
-nerdFontsVersion: 3  
-
+quitOnTopLevelReturn: true
+nerdFontsVersion: 3
