@@ -20,14 +20,7 @@ return require('packer').startup(function(use)
     'nvim-telescope/telescope.nvim', requires = { { 'nvim-lua/plenary.nvim' } }
   }
 
-use { "catppuccin/nvim", as = "catppuccin" }
-
-  --[[ use({
-    "neanias/everforest-nvim",
-    config = function()
-      require("everforest").setup()
-    end,
-  }) ]]
+  use { "catppuccin/nvim", as = "catppuccin" }
 
   use {
     'nvim-treesitter/nvim-treesitter',
@@ -45,27 +38,14 @@ use { "catppuccin/nvim", as = "catppuccin" }
   use 'romgrk/barbar.nvim'
   use 'mbbill/undotree'
   use 'kyazdani42/nvim-web-devicons'
-
-  use {
-    'VonHeikemen/lsp-zero.nvim',
-    branch = 'v2.x',
-    requires = {
-      -- LSP Support
-      { 'neovim/nvim-lspconfig' },             -- Required
-      { 'williamboman/mason.nvim' },           -- Optional
-      { 'williamboman/mason-lspconfig.nvim' }, -- Optional
-
-      -- Autocompletion
-      { 'hrsh7th/nvim-cmp' },     -- Required
-      { 'hrsh7th/cmp-nvim-lsp' }, -- Required
-      { 'L3MON4D3/LuaSnip' },     -- Required
-    }
-  }
-
+  use 'neovim/nvim-lspconfig'
+  use 'williamboman/mason.nvim'
+  use 'williamboman/mason-lspconfig.nvim'
+  use 'hrsh7th/nvim-cmp'
+  use 'hrsh7th/cmp-nvim-lsp'
   use 'echasnovski/mini.animate'
   use 'echasnovski/mini.surround'
-  use { 'folke/noice.nvim', requires = {
-    'MunifTanjim/nui.nvim' } }
+  use { 'folke/noice.nvim', requires = { 'MunifTanjim/nui.nvim' } }
   use { 'folke/which-key.nvim' }
   use 'numToStr/Comment.nvim'
   use "smartpde/telescope-recent-files"
@@ -77,7 +57,6 @@ use { "catppuccin/nvim", as = "catppuccin" }
   }
   use({
     "kdheepak/lazygit.nvim",
-    -- optional for floating window border decoration
     requires = {
       "nvim-lua/plenary.nvim",
     },
@@ -88,19 +67,9 @@ use { "catppuccin/nvim", as = "catppuccin" }
     cmd = 'CodeActionMenu',
   })
 
-  use('MunifTanjim/prettier.nvim')
   use('onsails/lspkind.nvim');
-  use('ggandor/leap.nvim');
-  --[[ use {
-    "pmizio/typescript-tools.nvim",
-    requires = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
-    config = function()
-      require("typescript-tools").setup {}
-    end,
-  } ]]
-
   use { 'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
-  use {'nvim-telescope/telescope-ui-select.nvim' }
+  use { 'nvim-telescope/telescope-ui-select.nvim' }
 
   use {
     'nvim-lualine/lualine.nvim',
@@ -109,17 +78,30 @@ use { "catppuccin/nvim", as = "catppuccin" }
 
   use {
     'akinsho/git-conflict.nvim', config = function()
-      require('git-conflict').setup()
-    end
+    require('git-conflict').setup()
+  end
   }
 
   use {
-    'uga-rosa/ccc.nvim', config = function ()
-      require('ccc').setup({
-        highlighter = {
-          auto_enable = true,
-          lsp = true,
-        }
+    'uga-rosa/ccc.nvim', config = function()
+    require('ccc').setup({
+      highlighter = {
+        auto_enable = true,
+        lsp = true,
+      }
+    })
+  end
+  }
+
+  use {
+    'folke/lazydev.nvim',
+    ft = 'lua', -- only load on lua files
+    config = function()
+      require('lazydev').setup({
+        library = {
+          -- Load luvit types when the `vim.uv` word is found
+          { path = "${3rd}/luv/library", words = { "vim%.uv" } },
+        },
       })
     end
   }

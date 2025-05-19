@@ -1,38 +1,38 @@
-local lsp = require('lsp-zero')
-local lspconfig = require("lspconfig")
+local lsp_config = require "lspconfig"
+local cmp_lsp = require "cmp_nvim_lsp"
+local mason = require "mason"
+local mason_lsp_config = require "mason-lspconfig"
 
-local function on_attach(_, bufnr)
-  vim.api.nvim_create_autocmd("BufWritePre", {
-    buffer = bufnr,
-    callback = function()
-      vim.lsp.buf.format({ async = false })
-    end,
-  })
-end
-
-lsp.preset('recommended')
-
-vim.keymap.set('n', 'K', vim.lsp.buf.hover, { desc = 'Preview symbol definition' })
-vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'Go to definition' })
-vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, { desc = 'Go to declaration' })
-vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, { desc = 'Go to implementation' })
-vim.keymap.set('n', 'go', vim.lsp.buf.type_definition, { desc = 'Go to type definition' })
-vim.keymap.set('n', 'gr', vim.lsp.buf.references, { desc = 'Show references' })
-vim.keymap.set('n', 'gs', vim.lsp.buf.signature_help, { desc = 'Show signature help' })
-vim.keymap.set('n', 'gl', vim.diagnostic.open_float, { desc = 'Show warnings & errors for current buffer' })
-
-lsp.set_sign_icons({
-  error = '✘',
-  warn = '▲',
-  hint = '⚑',
-  info = '»'
+-- taken from: https://www.mitchellhanberg.com/modern-format-on-save-in-neovim/
+vim.api.nvim_create_autocmd("LspAttach", {
+  group = vim.api.nvim_create_augroup("lsp", { clear = true }),
+  callback = function(args)
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      buffer = args.buf,
+      callback = function()
+        vim.lsp.buf.format { async = false, id = args.data.client_id }
+      end,
+    })
+  end
 })
 
-local lua_opts = lsp.nvim_lua_ls()
+vim.diagnostic.config({
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = " ",
+      [vim.diagnostic.severity.WARN] = " ",
+      [vim.diagnostic.severity.INFO] = "󰋼 ",
+      [vim.diagnostic.severity.HINT] = "󰌵 ",
+    },
+  },
+})
 
-lspconfig.biome.setup({ on_attach = on_attach })
-lspconfig.eslint.setup({ on_attach = on_attach })
-lspconfig.svelte.setup({ on_attach = on_attach })
-lspconfig.cssls.setup({ on_attach = on_attach })
-lspconfig.lua_ls.setup(lua_opts)
-lsp.setup()
+mason.setup();
+mason_lsp_config.setup();
+mason_lsp_config.setup_handlers {
+  function(server_name)
+    lsp_config[server_name].setup {
+      capabilities = cmp_lsp.default_capabilities()
+    }
+  end,
+}
