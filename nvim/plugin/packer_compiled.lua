@@ -49,8 +49,8 @@ local function save_profiles(threshold)
 end
 
 time([[Luarocks path setup]], true)
-local package_path_str = "/Users/adamzajac/.cache/nvim/packer_hererocks/2.1.1736781742/share/lua/5.1/?.lua;/Users/adamzajac/.cache/nvim/packer_hererocks/2.1.1736781742/share/lua/5.1/?/init.lua;/Users/adamzajac/.cache/nvim/packer_hererocks/2.1.1736781742/lib/luarocks/rocks-5.1/?.lua;/Users/adamzajac/.cache/nvim/packer_hererocks/2.1.1736781742/lib/luarocks/rocks-5.1/?/init.lua"
-local install_cpath_pattern = "/Users/adamzajac/.cache/nvim/packer_hererocks/2.1.1736781742/lib/lua/5.1/?.so"
+local package_path_str = "/Users/adamzajac/.cache/nvim/packer_hererocks/2.1.1744318430/share/lua/5.1/?.lua;/Users/adamzajac/.cache/nvim/packer_hererocks/2.1.1744318430/share/lua/5.1/?/init.lua;/Users/adamzajac/.cache/nvim/packer_hererocks/2.1.1744318430/lib/luarocks/rocks-5.1/?.lua;/Users/adamzajac/.cache/nvim/packer_hererocks/2.1.1744318430/lib/luarocks/rocks-5.1/?/init.lua"
+local install_cpath_pattern = "/Users/adamzajac/.cache/nvim/packer_hererocks/2.1.1744318430/lib/lua/5.1/?.so"
 if not string.find(package.path, package_path_str, 1, true) then
   package.path = package.path .. ';' .. package_path_str
 end
@@ -122,6 +122,14 @@ _G.packer_plugins = {
     path = "/Users/adamzajac/.local/share/nvim/site/pack/packer/start/gitsigns.nvim",
     url = "https://github.com/lewis6991/gitsigns.nvim"
   },
+  ["lazydev.nvim"] = {
+    config = { "\27LJ\2\n™\1\0\0\6\0\b\0\r6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\6\0004\3\3\0005\4\3\0005\5\4\0=\5\5\4>\4\1\3=\3\a\2B\0\2\1K\0\1\0\flibrary\1\0\1\flibrary\0\nwords\1\2\0\0\fvim%.uv\1\0\2\nwords\0\tpath\23${3rd}/luv/library\nsetup\flazydev\frequire\0" },
+    loaded = false,
+    needs_bufread = false,
+    only_cond = false,
+    path = "/Users/adamzajac/.local/share/nvim/site/pack/packer/opt/lazydev.nvim",
+    url = "https://github.com/folke/lazydev.nvim"
+  },
   ["lazygit.nvim"] = {
     loaded = true,
     path = "/Users/adamzajac/.local/share/nvim/site/pack/packer/start/lazygit.nvim",
@@ -131,11 +139,6 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/adamzajac/.local/share/nvim/site/pack/packer/start/leap.nvim",
     url = "https://github.com/ggandor/leap.nvim"
-  },
-  ["lsp-zero.nvim"] = {
-    loaded = true,
-    path = "/Users/adamzajac/.local/share/nvim/site/pack/packer/start/lsp-zero.nvim",
-    url = "https://github.com/VonHeikemen/lsp-zero.nvim"
   },
   ["lspkind.nvim"] = {
     loaded = true,
@@ -263,10 +266,6 @@ time([[Defining packer_plugins]], false)
 time([[Config for oil.nvim]], true)
 try_loadstring("\27LJ\2\n1\0\0\3\0\3\0\0066\0\0\0'\2\1\0B\0\2\0029\0\2\0B\0\1\1K\0\1\0\nsetup\boil\frequire\0", "config", "oil.nvim")
 time([[Config for oil.nvim]], false)
--- Config for: auto-session
-time([[Config for auto-session]], true)
-try_loadstring("\27LJ\2\n:\0\0\3\0\3\0\0066\0\0\0'\2\1\0B\0\2\0029\0\2\0B\0\1\1K\0\1\0\nsetup\17auto-session\frequire\0", "config", "auto-session")
-time([[Config for auto-session]], false)
 -- Config for: git-conflict.nvim
 time([[Config for git-conflict.nvim]], true)
 try_loadstring("\27LJ\2\n:\0\0\3\0\3\0\0066\0\0\0'\2\1\0B\0\2\0029\0\2\0B\0\1\1K\0\1\0\nsetup\17git-conflict\frequire\0", "config", "git-conflict.nvim")
@@ -275,6 +274,10 @@ time([[Config for git-conflict.nvim]], false)
 time([[Config for ccc.nvim]], true)
 try_loadstring("\27LJ\2\nn\0\0\4\0\6\0\t6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\4\0005\3\3\0=\3\5\2B\0\2\1K\0\1\0\16highlighter\1\0\1\16highlighter\0\1\0\2\blsp\2\16auto_enable\2\nsetup\bccc\frequire\0", "config", "ccc.nvim")
 time([[Config for ccc.nvim]], false)
+-- Config for: auto-session
+time([[Config for auto-session]], true)
+try_loadstring("\27LJ\2\n:\0\0\3\0\3\0\0066\0\0\0'\2\1\0B\0\2\0029\0\2\0B\0\1\1K\0\1\0\nsetup\17auto-session\frequire\0", "config", "auto-session")
+time([[Config for auto-session]], false)
 
 -- Command lazy-loads
 time([[Defining lazy-load commands]], true)
@@ -287,6 +290,13 @@ pcall(vim.api.nvim_create_user_command, 'CodeActionMenu', function(cmdargs)
       end})
 time([[Defining lazy-load commands]], false)
 
+vim.cmd [[augroup packer_load_aucmds]]
+vim.cmd [[au!]]
+  -- Filetype lazy-loads
+time([[Defining lazy-load filetype autocommands]], true)
+vim.cmd [[au FileType lua ++once lua require("packer.load")({'lazydev.nvim'}, { ft = "lua" }, _G.packer_plugins)]]
+time([[Defining lazy-load filetype autocommands]], false)
+vim.cmd("augroup END")
 
 _G._packer.inside_compile = false
 if _G._packer.needs_bufread == true then
