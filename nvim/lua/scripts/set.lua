@@ -16,6 +16,7 @@ vim.opt.incsearch = true
 vim.opt.termguicolors = true
 vim.opt.ph = 10;
 vim.cmd.colorscheme "catppuccin"
+vim.opt.signcolumn = "yes"
 
 vim.filetype.add({
   extension = {
@@ -42,4 +43,3 @@ end
 
 -- Create the custom command
 vim.api.nvim_create_user_command('CopyPathToClipboard', copy_path_to_clipboard, {})
-
