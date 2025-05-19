@@ -1,5 +1,3 @@
-local lsp_config = require "lspconfig"
-local cmp_lsp = require "cmp_nvim_lsp"
 local mason = require "mason"
 local mason_lsp_config = require "mason-lspconfig"
 
@@ -29,10 +27,3 @@ vim.diagnostic.config({
 
 mason.setup();
 mason_lsp_config.setup();
-mason_lsp_config.setup_handlers {
-  function(server_name)
-    lsp_config[server_name].setup {
-      capabilities = cmp_lsp.default_capabilities()
-    }
-  end,
-}
