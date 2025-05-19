@@ -118,7 +118,7 @@ _G.packer_plugins = {
     url = "https://github.com/lewis6991/gitsigns.nvim"
   },
   ["lazydev.nvim"] = {
-    config = { "\27LJ\2\n™\1\0\0\6\0\b\0\r6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\6\0004\3\3\0005\4\3\0005\5\4\0=\5\5\4>\4\1\3=\3\a\2B\0\2\1K\0\1\0\flibrary\1\0\1\flibrary\0\nwords\1\2\0\0\fvim%.uv\1\0\2\tpath\23${3rd}/luv/library\nwords\0\nsetup\flazydev\frequire\0" },
+    config = { "\27LJ\2\n™\1\0\0\6\0\b\0\r6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\6\0004\3\3\0005\4\3\0005\5\4\0=\5\5\4>\4\1\3=\3\a\2B\0\2\1K\0\1\0\flibrary\1\0\1\flibrary\0\nwords\1\2\0\0\fvim%.uv\1\0\2\nwords\0\tpath\23${3rd}/luv/library\nsetup\flazydev\frequire\0" },
     loaded = false,
     needs_bufread = false,
     only_cond = false,
@@ -139,16 +139,6 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/adamzajac/.local/share/nvim/site/pack/packer/start/lualine.nvim",
     url = "https://github.com/nvim-lualine/lualine.nvim"
-  },
-  ["mason-lspconfig.nvim"] = {
-    loaded = true,
-    path = "/Users/adamzajac/.local/share/nvim/site/pack/packer/start/mason-lspconfig.nvim",
-    url = "https://github.com/williamboman/mason-lspconfig.nvim"
-  },
-  ["mason.nvim"] = {
-    loaded = true,
-    path = "/Users/adamzajac/.local/share/nvim/site/pack/packer/start/mason.nvim",
-    url = "https://github.com/williamboman/mason.nvim"
   },
   ["mini.animate"] = {
     loaded = true,
@@ -247,10 +237,6 @@ _G.packer_plugins = {
 }
 
 time([[Defining packer_plugins]], false)
--- Config for: auto-session
-time([[Config for auto-session]], true)
-try_loadstring("\27LJ\2\n:\0\0\3\0\3\0\0066\0\0\0'\2\1\0B\0\2\0029\0\2\0B\0\1\1K\0\1\0\nsetup\17auto-session\frequire\0", "config", "auto-session")
-time([[Config for auto-session]], false)
 -- Config for: git-conflict.nvim
 time([[Config for git-conflict.nvim]], true)
 try_loadstring("\27LJ\2\n:\0\0\3\0\3\0\0066\0\0\0'\2\1\0B\0\2\0029\0\2\0B\0\1\1K\0\1\0\nsetup\17git-conflict\frequire\0", "config", "git-conflict.nvim")
@@ -263,6 +249,10 @@ time([[Config for ccc.nvim]], false)
 time([[Config for oil.nvim]], true)
 try_loadstring("\27LJ\2\n1\0\0\3\0\3\0\0066\0\0\0'\2\1\0B\0\2\0029\0\2\0B\0\1\1K\0\1\0\nsetup\boil\frequire\0", "config", "oil.nvim")
 time([[Config for oil.nvim]], false)
+-- Config for: auto-session
+time([[Config for auto-session]], true)
+try_loadstring("\27LJ\2\n:\0\0\3\0\3\0\0066\0\0\0'\2\1\0B\0\2\0029\0\2\0B\0\1\1K\0\1\0\nsetup\17auto-session\frequire\0", "config", "auto-session")
+time([[Config for auto-session]], false)
 
 -- Command lazy-loads
 time([[Defining lazy-load commands]], true)
