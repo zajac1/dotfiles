@@ -3,7 +3,8 @@ local lspkind = require('lspkind')
 
 cmp.setup({
   sources = {
-    { name = 'nvim_lsp' }
+    { name = 'nvim_lsp' },
+    { name = 'render_markdown' }
   },
   preselect = 'item',
   completion = {

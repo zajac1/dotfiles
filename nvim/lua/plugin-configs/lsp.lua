@@ -1,6 +1,5 @@
-local mason = require "mason"
-local mason_lsp_config = require "mason-lspconfig"
-
+require("mason").setup()
+require("mason-lspconfig").setup()
 -- taken from: https://www.mitchellhanberg.com/modern-format-on-save-in-neovim/
 vim.api.nvim_create_autocmd("LspAttach", {
   group = vim.api.nvim_create_augroup("lsp", { clear = true }),
@@ -17,13 +16,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
 vim.diagnostic.config({
   signs = {
     text = {
-      [vim.diagnostic.severity.ERROR] = " ",
-      [vim.diagnostic.severity.WARN] = " ",
-      [vim.diagnostic.severity.INFO] = "󰋼 ",
-      [vim.diagnostic.severity.HINT] = "󰌵 ",
+      [vim.diagnostic.severity.ERROR] = "",
+      [vim.diagnostic.severity.WARN] = "",
+      [vim.diagnostic.severity.INFO] = "",
+      [vim.diagnostic.severity.HINT] = "󰌵",
     },
   },
 })
-
-mason.setup();
-mason_lsp_config.setup();
