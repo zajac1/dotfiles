@@ -1,11 +1,12 @@
+local TIMEOUT_VALUE = 2000;
 return {
   "folke/which-key.nvim",
   event = "VeryLazy",
   init = function()
     vim.o.timeout = true
-    vim.o.timeoutlen = 2000
+    vim.o.timeoutlen = TIMEOUT_VALUE
   end,
   opts = {
-    delay = 2000,
+    delay = TIMEOUT_VALUE,
   },
 }
