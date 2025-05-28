@@ -34,3 +34,7 @@ vim.keymap.set('n', '<leader>s', function() builtin.git_status({ previewer = del
   { desc = 'List of files according to git status' })
 vim.keymap.set('n', '<leader>r', telescope.extensions.recent_files.pick, { desc = 'List of recent files' })
 vim.keymap.set("n", "<leader>h", builtin.keymaps, { desc = 'Show Telescope menu for all available keybindings' })
+vim.keymap.set('n', 'gr', builtin.lsp_references, { desc = 'Show references (Telescope)' })
+vim.keymap.set('n', 'gd', builtin.lsp_definitions, { desc = 'Go to definition' })
+vim.keymap.set('n', 'go', builtin.lsp_type_definitions, { desc = 'Go to type definition' })
+vim.keymap.set('n', 'gi', builtin.lsp_implementations, { desc = 'Go to implementation' })
