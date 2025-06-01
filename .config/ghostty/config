@@ -1,0 +1,9 @@
+theme = nordfox
+font-size = 17
+background-opacity = 0.85
+background-blur = true
+maximize = true
+
+# Other things to try
+# font-family = GohuFont 14 Nerd Font
+# theme = Havn Skumring
