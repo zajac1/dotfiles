@@ -1,0 +1,8 @@
+# FILE AUTOMATICALLY GENERATED FROM /Users/adamzajac/.config/.zimrc
+# EDIT THE SOURCE FILE AND THEN RUN zimfw build. DO NOT DIRECTLY EDIT THIS FILE!
+
+if [[ -e ${ZIM_CONFIG_FILE:-${ZDOTDIR:-${HOME}}/.zimrc} ]] zimfw() { source "/opt/homebrew/opt/zimfw/share/zimfw.zsh" "${@}" }
+source "${HOME}/.zim/modules/input/init.zsh"
+source "${HOME}/.zim/modules/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+source "${HOME}/.zim/modules/zsh-autosuggestions/zsh-autosuggestions.zsh"
+source "${HOME}/.zim/modules/zsh-z/zsh-z.plugin.zsh"
