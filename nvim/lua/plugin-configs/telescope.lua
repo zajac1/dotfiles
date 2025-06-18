@@ -1,6 +1,7 @@
 local telescope = require('telescope')
 local builtin = require('telescope.builtin')
 local previewers = require('telescope.previewers')
+local telescopeConfig = require("telescope.config")
 
 local delta = previewers.new_termopen_previewer({
   get_command = function(entry)
@@ -12,11 +13,16 @@ local delta = previewers.new_termopen_previewer({
   end
 })
 
+-- Clone the default Telescope configuration
+local vimgrep_arguments = { unpack(telescopeConfig.values.vimgrep_arguments) }
+table.insert(vimgrep_arguments, "--fixed-strings")
+
 telescope.setup({
   defaults = {
     prompt_prefix = "  󰭎  ",
     selection_caret = " ❯ ",
     entry_prefix = "   ",
+    vimgrep_arguments = vimgrep_arguments,
   },
   extensions = {
     ["ui-select"] = {
