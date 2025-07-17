@@ -19,3 +19,4 @@ vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]], { desc = 'Copy to system clib
 vim.keymap.set({ "n", "v" }, "<leader>d", [["_d]], { desc = 'Delete without copying content to buffer' })
 vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = 'Move selected lines down in visual mode' })
 vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = 'Move selected lines up in visual mode' })
+vim.keymap.set('n', '<leader>e', function() vim.cmd('LspEslintFixAll') end, { desc = 'Apply ESLint fix all' })
