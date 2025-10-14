@@ -1,3 +1,3 @@
-require("scripts.remap")
 require("scripts.set")
+require("scripts.remap")
 require("scripts.lazy")

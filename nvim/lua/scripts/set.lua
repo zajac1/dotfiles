@@ -25,7 +25,7 @@ vim.filetype.add({
 })
 
 
-local function copy_path_to_clipboard()
+function copy_path_to_clipboard()
   -- Get the full path of the current file
   local full_path = vim.fn.expand('%:p')
   -- Find the position of 'src' in the path
@@ -36,7 +36,9 @@ local function copy_path_to_clipboard()
     vim.fn.setreg('+', relative_path)
     print('Path copied to clipboard: ' .. relative_path)
   else
-    print('No "src" directory found in path')
+    -- Copy the absolute path when no 'src' directory is found
+    vim.fn.setreg('+', full_path)
+    print('Absolute path copied to clipboard: ' .. full_path)
   end
 end
 
