@@ -13,7 +13,6 @@ vim.opt.undofile = true
 
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
-vim.opt.termguicolors = true
 vim.opt.ph = 10;
 vim.opt.signcolumn = "yes"
 

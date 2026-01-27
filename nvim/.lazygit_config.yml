@@ -6,9 +6,9 @@ git:
     nordpass-ui:
       - pattern: "^(\\w+)\\/(\\w+)-(\\d+)-(.*)"
         replace: '$1: [$2-$3] '
-  paging:
-    colorArg: always
-    pager: delta --dark --paging=never --file-style=omit --24-bit-color=never
+  pagers:
+    - colorArg: always
+      pager: delta --dark --paging=never --file-style=omit --24-bit-color=never
 os:
   edit: 'nvim --server "$NVIM" --remote-tab {{filename}}'
   editAtLine: 'nvim --server "$NVIM" --remote-tab {{filename}}; [ -z "$NVIM" ] || nvim --server "$NVIM" --remote-send ":{{line}}<CR>"'
