@@ -1,9 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "theme": "catppuccin-macchiato",
-  "keybinds": {
-    "session_timeline": "<leader>t"
-  },
   "provider": {
     "nexos": {
       "npm": "@ai-sdk/openai-compatible",
