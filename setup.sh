@@ -45,3 +45,9 @@ else
 fi
 
 mkdir "$HOME/Desktop/Screenshots"
+
+# Claude Code
+DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+mkdir -p "$HOME/.claude"
+ln -sf "$DOTFILES_DIR/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
+ln -sf "$DOTFILES_DIR/AGENTS.md" "$HOME/.claude/CLAUDE.md"
