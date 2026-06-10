@@ -1,0 +1,5 @@
+# Vendored shader collection cloned with its own .git — not tracked here
+.config/ghostty/ghostty-shaders/
+
+# Local pre-migration snapshots, kept out of version control
+backups/
