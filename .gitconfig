@@ -1,6 +1,5 @@
-[user]
-  name = Adam Zając
-  email = redacted@example.com
+# Identity is provided per-context by the ~/.ssh/*.conf includes below
+# (and by setup.sh on a fresh machine) — not hardcoded in this shared file.
 [pull]
   rebase = true
 [push]
