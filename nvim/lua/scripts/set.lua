@@ -16,6 +16,8 @@ vim.opt.incsearch = true
 vim.opt.pumheight = 10
 vim.opt.signcolumn = "yes"
 
+vim.opt.foldlevelstart = 99
+
 vim.filetype.add({
   extension = {
     mdx = "markdown",

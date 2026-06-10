@@ -1,20 +1,35 @@
 return {
   "nvim-treesitter/nvim-treesitter",
+  branch = "main",
+  lazy = false,
   build = ":TSUpdate",
-  opts = {
-    -- A list of parser names, or "all" (the five listed parsers should always be installed)
-    ensure_installed = { "javascript", "typescript", "vim", "vimdoc", "lua" },
+  config = function()
+    local parsers = {
+      "javascript", "typescript", "tsx",
+      "lua", "vim", "vimdoc", "query",
+      "markdown", "markdown_inline",
+      "regex", "json", "yaml", "html", "css",
+      "bash", "diff", "gitcommit",
+    }
 
-    -- Install parsers synchronously (only applied to `ensure_installed`)
-    sync_install = false,
+    require("nvim-treesitter").install(parsers)
 
-    -- Automatically install missing parsers when entering buffer
-    -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-    auto_install = true,
+    local ts_filetypes = {
+      "javascript", "javascriptreact",
+      "typescript", "typescriptreact",
+      "lua", "vim", "help", "query",
+      "markdown",
+      "json", "yaml", "html", "css",
+      "sh", "bash", "diff", "gitcommit",
+    }
 
-    highlight = {
-      enable = true,
-      additional_vim_regex_highlighting = false,
-    },
-  }
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = ts_filetypes,
+      callback = function()
+        pcall(vim.treesitter.start)
+        vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
+        vim.wo[0][0].foldmethod = "expr"
+      end,
+    })
+  end,
 }
