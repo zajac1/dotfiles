@@ -49,7 +49,7 @@ else
 fi
 
 # Nerd Font glyphs via UTF-8 hex (avoids file-encoding issues)
-SEP=$(printf '\xee\x82\xb0')          # U+E0B0  ► powerline right arrow
+SEP=$(printf '\xee\x82\xb0')          # U+E0B0  ► powerline divider (between segments)
 LEFT_CAP=$(printf '\xee\x82\xb6')    # U+E0B6   rounded left cap
 RIGHT_CAP=$(printf '\xee\x82\xb4')   # U+E0B4   rounded right cap
 ICON_BRANCH=$(printf '\xee\x82\xa0') # U+E0A0   git branch
@@ -57,25 +57,19 @@ ICON_CTX=$(printf '\xef\x83\xa4')    # U+F0E4   gauge/dashboard (context)
 ICON_CLOCK=$(printf '\xef\x80\x97')  # U+F017   clock (5h)
 ICON_CAL=$(printf '\xef\x81\xb3')    # U+F073   calendar (7d)
 
-# Superscript glyphs for the (subtle, smaller-looking) rollover countdown
-SUP_0=$(printf '\xe2\x81\xb0'); SUP_1=$(printf '\xc2\xb9'); SUP_2=$(printf '\xc2\xb2')
-SUP_3=$(printf '\xc2\xb3');     SUP_4=$(printf '\xe2\x81\xb4'); SUP_5=$(printf '\xe2\x81\xb5')
-SUP_6=$(printf '\xe2\x81\xb6'); SUP_7=$(printf '\xe2\x81\xb7'); SUP_8=$(printf '\xe2\x81\xb8')
-SUP_9=$(printf '\xe2\x81\xb9'); SUP_H=$(printf '\xca\xb0');     SUP_LT=$(printf '\xe2\x80\xb9')
-
 # ---------------------------------------------------------------------------
 # Segment engine — connected powerline style, matching Starship
 # ---------------------------------------------------------------------------
 _prev_bg=""
 
 seg() {
-  _bg=$1; _content=$2
+  _bg=$1; _content=$2; _fg=${3:-$CRUST}
   if [ -n "$_prev_bg" ]; then
     printf '\033[38;2;%sm\033[48;2;%sm%s' "$_prev_bg" "$_bg" "$SEP"
   else
     printf '\033[0m\033[38;2;%sm%s\033[48;2;%sm' "$_bg" "$LEFT_CAP" "$_bg"
   fi
-  printf '\033[38;2;%sm%s' "$CRUST" "$_content"
+  printf '\033[38;2;%sm%s' "$_fg" "$_content"
   _prev_bg=$_bg
 }
 
@@ -91,28 +85,49 @@ rate_bg() {
   fi
 }
 
-# Render an ASCII digit string as superscript glyphs.
-_sup() {
-  _out=""; _i=1; _len=${#1}
-  while [ "$_i" -le "$_len" ]; do
-    eval "_out=\"\${_out}\${SUP_$(printf '%s' "$1" | cut -c"$_i")}\""
-    _i=$(( _i + 1 ))
-  done
-  printf '%s' "$_out"
+# Blend an "R;G;B" triplet toward white by factor f (0..1) — the paler inset
+# capsule background for the rollover counter.
+lighten() {
+  awk -v c="$1" -v f="$2" 'BEGIN { split(c, a, ";")
+    printf "%d;%d;%d", a[1]+(255-a[1])*f, a[2]+(255-a[2])*f, a[3]+(255-a[3])*f }'
 }
 
-# Time until a rate-limit window rolls over, always in whole hours ("<1h" if less),
-# rendered superscript so it reads smaller and less striking than the percentage.
+# Blend triplet $1 toward triplet $2 by factor f — softens the rollover text so
+# it reads lighter than the bold percentage.
+mix() {
+  awk -v x="$1" -v y="$2" -v f="$3" 'BEGIN { split(x, a, ";"); split(y, b, ";")
+    printf "%d;%d;%d", a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f, a[3]+(b[3]-a[3])*f }'
+}
+
+# Time until a rate-limit window rolls over, as plain text in whole hours
+# ("<1h" if less than an hour).
 now=$(date +%s)
 reset_label() {
   rl_label=""
   [ -z "$1" ] && return
   _delta=$(( $1 - now ))
-  if   [ "$_delta" -le 0 ];    then _pre="";       _h=0
-  elif [ "$_delta" -lt 3600 ]; then _pre="$SUP_LT"; _h=1
-  else                              _pre="";        _h=$(( (_delta + 1800) / 3600 ))
+  if   [ "$_delta" -le 0 ];    then rl_label="0h"
+  elif [ "$_delta" -lt 3600 ]; then rl_label="<1h"
+  else                              rl_label="$(( (_delta + 1800) / 3600 ))h"
   fi
-  rl_label="${_pre}$(_sup "$_h")${SUP_H}"
+}
+
+# Draw a rate-limit window: {icon}{remaining%} on the rate-colored background,
+# and — when a reset time is known — the rollover countdown inside a paler,
+# rounded inset "capsule" so it reads as a sub-element of the same segment.
+rate_segment() {
+  _icon=$1; _rem=$2; _reset=$3
+  rate_bg "$_rem"
+  reset_label "$_reset"
+  if [ -n "$rl_label" ]; then
+    _light=$(lighten "$rl_bg" 0.5)
+    _soft=$(mix "$CRUST" "$_light" 0.45)
+    _cap=$(printf '\033[38;2;%sm%s\033[48;2;%sm\033[38;2;%sm%s\033[48;2;%sm\033[38;2;%sm%s\033[48;2;%sm' \
+      "$_light" "$LEFT_CAP" "$_light" "$_soft" "$rl_label" "$rl_bg" "$_light" "$RIGHT_CAP" "$rl_bg")
+    seg "$rl_bg" " ${_icon} ${_rem}% ${_cap} "
+  else
+    seg "$rl_bg" " ${_icon} ${_rem}% "
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -129,22 +144,10 @@ if [ -n "$used_pct" ]; then
   seg "$BG_LAVENDER" " ${ICON_CTX} ${ctx_pct}% "
 fi
 
-if [ -n "$five_h_used" ]; then
-  five_h_rem=$(echo "$five_h_used" | awk '{printf "%.0f", 100 - $1}')
-  rate_bg "$five_h_rem"
-  reset_label "$five_h_reset"
-  _txt=" ${ICON_CLOCK} ${five_h_rem}%"
-  [ -n "$rl_label" ] && _txt="${_txt} ${rl_label}"
-  seg "$rl_bg" "${_txt} "
-fi
+[ -n "$five_h_used" ] && \
+  rate_segment "$ICON_CLOCK" "$(echo "$five_h_used" | awk '{printf "%.0f", 100 - $1}')" "$five_h_reset"
 
-if [ -n "$week_used" ]; then
-  week_rem=$(echo "$week_used" | awk '{printf "%.0f", 100 - $1}')
-  rate_bg "$week_rem"
-  reset_label "$week_reset"
-  _txt=" ${ICON_CAL} ${week_rem}%"
-  [ -n "$rl_label" ] && _txt="${_txt} ${rl_label}"
-  seg "$rl_bg" "${_txt} "
-fi
+[ -n "$week_used" ] && \
+  rate_segment "$ICON_CAL" "$(echo "$week_used" | awk '{printf "%.0f", 100 - $1}')" "$week_reset"
 
 endcap
