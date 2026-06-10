@@ -1,0 +1,8 @@
+shell = "sh -c '{}'"
+
+[[items]]
+name = "tinted-shell"
+path = "https://github.com/tinted-theming/tinted-shell"
+hook = ". %f && /Users/adamzajac/dotfiles/.config/tinted-theming/hooks/apply.sh"
+supported-systems = ["base16", "base24"]
+themes-dir = "scripts"
