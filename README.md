@@ -23,26 +23,26 @@ For how an agent should *behave* in this repo, see [`AGENTS.md`](AGENTS.md)
 | `AGENTS.md` | Engineering rules → `~/.claude/CLAUDE.md` |
 | `Brewfile` | All Homebrew packages, casks, fonts |
 | `.gitconfig`, `.delta_themes.gitconfig`, `.lazygit_config.yml` | Git tooling |
-| `setup.sh` | Bootstrap: git/ssh config + Claude symlinks |
+| `setup.sh` | Bootstrap: git/ssh config + Claude symlinks + `~/.config/nvim` symlink |
 | `.macos` | macOS `defaults` tweaks |
 
-> Note: `setup.sh` wires git/ssh and the Claude symlinks only. The shell,
-> Ghostty, starship, and Neovim configs are deployed manually (symlink or copy
-> into `~`/`~/.config`). `.config/ghostty/ghostty-shaders/` and `backups/` are
-> intentionally gitignored.
+> Note: `setup.sh` wires git/ssh, the Claude symlinks, and the Neovim symlink.
+> The shell, Ghostty, and starship configs are still deployed manually (symlink
+> or copy into `~`/`~/.config`). `.config/ghostty/ghostty-shaders/` and
+> `backups/` are intentionally gitignored.
 
 ## Fresh machine
 
 ```sh
 brew bundle --file=~/dotfiles/Brewfile   # tools, casks, fonts
-~/dotfiles/setup.sh                       # git/ssh + Claude symlinks
+~/dotfiles/setup.sh                       # git/ssh + Claude symlinks + ~/.config/nvim
 tinty install                             # clone the tinted-shell template (required before apply)
 tinty apply base24-catppuccin-mocha       # generate all theme files
 ```
 
-Then link the remaining configs into `~`/`~/.config` — e.g.
-`~/.config/nvim -> ~/dotfiles/nvim`, plus `.zshrc`, `.config/.zimrc`,
-`.config/starship.toml`, and `.config/ghostty/`.
+Then link the remaining configs into `~`/`~/.config` — `.zshrc`,
+`.config/.zimrc`, `.config/starship.toml`, and `.config/ghostty/`. (Neovim is
+already symlinked by `setup.sh`; launch `nvim` once to let lazy.nvim install.)
 
 ## Theming (tinty)
 

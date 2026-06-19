@@ -51,3 +51,7 @@ DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$HOME/.claude"
 ln -sf "$DOTFILES_DIR/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
 ln -sf "$DOTFILES_DIR/AGENTS.md" "$HOME/.claude/CLAUDE.md"
+
+# Neovim (lazy.nvim self-bootstraps and installs from lazy-lock.json on first launch)
+mkdir -p "$HOME/.config"
+ln -sfn "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
