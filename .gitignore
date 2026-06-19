@@ -3,3 +3,6 @@
 
 # Local pre-migration snapshots, kept out of version control
 backups/
+
+# Machine-local secrets — only .env.example is tracked
+.env

@@ -23,26 +23,34 @@ For how an agent should *behave* in this repo, see [`AGENTS.md`](AGENTS.md)
 | `AGENTS.md` | Engineering rules → `~/.claude/CLAUDE.md` |
 | `Brewfile` | All Homebrew packages, casks, fonts |
 | `.gitconfig`, `.delta_themes.gitconfig`, `.lazygit_config.yml` | Git tooling |
-| `setup.sh` | Bootstrap: git/ssh config + Claude symlinks + `~/.config/nvim` symlink |
+| `setup.sh` | Bootstrap: git identity + SSH key, symlinks all tracked configs, registers MCP servers |
+| `.env.example` | Template for `~/.env` machine-local secrets (copy + fill in) |
 | `.macos` | macOS `defaults` tweaks |
 
-> Note: `setup.sh` wires git/ssh, the Claude symlinks, and the Neovim symlink.
-> The shell, Ghostty, and starship configs are still deployed manually (symlink
-> or copy into `~`/`~/.config`). `.config/ghostty/ghostty-shaders/` and
-> `backups/` are intentionally gitignored.
+> Note: `setup.sh` now symlinks every tracked config into place (shell, git,
+> Ghostty, starship, tinty, Neovim, Claude) — see the `link` list in the
+> script. It assumes a fresh machine: back up any existing real configs at
+> those paths first, since they're replaced with symlinks.
+> `.config/ghostty/ghostty-shaders/`, `backups/`, and `~/.env` are intentionally
+> untracked.
 
 ## Fresh machine
 
+For the full step-by-step (agent-followable) bootstrap with verifications and a
+capabilities recap, see [`BOOTSTRAP.md`](BOOTSTRAP.md). Quick version:
+
 ```sh
 brew bundle --file=~/dotfiles/Brewfile   # tools, casks, fonts
-~/dotfiles/setup.sh                       # git/ssh + Claude symlinks + ~/.config/nvim
+~/dotfiles/setup.sh                       # git/ssh, all config symlinks, MCP servers
+cp ~/dotfiles/.env.example ~/.env         # then fill in the real secret values
 tinty install                             # clone the tinted-shell template (required before apply)
 tinty apply base24-catppuccin-mocha       # generate all theme files
 ```
 
-Then link the remaining configs into `~`/`~/.config` — `.zshrc`,
-`.config/.zimrc`, `.config/starship.toml`, and `.config/ghostty/`. (Neovim is
-already symlinked by `setup.sh`; launch `nvim` once to let lazy.nvim install.)
+`setup.sh` symlinks everything tracked, so there's no manual linking left.
+Launch `nvim` once to let lazy.nvim install plugins. Per-context git identity
+for `~/projects/` (work) goes in `~/.ssh/prof.conf` — set that up separately;
+`setup.sh` only writes the global identity to `~/.ssh/priv.conf`.
 
 ## Theming (tinty)
 
@@ -151,19 +159,16 @@ branch with an expanded parser set and treesitter-based folding
 `delta` is the pager and diff filter (side-by-side, line numbers, `colibri`
 feature). `pull.rebase=true`, `push.autoSetupRemote=true`, `diff3` conflict style.
 SSH/identity configs are split via conditional includes: `~/.ssh/priv.conf`
-globally and `~/.ssh/prof.conf` for repos under `~/projects/`. `lazygit` is
-configured in `.lazygit_config.yml`.
+globally and `~/.ssh/prof.conf` for repos under `~/projects/`. `.lazygit_config.yml`
+configures lazygit *as launched from Neovim* (the `kdheepak/lazygit.nvim` plugin
+points at `~/.lazygit_config.yml`); terminal `lazygit` runs on its own defaults.
 
 ## Claude Code
 
-Slash commands live in `claude/commands/` and are linked into place via:
-
-```sh
-ln -s ~/dotfiles/claude/commands ~/.claude/commands
-```
-
-`setup.sh` also symlinks `claude/statusline-command.sh` → `~/.claude/` and
-`AGENTS.md` → `~/.claude/CLAUDE.md`.
+Slash commands live in `claude/commands/`. `setup.sh` symlinks them to
+`~/.claude/commands`, plus `claude/statusline-command.sh` → `~/.claude/` and
+`AGENTS.md` → `~/.claude/CLAUDE.md`. It also registers MCP servers at user scope
+(e.g. `context7` via `claude mcp add`), so they're available across all projects.
 
 The **statusline** (`claude/statusline-command.sh`) is a powerline-style bar
 showing cwd, git branch, model, context-window usage, and the 5h/weekly rate-limit

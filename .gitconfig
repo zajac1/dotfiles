@@ -4,6 +4,8 @@
   rebase = true
 [push]
   autoSetupRemote = true
+[credential]
+  helper = osxkeychain
 [include]
   path = "~/.delta_themes.gitconfig"
   path = ~/.ssh/priv.conf
