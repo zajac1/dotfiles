@@ -27,6 +27,7 @@ brew "tree-sitter-cli"
 brew "trash", link: true
 brew "uv"
 brew "zimfw"
+brew "glslang"
 brew "zoxide"
 brew "jesseduffield/lazygit/lazygit"
 brew "sst/tap/opencode"

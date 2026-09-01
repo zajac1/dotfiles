@@ -8,12 +8,26 @@ background-blur = true
 maximize = true
 window-save-state = "always"
 window-colorspace = "display-p3"
-#custom-shader= ghostty-shaders/heartfelt.glsl
-#custom-shader= ghostty-shaders/palette.glsl
-#custom-shader= ghostty-shaders/cityscape.glsl
-# custom-shader= ghostty-shaders/tft.glsl
-# custom-shader= ghostty-shaders/crt.glsl
-# custom-shader= ghostty-shaders/in-game-crt.glsl
-# custom-shader= ghostty-shaders/glitchy.glsl
 
-# Other things to try
+# Drop-down quick terminal from any app (VS Code-style ctrl+`)
+keybind = global:ctrl+grave_accent=toggle_quick_terminal
+
+# Split menu (tmux-style): cmd+d, then % = split right, " = split down,
+# arrows = move focus, f = fullscreen toggle, x = close, = = equal sizes.
+keybind = cmd+d>shift+digit5=new_split:right
+keybind = cmd+d>shift+quote=new_split:down
+keybind = cmd+d>arrow_right=goto_split:right
+keybind = cmd+d>arrow_down=goto_split:down
+keybind = cmd+d>arrow_left=goto_split:left
+keybind = cmd+d>arrow_up=goto_split:up
+keybind = cmd+d>f=toggle_split_zoom
+keybind = cmd+d>x=close_surface
+keybind = cmd+d>equal=equalize_splits
+
+# Shaders (tracked in shaders/): theme-colored cursor smear, theme-derived
+# gradient background (accent pair rotated by shaders/rotate-gradient.sh,
+# hooked in ~/.zshrc), unfocused-pane dimmer. Apply edits via cmd+shift+,
+# The untracked ghostty-shaders/ clone is a playground for experiments.
+custom-shader = shaders/cursor_warp.glsl
+custom-shader = shaders/gradient-static-theme.glsl
+custom-shader = shaders/bespoke-focus-dim.glsl
