@@ -232,6 +232,6 @@ else
   rows "$level"
 fi | { if [ -z "$level" ]; then grep -v "^sep$TAB"; else cat; fi; } |
   { if [ -z "$level" ]; then awk -F'\t' -v OFS='\t' '!seen[$2]++'; else cat; fi; } |
-  mark_favs | fzf --ansi --filter="$q" --delimiter="$TAB" --nth=2 2>/dev/null
+  mark_favs | fzf --ansi -i --filter="$q" --delimiter="$TAB" --nth=2 2>/dev/null
 
 emit_web "$q"

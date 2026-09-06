@@ -47,5 +47,5 @@ case "$q" in
 esac
 
 looks_like_math "$q" && emit_calc "$q"
-fzf --ansi --filter="$q" --delimiter="$TAB" --nth=2 < "$INDEX" 2>/dev/null | head -40
+fzf --ansi -i --filter="$q" --delimiter="$TAB" --nth=2 < "$INDEX" 2>/dev/null | head -40
 emit_web "$q"
