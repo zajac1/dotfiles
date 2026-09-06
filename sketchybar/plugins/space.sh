@@ -1,19 +1,18 @@
 #!/bin/bash
-# macOS exposes no public way to ask which Space you are on, so we only learn it
-# when space_change fires. On load nothing has fired yet, which left every
-# indicator unmarked. Remember the last known value so the marker is correct
-# immediately after a reload, and self-corrects on the first switch.
+# space_change delivers $INFO as JSON - {"display-1": 3} - not a bare number.
+# Comparing the raw blob to a space number never matched, so nothing ever
+# painted. Parse it, and remember the value so a reload keeps the marker
+# (macOS exposes no way to ask which Space is current).
 source "$HOME/.config/sketchybar/colors.sh"
 STATE="$HOME/.cache/omni/bar.space"
 
 if [ -n "${INFO:-}" ]; then
-  CUR="$INFO"
-  mkdir -p "$(dirname "$STATE")"
-  printf '%s' "$CUR" > "$STATE"
+  CUR=$(printf '%s' "$INFO" | jq -r 'if type=="object" then (to_entries[0].value|tostring) else tostring end' 2>/dev/null)
+  [ -n "$CUR" ] && { mkdir -p "$(dirname "$STATE")"; printf '%s' "$CUR" > "$STATE"; }
 else
   CUR=$(cat "$STATE" 2>/dev/null)
-  [ -n "$CUR" ] || CUR=1
 fi
+[ -n "$CUR" ] && [ "$CUR" != "null" ] || CUR=1
 
 N="${NAME#space.}"
 if [ "$N" = "$CUR" ]; then
