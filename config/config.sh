@@ -23,6 +23,8 @@ OMNI_HOTKEY="alt+space"
 OMNI_APP_COLORS=true
 
 OMNI_PROJECT_ROOT="$HOME/git"
-OMNI_SEARCH_URL="https://duckduckgo.com/?q="
+# We build this URL ourselves; macOS exposes no way to ask the default
+# browser for its configured search engine.
+OMNI_SEARCH_URL="https://www.google.com/search?q="
 
 . "$HOME/.config/omni/themes/$OMNI_THEME.sh"

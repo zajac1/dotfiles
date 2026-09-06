@@ -86,6 +86,8 @@ set -- \
   --marker='' \
   --info=hidden \
   --no-scrollbar \
+  --wrap=word \
+  --wrap-sign='   ' \
   --highlight-line \
   ${gap:+$gap} ${gapline:+$gapline} \
   --ellipsis='' \

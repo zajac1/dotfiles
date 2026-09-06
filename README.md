@@ -36,7 +36,7 @@ Two surfaces on one hotkey, mirroring how omarchy splits them:
   |---|---|
   | *(none)* | apps + project directories |
   | `=` | calculator (`=100 EUR to PLN`, `=2 GiB to MB`, `=150 to hex`) |
-  | `@` | web search |
+  | `@` | web search — `OMNI_SEARCH_URL`, Google by default. macOS exposes no way to ask the default browser for its configured engine, so this is ours to set. |
   | `.` | file search (Spotlight, plus a bounded `find` for dotfiles) |
 
 Numbers with an operator trigger the calculator without a prefix, so `2+2` just
@@ -98,6 +98,7 @@ Everything lives in `~/.config/omni/config.sh`. The values worth knowing:
 | `OMNI_CHROME` | rows fzf spends on borders/padding — **measured, see docs** |
 | `OMNI_FRAME` | `boxed` (exact size, opaque) or `full` (translucent + blur) |
 | `OMNI_HOTKEY` | Ghostty global keybind |
+| `OMNI_SEARCH_URL` | search engine prefix (Google by default) |
 | `OMNI_PROJECT_ROOT` | directory scanned for project entries |
 | `OMNI_APP_COLORS` | tint each app glyph with its icon's dominant colour |
 

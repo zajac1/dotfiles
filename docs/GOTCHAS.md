@@ -128,7 +128,17 @@ for ~80ms. About 16ms of that is fzf's own init and cannot be suppressed.
 Do not add command substitutions to `omni-index`'s per-app loop. `$(printf | tr)`
 per app is ~250 extra process spawns and made a cold launch 68% slower.
 
-## 13. Icon colours
+## 13. Long rows
+
+`--ellipsis=''` hides truncation but does not prevent it, so an over-long row
+just stops mid-word. `--wrap=word` is the general fix: rows break at a word
+boundary onto a second line instead of disappearing. Keep labels short anyway -
+"Search the web for X" cost 12 cells of chrome before anything useful.
+
+Note wrapped rows occupy two terminal lines, so a list full of them fits fewer
+items than `OMNI_CHROME` arithmetic assumes.
+
+## 14. Icon colours
 
 `sips` can render an `.icns` to a 16x16 32-bit BMP, and the dominant colour can
 be read with `od` + `awk` — no Pillow, no ImageMagick.
