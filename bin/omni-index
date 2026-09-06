@@ -139,5 +139,37 @@ touch "$COLORS"
   fi
 } | sort -u -t"$(printf '\t')" -k2,2 > "$INDEX.tmp"
 
+# Brand pass: any app that fell through to the generic glyph gets matched
+# against the Nerd Font brand sets. Runs AFTER the hand-written map so curated
+# choices win - "Google Chrome" stays fa-chrome rather than becoming fa-google.
+if [ -s "$HOME/.config/omni/glyphs.tsv" ]; then
+  awk -F'\t' -v OFS='\t' -v gen="" '
+    NR==FNR {
+      if ($3 !~ /^(fa|dev|linux|seti|cod)-/) next
+      seg=$3; sub(/^[a-z]+-/,"",seg)
+      if (length(seg) < 3 || seg ~ /_/) next
+      if (!(seg in brand)) brand[seg]=$1
+      next
+    }
+    {
+      # $2 is "<ESC>[38;2;r;g;bm<glyph><ESC>[0m  Name" when app colours are on,
+      # so the glyph is NOT at position 1. Match it anywhere and strip ANSI
+      # before tokenising the name.
+      if ($1 == "app" && index($2, gen) > 0) {
+        name = $2
+        gsub(/\033\[[0-9;]*m/, "", name)
+        sub(/^[^ ]*  */, "", name)
+        np = split(tolower(name), parts, /[._ -]/)
+        for (i = 1; i <= np; i++) {
+          w = parts[i]
+          if (length(w) < 3) continue
+          if (w in brand) { sub(gen, brand[w], $2); break }
+        }
+      }
+      print
+    }
+  ' "$HOME/.config/omni/glyphs.tsv" "$INDEX.tmp" > "$INDEX.tmp2" && mv "$INDEX.tmp2" "$INDEX.tmp"
+fi
+
 mv "$INDEX.tmp" "$INDEX"
 [ -s "$COLORS.new" ] && mv "$COLORS.new" "$COLORS" || rm -f "$COLORS.new"

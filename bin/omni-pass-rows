@@ -15,7 +15,16 @@ CACHE="$HOME/.cache/omni/pass.tsv"
 STAT="$HOME/.cache/omni/pass.status"
 TTL="${OMNI_PASS_CACHE_TTL:-900}"
 
+# fzf kills the previous `change:reload` on every keystroke. If the refresh runs
+# in that path, each keypress starts a 3.4s pass-cli call and kills the last one
+# mid-flight, so you get partial results that "arrive later". Refreshes are now
+# always detached and serialised behind a lock; the render path only ever reads
+# whatever is already cached.
+LOCK="$HOME/.cache/omni/pass.lock"
+
 refresh() {
+  mkdir "$LOCK" 2>/dev/null || return 0
+  trap 'rmdir "$LOCK" 2>/dev/null' EXIT
   omni-pass status > "$STAT.new" 2>/dev/null
   mv "$STAT.new" "$STAT" 2>/dev/null
   if [ "$(cat "$STAT" 2>/dev/null)" = unlocked ]; then
@@ -26,7 +35,10 @@ refresh() {
 }
 
 if [ ! -s "$STAT" ]; then
-  refresh
+  ( refresh >/dev/null 2>&1 & )
+  printf 'sep\t  Loading vault…\t\n'
+  printf 'act\t  Refresh\tpass-refresh\n'
+  exit 0
 else
   age=$(( $(date +%s) - $(stat -f %m "$STAT") ))
   [ "$age" -gt "$TTL" ] && ( refresh >/dev/null 2>&1 & )
