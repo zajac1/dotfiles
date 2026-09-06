@@ -87,9 +87,12 @@ omni-theme tokyo-night  # switch
 Style → Theme previews **live** as you arrow through the list, and reverts on
 `Esc`. Preview never writes to disk, so backing out is free.
 
-Style → Font lists the monospace families Ghostty can see. It cannot preview:
-colours can be pushed into a running terminal with OSC escapes, fonts cannot, so
-applying one writes the config and restarts the launcher instance. Fonts are
+Style → Font lists the monospace families Ghostty can see. **Applying one closes
+the launcher**, and there is no way around it: the font lives in Ghostty's
+config, which can only be reloaded by a keybind (no CLI, no signal). Colours
+escape this because they can be pushed into a running terminal as OSC sequences.
+The instance restarts in the background, so the next `Alt+Space` is already in
+the new font. For the same reason fonts cannot preview live the way themes do. Fonts are
 deliberately left out of the flat menu search — half of them contain the words
 "Mono" or "Nerd" and would match almost anything.
 

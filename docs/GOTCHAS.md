@@ -159,3 +159,21 @@ restart or shutdown the moment Enter lands, and a fuzzy match one keypress away
 from that is too close. Typing "restart" surfaces the *menu* row that leads to
 the confirmation screen, never the confirmation itself. Verified: "yes" matches
 nothing but a web search.
+
+## 16. `start` fires before the list exists
+
+fzf's `start` event runs before any item is loaded, so both `{}` and `pos(N)`
+are no-ops there. Anything that needs to inspect or move to a row must bind
+`load` instead. This is why the menu kept opening with the cursor on the
+Favorites title even though `start:pos(2)` was in the argv.
+
+## 17. Ghostty config cannot be reloaded programmatically
+
+`reload_config` exists only as a **keybind action** (default `super+shift+,`).
+There is no CLI for it, and no signal: `SIGUSR1` terminates the process
+(verified). Config is read at app start.
+
+Consequence: anything that lives in the Ghostty config - the font, chiefly -
+cannot be changed live. Colours escape this because they can be pushed into a
+running terminal as OSC sequences; fonts have no equivalent. Applying a font
+therefore has to restart the instance, which closes the launcher window.
