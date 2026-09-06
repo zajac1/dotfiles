@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# omni-btop - launch btop showing only the requested boxes.
+#
+# btop has no CLI switch for shown_boxes, but it does take -c <file>. So we copy
+# the user's own btop.conf (keeping their theme, update rate, everything) and
+# override just that one key. Presets (-p 0..9) were the alternative but they
+# are positional and would fight whatever the user has configured.
+set -u
+
+case "${1-}" in
+  cpu|mem|net|proc|"cpu mem net proc") boxes="$1" ;;
+  *) echo "omni-btop: refusing unknown box set '${1-}'" >&2; exit 1 ;;
+esac
+
+SRC="$HOME/.config/btop/btop.conf"
+DST="$HOME/.cache/omni/btop-$(printf '%s' "$boxes" | tr ' ' '-').conf"
+mkdir -p "$HOME/.cache/omni"
+
+if [ -s "$SRC" ]; then
+  if grep -q '^shown_boxes' "$SRC"; then
+    sed "s/^shown_boxes = .*/shown_boxes = \"$boxes\"/" "$SRC" > "$DST"
+  else
+    { cat "$SRC"; printf 'shown_boxes = "%s"\n' "$boxes"; } > "$DST"
+  fi
+else
+  printf 'shown_boxes = "%s"\n' "$boxes" > "$DST"
+fi
+
+exec btop -c "$DST"

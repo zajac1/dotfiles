@@ -180,6 +180,31 @@ otherwise every keystroke at the top level would hit the network.
 | `OMNI_WEATHER_LOCATION` | empty = wttr.in IP geolocation; or `"Warsaw"` / `"50.06,19.94"` |
 | `OMNI_WEATHER_TTL` | cache seconds, default 900 |
 
+### Utilities
+
+| entry | what it does |
+|---|---|
+| Weather | compact view; see below |
+| CPU / Memory / Network | `btop` showing only that box |
+| System Monitor | full `btop` |
+| Caffeinate | placeholder |
+
+The per-box views copy **your** `~/.config/btop/btop.conf` and override only
+`shown_boxes`, so your theme and update rate carry over. btop has no CLI switch
+for that key, and its numbered presets would fight whatever you have configured.
+
+### Glyphs
+
+```sh
+omni-glyphs umbrella     # every umbrella in the font, with codepoints
+omni-glyphs tshirt
+```
+
+Nerd Font codepoints are **not** guessable. `U+F0750` is not an umbrella, it is
+`md-microsoft_xbox_controller_battery_unknown`; `U+F0B22` is a bulldozer. The
+index in `data/glyphs.tsv` is generated from the font's own cmap — look glyphs
+up there rather than trusting memory.
+
 ### Menu sections
 
 `~/.config/omni/sections` lists the root entries, one id per line. Comment one

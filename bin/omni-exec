@@ -25,6 +25,10 @@ case "$kind" in
       brew)        open -na Ghostty.app --args -e bash -lc 'brew update && brew upgrade; echo; read -rp "Press enter to close "' ;;
       # softwareupdate -ia needs sudo; a password prompt out of a launcher is
       # bad UX, so open the pane instead - one click and no elevation here.
+      cpu)         open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" cpu ;;
+      memory)      open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" mem ;;
+      network)     open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" net ;;
+      monitor)     open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" "cpu mem net proc" ;;
       weather-report) open -na Ghostty.app --args -e "$HOME/.local/bin/omni-weather-report" ;;
       weather-refresh) rm -f "$HOME/.cache/omni/weather.json"; omni-weather >/dev/null 2>&1 ;;
       macos)       settings "com.apple.Software-Update-Settings.extension" ;;

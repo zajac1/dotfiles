@@ -214,3 +214,23 @@ selects with accent text, search has no box and uses the fill.
 `-A "omni"` returned an HTML page and the report window came up empty.
 `-A "curl/8"` gets the ASCII rendering. (`?format=j1` returns JSON either way,
 which is why the data path never showed the problem.)
+
+## 23. Never guess a Nerd Font codepoint
+
+Three icons shipped wrong because I mapped names to codepoints from memory:
+
+| shipped | what it actually is |
+|---|---|
+| `U+F0750` "umbrella" | `md-microsoft_xbox_controller_battery_unknown` |
+| `U+F0B22` "tshirt" | `md-bulldozer` |
+| `U+F0E1C` "thermometer-low" | `md-car_off` |
+
+Verifying a codepoint *exists* proves nothing about what it draws. Use
+`omni-glyphs <name>`, which greps an index generated from the font's own cmap.
+
+## 24. `awk length()` counts bytes — again
+
+Centring the weather art measured 22 for a 14-character line, because `‘` is
+three bytes, so the offset computed to zero and nothing moved. `wc -m` is
+locale-aware and counts characters. This is the third distinct bug from this
+one behaviour; assume `length()` is bytes everywhere in this codebase.

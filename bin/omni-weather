@@ -15,12 +15,12 @@
 set -u
 . "$HOME/.config/omni/config.sh"
 
-W_COLD="${OMNI_ICON_COLD:-󰜗}"     # mdi-snowflake
-W_COOL="${OMNI_ICON_COOL:-󰸜}"     # mdi-thermometer-low
-W_WARM="${OMNI_ICON_WARM:-󰬢}"     # mdi-tshirt-crew
-W_HOT="${OMNI_ICON_HOT:-󱣖}"       # mdi-sun-thermometer
-W_RAIN="${OMNI_ICON_RAIN:-󰝐}"     # mdi-umbrella
-W_WIND="${OMNI_ICON_WIND:-󰖝}"     # mdi-weather-windy
+W_COLD="${OMNI_ICON_COLD:-󰜗}"     # md-snowflake
+W_COOL="${OMNI_ICON_COOL:-}"     # fa-mitten
+W_WARM="${OMNI_ICON_WARM:-󰩻}"     # md-tshirt_crew
+W_HOT="${OMNI_ICON_HOT:-󰓠}"       # md-sunglasses
+W_RAIN="${OMNI_ICON_RAIN:-󰕊}"     # md-umbrella
+W_WIND="${OMNI_ICON_WIND:-󰖝}"     # md-weather_windy
 W_LOC="${OMNI_ICON_LOC:-}"
 
 CACHE="$HOME/.cache/omni/weather.json"
@@ -48,7 +48,17 @@ else
 fi
 
 if [ -s "$ART" ]; then
-  head -5 "$ART" | while IFS= read -r l; do printf 'sep\t%s\t\n' "$l"; done
+  aw=0
+  while IFS= read -r l; do
+    n=$(printf '%s' "$l" | LC_ALL=en_US.UTF-8 wc -m | tr -d ' ')
+    [ "$n" -gt "$aw" ] && aw=$n
+  done <<EOF
+$(head -5 "$ART" | sed 's/ *$//')
+EOF
+  pad=$(( ( ${OMNI_ROW_WIDTH:-26} - aw ) / 2 )); [ "$pad" -lt 0 ] && pad=0
+  head -5 "$ART" | sed 's/ *$//' | while IFS= read -r l; do
+    printf 'sep\t%*s%s\t\n' "$pad" "" "$l"
+  done
 fi
 
 if [ -s "$CACHE" ]; then

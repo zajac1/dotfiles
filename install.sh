@@ -13,6 +13,7 @@ missing=()
 command -v fzf  >/dev/null || missing+=("fzf")
 command -v qalc >/dev/null || missing+=("libqalculate")
 command -v jq   >/dev/null || missing+=("jq")
+command -v btop >/dev/null || echo "    note: btop not found - Utilities CPU/Memory/Network need it"
 [ -d /Applications/Ghostty.app ] || missing+=("ghostty (cask)")
 if [ ${#missing[@]} -gt 0 ]; then
   echo "    missing: ${missing[*]}"
@@ -39,6 +40,7 @@ fi
 [ -f "$CFG/favorites" ] || : > "$CFG/favorites"
 [ -f "$CFG/glyphs" ] || cp "$SRC/config/glyphs.example" "$CFG/glyphs"
 [ -f "$CFG/sections" ] || cp "$SRC/config/sections.example" "$CFG/sections"
+cp "$SRC/data/glyphs.tsv" "$CFG/glyphs.tsv"
 
 echo "==> Ghostty terminal theme (optional)"
 echo "    add this line to ~/.config/ghostty/config to theme all your terminals:"

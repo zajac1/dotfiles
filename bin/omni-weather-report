@@ -23,7 +23,17 @@ R=$(printf '\033[0m')
 [ -s "$CACHE" ] || curl -sS --max-time 12 -A "curl/8" "https://wttr.in/${loc}?format=j1" -o "$CACHE" 2>/dev/null
 
 echo
-[ -s "$ART" ] && while IFS= read -r l; do printf '   %s%s%s\n' "$A" "$l" "$R"; done < "$ART"
+if [ -s "$ART" ]; then
+  aw=0
+  while IFS= read -r l; do
+    n=$(printf '%s' "$l" | LC_ALL=en_US.UTF-8 wc -m | tr -d ' ')
+    [ "$n" -gt "$aw" ] && aw=$n
+  done <<EOF
+$(cat "$ART" | sed 's/ *$//')
+EOF
+  pad=$(( (56 - aw) / 2 )); [ "$pad" -lt 0 ] && pad=0
+  sed 's/ *$//' "$ART" | while IFS= read -r l; do printf '%*s%s%s%s\n' "$pad" "" "$A" "$l" "$R"; done
+fi
 echo
 
 if [ -s "$CACHE" ]; then

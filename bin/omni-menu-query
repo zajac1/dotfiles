@@ -154,9 +154,10 @@ case "${1-$level}" in
     ;;
   utilities)
     printf 'menu\t  Weather\tweather\n'
-    printf 'run\t  CPU Usage\tcpu\n'
-    printf 'run\t  Network Usage\tnetwork\n'
-    printf 'run\t  Memory Usage\tmemory\n'
+    printf 'run\t  CPU\tcpu\n'
+    printf 'run\t  Memory\tmemory\n'
+    printf 'run\t  Network\tnetwork\n'
+    printf 'run\t  System Monitor\tmonitor\n'
     printf 'run\t  Caffeinate\tcaffeinate\n'
     ;;
   weather)
