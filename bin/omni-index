@@ -93,10 +93,22 @@ icon_color() {
         if(a<200) continue
         mx=r; if(g>mx)mx=g; if(b>mx)mx=b
         mn=r; if(g<mn)mn=g; if(b<mn)mn=b
-        if(mx<50) continue
+        if(mx<60) continue
         s=mx-mn
         if(s>best){best=s;br=r;bg=g;bb=b} }
-      if(best>0) printf "38;2;%d;%d;%d", br, bg, bb }'
+      if(best<=0) exit
+      # Visibility floor on the BRIGHTEST channel, not perceived luminance:
+      # rgb(255,0,67) has luminance 84 but is perfectly visible, and scaling it
+      # only clips. What actually disappears is a low-value colour like
+      # rgb(30,25,20), which max-channel catches correctly.
+      v = br; if (bg > v) v = bg; if (bb > v) v = bb
+      floor = 150
+      if (v < floor && v > 0) {
+        f = floor/v
+        br = br*f; bg = bg*f; bb = bb*f
+        if (br>255) br=255; if (bg>255) bg=255; if (bb>255) bb=255
+      }
+      printf "38;2;%d;%d;%d", br, bg, bb }'
 }
 
 

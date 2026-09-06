@@ -107,7 +107,7 @@ if [ "$mode" = search ]; then
   fzf --disabled \
       --highlight-line \
       --bind "start:reload(omni-query '')" \
-      --bind "change:reload(omni-query {q})+first" \
+      --bind "change:reload(sleep 0.08; omni-query {q})+first" \
       --bind "ctrl-p:execute-silent(omni-toggle-pin {})+reload(omni-query {q})" \
       "$@"
 else
@@ -126,7 +126,7 @@ else
   fi
   case "$at" in ""|*[!0-9]*) : ;; *) startacts="pos($((at+1)))+$startacts" ;; esac
   extra+=("--bind=start:$startacts")
-  extra+=("--bind=change:reload(omni-menu-query '$level' {q})+first")
+  extra+=("--bind=change:reload(sleep 0.08; omni-menu-query '$level' {q})+first")
   printf '%s\n' "$ITEMS" | \
     fzf --disabled \
         --bind 'ctrl-p:execute-silent(omni-toggle-pin {})+become(omni --menu)' \
