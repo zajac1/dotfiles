@@ -38,7 +38,12 @@ mem)
   used=$(( (act + wir + cmp) * ps ))
   row "" "$(awk -v u="$used" -v t="$total" 'BEGIN{printf "%.1f", u/1073741824}') GB of $(awk -v t="$total" 'BEGIN{printf "%.0f", t/1073741824}') GB used"
   row "" "$(awk -v u="$used" -v t="$total" 'BEGIN{printf "%.0f", (u/t)*100}')% · free $(awk -v f="$fre" -v p="$ps" 'BEGIN{printf "%.1f", (f*p)/1073741824}') GB"
-  row "" "compressed $(awk -v c="$cmp" -v p="$ps" 'BEGIN{printf "%.1f", (c*p)/1073741824}') GB"
+  # top three by RSS - the point of this view is spotting what is making the
+  # machine feel slow. /bin/ps because ps is often aliased; 87ms, versus 573ms
+  # for ps -A -o %cpu and 947ms for top.
+  /bin/ps -A -o rss=,comm= | sort -rn | head -3 | while read -r kb cmd; do
+    row "" "$(awk -v k="$kb" 'BEGIN{printf "%.1f GB", k/1048576}')  $(basename "$cmd")"
+  done
   ;;
 net)
   PREV="$HOME/.cache/omni/net.prev"

@@ -87,4 +87,5 @@ fi
 
 printf 'run\t  Full report\tweather-report\n'
 printf 'act\t  Refresh\tweather-refresh\n'
+printf 'back\t  Back\t\n'
 

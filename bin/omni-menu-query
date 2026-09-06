@@ -161,7 +161,11 @@ case "$lvl" in
     printf 'menu\t  Memory\tmemory\n'
     printf 'menu\t  Network\tnetwork\n'
     printf 'run\t  System Monitor\tmonitor\n'
-    printf 'run\t  Caffeinate\tcaffeinate\n'
+    if [ "$(omni-caffeinate status)" = on ]; then
+      printf 'act\t  Caffeinate  \tcaffeinate\n'
+    else
+      printf 'act\t  Caffeinate\tcaffeinate\n'
+    fi
     ;;
   weather)
     omni-weather
