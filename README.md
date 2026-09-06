@@ -163,7 +163,31 @@ There is deliberately **no weather description**. `weatherDesc` ranges over
 and the vague ones tell you nothing you can act on. `precipMM` and `cloudcover`
 say the same thing as facts. The full report still carries the description.
 
-*Full report* opens wttr.in's ASCII rendering in a window. *Refresh* re-fetches
+*Full report* opens an expanded view in its own window: wttr.in's ASCII art for
+the current condition, recoloured to your theme, then temperature with a
+clothing cue, the per-slot rain forecast, and wind.
+
+```
+     _`/"".-.
+      ,\_(   ).
+       /(___(__)
+         ' ' ' '
+
+   󰬡  15°C · feels 10°C  · coat
+   󰝐  15h 18%  18h 15%  21h 19%
+   󰖝  26 km/h WNW
+```
+
+The clothing icon keys off **feels-like**, not the raw temperature, since that
+is what you actually dress for: snowflake below 2°C, coat below 14, t-shirt
+below 22, sunglasses above.
+
+**On location:** `nearest_area` is a label from WorldWeatherOnline's gazetteer,
+not a weather station. Every input around Warsaw — auto, `"Warsaw"`, explicit
+coordinates — reports "Powisle", but the *data* does change with coordinates
+(auto gave 15°C, `52.2297,21.0122` gave 17°C). So set
+`OMNI_WEATHER_LOCATION="52.2297,21.0122"` with your own coordinates for a
+reading at your actual spot; the label will still say Powisle. *Refresh* re-fetches
 without leaving the menu. Informational rows are `sep`: arrow keys step over
 them, but they are still filterable — typing `rain` in the Weather submenu
 narrows to the rain lines.
