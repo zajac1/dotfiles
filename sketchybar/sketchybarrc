@@ -45,8 +45,12 @@ for i in $(seq 1 "$SPACES"); do
                             script="$PLUGINS/space.sh" \
                             click_script="$PLUGINS/goto_space.sh $i" \
              --subscribe space.$i space_change
-  sketchybar --set space.$i updates=on
 done
+
+# SketchyBar only runs an item's script on its events, so nothing paints the
+# markers at startup. Invoke the plugin once per space to set the initial state
+# - cheaper than giving them an update_freq and polling forever.
+for i in $(seq 1 "$SPACES"); do NAME="space.$i" "$PLUGINS/space.sh"; done
 
 # ---------------- centre: clock (omarchy puts it here, not right) ---------
 sketchybar --add item clock center \
