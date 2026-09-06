@@ -73,7 +73,7 @@ if [ -s "$CACHE" ]; then
     | [ .weather[0].hourly[] | select((.time|tonumber/100|floor) >= ($hh|tonumber)) ] as $rest
     | [ row($wear; "\($c.temp_C)°C · feels \($c.FeelsLikeC)°C"),
         ( if ($rest|length) == 0 then empty
-          else row($rain; ($rest | map("\((.time|tonumber/100|floor|tostring))h \(.chanceofrain)%") | join(" · ")))
+          else row($rain; ($rest[0:3] | map("\((.time|tonumber/100|floor|tostring))h \(.chanceofrain)%") | join("  ")))
           end ),
         row($wind; "\($c.windspeedKmph) km/h \($c.winddir16Point)"
                    + ( [ $rest[] | select((.WindGustKmph|tonumber) >= 40) ]
@@ -87,4 +87,4 @@ fi
 
 printf 'run\t  Full report\tweather-report\n'
 printf 'act\t  Refresh\tweather-refresh\n'
-printf 'back\t  Back\t\n'
+
