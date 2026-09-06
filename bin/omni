@@ -105,6 +105,7 @@ set -- \
 
 if [ "$mode" = search ]; then
   fzf --disabled \
+      --highlight-line \
       --bind "start:reload(omni-query '')" \
       --bind "change:reload(omni-query {q})+first" \
       --bind "ctrl-p:execute-silent(omni-toggle-pin {})+reload(omni-query {q})" \

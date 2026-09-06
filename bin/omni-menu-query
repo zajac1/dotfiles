@@ -31,6 +31,7 @@ resolve_fav() {
 }
 
 emit_favorites() {
+  [ "${NO_FAVS:-0}" = 1 ] && return 0
   [ -s "$FAVS" ] || return 0
   w=${OMNI_ROW_WIDTH:-23}
   # top rule: "╭─ Favorites ───────╮" padded to exactly w cells
@@ -197,6 +198,9 @@ esac
 looks_like_math "$q" && emit_calc "$q"
 
 if [ -z "$level" ]; then
+  # 2. favourites are already reachable via their own sections; emitting the
+  #    boxed copies here produced duplicate hits for every pinned item.
+  NO_FAVS=1
   # Flatten only the sections that are actually enabled, so hiding one in
   # ~/.config/omni/sections also removes it from search. `font` is left out on
   # purpose: half the family names contain "Mono"/"Nerd" and match everything.
@@ -213,7 +217,8 @@ if [ -z "$level" ]; then
   done
 else
   rows "$level"
-fi | grep -v "^sep$TAB" | awk -F'\t' -v OFS='\t' '!seen[$2]++' |
+fi | { if [ -z "$level" ]; then grep -v "^sep$TAB"; else cat; fi; } |
+  awk -F'\t' -v OFS='\t' '!seen[$2]++' |
   mark_favs | fzf --ansi --filter="$q" --delimiter="$TAB" --nth=2 2>/dev/null
 
 emit_web "$q"

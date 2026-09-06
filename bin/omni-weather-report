@@ -1,0 +1,11 @@
+#!/bin/bash
+# wttr.in's ASCII rendering, in a window. This is a script rather than an
+# inline `open -na Ghostty --args -e bash -lc '...'` because the quoting did
+# not survive that path and the window came up empty.
+set -u
+. "$HOME/.config/omni/config.sh" 2>/dev/null || true
+loc="${OMNI_WEATHER_LOCATION:-}"
+printf '\033[?25l'
+curl -sS --max-time 20 -A "curl/8" "https://wttr.in/${loc}" || echo "weather unavailable"
+printf '\033[?25h\n'
+read -rp "Press enter to close "

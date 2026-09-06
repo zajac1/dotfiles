@@ -147,7 +147,10 @@ JSON: current temperature and feels-like, conditions, and per-3-hour chances of
 rain, snow and thunder plus wind gusts — only for the hours **left today**, and
 only when a chance clears its threshold, so it stays a few short lines.
 
-*Full report* opens wttr.in's ASCII rendering in a window.
+*Full report* opens wttr.in's ASCII rendering in a window. *Refresh* re-fetches
+without leaving the menu. Informational rows are `sep`: arrow keys step over
+them, but they are still filterable — typing `rain` in the Weather submenu
+narrows to the rain lines.
 
 Cached for 15 minutes. A stale cache renders immediately and refreshes in the
 background, so the menu never blocks on the network; only a cold cache fetches

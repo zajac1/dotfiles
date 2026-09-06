@@ -186,3 +186,31 @@ after `--wrap` landed it wrapped into a stray coloured fragment on the next
 line. The fix was to stop needing the width: the `FAVORITES` heading is a dim
 label with no fill, and the pinned-item marker is appended after the text rather
 than right-aligned. Only `--highlight-line` fills a row, and fzf sizes that.
+
+## 19. An emitted move does not re-fire its own binding
+
+`down:down+transform(omni-skip {} down)` skips ONE sep row. The `down` the
+transform emits moves the cursor but does not re-run the `down` binding, so two
+adjacent sep rows (a box cap followed by a spacer) left the cursor on the
+second. omni-skip therefore emits `down+transform(omni-skip {} down N+1)` and
+recurses, capped at 6 so a level made entirely of sep rows cannot loop.
+
+## 20. A pipeline's left side is a subshell
+
+```sh
+if cond; then flag=1; else flag=0; fi | consumer   # flag never reaches consumer
+```
+
+Decide before the pipe, or re-test the condition on the right-hand side.
+
+## 21. `--highlight-line` fills the whole row, not your box
+
+fzf sizes the selection highlight itself, so it can never line up with a
+narrower drawn box. The two are mutually exclusive: the menu draws a box and
+selects with accent text, search has no box and uses the fill.
+
+## 22. wttr.in serves HTML unless the UA looks like a terminal
+
+`-A "omni"` returned an HTML page and the report window came up empty.
+`-A "curl/8"` gets the ASCII rendering. (`?format=j1` returns JSON either way,
+which is why the data path never showed the problem.)

@@ -1,5 +1,11 @@
 #!/bin/bash
+# Emit a move if the focused row is a `sep`, and keep going: consecutive sep
+# rows (box cap + spacer) need more than one hop. Depth-capped so a level made
+# entirely of sep rows cannot loop forever.
 set -u
 line="${1-}"
 dir="${2-down}"
-[ "$(printf '%s' "$line" | cut -f1)" = "sep" ] && echo "$dir" || echo ignore
+depth="${3-1}"
+[ "$(printf '%s' "$line" | cut -f1)" = "sep" ] || { echo ignore; exit 0; }
+[ "$depth" -ge 6 ] && { echo ignore; exit 0; }
+echo "$dir+transform(omni-skip {} $dir $((depth+1)))"

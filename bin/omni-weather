@@ -21,7 +21,7 @@ TTL="${OMNI_WEATHER_TTL:-900}"
 URL="https://wttr.in/${LOC}?format=j1"
 
 fetch() {
-  curl -sS --max-time 12 -A "omni" "$URL" -o "$CACHE.new" 2>/dev/null &&
+  curl -sS --max-time 12 -A "curl/8" "$URL" -o "$CACHE.new" 2>/dev/null &&
     jq -e .current_condition "$CACHE.new" >/dev/null 2>&1 &&
     mv "$CACHE.new" "$CACHE" || rm -f "$CACHE.new"
 }
@@ -45,13 +45,15 @@ if [ -s "$CACHE" ]; then
     | [ $rest[] | select((.WindGustKmph|tonumber)    >= 40) ] as $gust
     | [ row(""; "\($c.temp_C)°C · feels \($c.FeelsLikeC)°C"),
         row(""; ($c.weatherDesc[0].value | gsub("^ +| +$";""))),
-        ( if ($rain|length) > 0
-          then row(""; "Rain \($rain|map(.chanceofrain|tonumber)|max)% · \($rain|map((.time|tonumber/100|floor|tostring)+"h")|join(", "))")
-          else row(""; "No rain expected") end ),
+        ( ($rest | map(.chanceofrain|tonumber) | max) as $rmax
+          | if ($rain|length) > 0
+            then row(""; "Rain \($rmax)% · \($rain|map((.time|tonumber/100|floor|tostring)+"h")|join(", "))")
+            else row(""; "Rain unlikely · peak \($rmax)%") end ),
         ( if ($snow|length) > 0 then row(""; "Snow \($snow|map(.chanceofsnow|tonumber)|max)%") else empty end ),
         ( if ($thun|length) > 0 then row(""; "Thunder \($thun|map(.chanceofthunder|tonumber)|max)%") else empty end ),
-        ( if ($gust|length) > 0 then row(""; "Gusts to \($gust|map(.WindGustKmph|tonumber)|max) km/h") else empty end ),
-        row(""; "Wind \($c.windspeedKmph) km/h \($c.winddir16Point)"),
+        ( if ($gust|length) > 0
+          then row(""; "Wind \($c.windspeedKmph) · gusts \($gust|map(.WindGustKmph|tonumber)|max) km/h")
+          else row(""; "Wind \($c.windspeedKmph) km/h \($c.winddir16Point)") end ),
         row(""; "\($a.areaName[0].value), \($a.country[0].value)")
       ] | .[]
   ' "$CACHE" 2>/dev/null
@@ -60,4 +62,5 @@ else
 fi
 
 printf 'run\t  Full report\tweather-report\n'
-printf 'run\t  Refresh\tweather-refresh\n'
+printf 'act\t  Refresh\tweather-refresh\n'
+printf 'back\t  Back\t\n'
