@@ -101,10 +101,10 @@ icon_color() {
       # rgb(255,0,67) has luminance 84 but is perfectly visible, and scaling it
       # only clips. What actually disappears is a low-value colour like
       # rgb(30,25,20), which max-channel catches correctly.
-      v = br; if (bg > v) v = bg; if (bb > v) v = bb
+      mxc = br; if (bg > mxc) mxc = bg; if (bb > mxc) mxc = bb   # v[] is the pixel array
       floor = 150
-      if (v < floor && v > 0) {
-        f = floor/v
+      if (mxc < floor && mxc > 0) {
+        f = floor/mxc
         br = br*f; bg = bg*f; bb = bb*f
         if (br>255) br=255; if (bg>255) bg=255; if (bb>255) bb=255
       }
