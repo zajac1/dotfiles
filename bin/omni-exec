@@ -22,7 +22,10 @@ case "$kind" in
   web)     open "${OMNI_SEARCH_URL}$(printf '%s' "$payload" | jq -sRr @uri)" ;;
   run)
     case "$payload" in
-      update)      open -na Ghostty.app --args -e bash -lc 'brew update && brew upgrade; echo; read -rp "Press enter to close "' ;;
+      brew)        open -na Ghostty.app --args -e bash -lc 'brew update && brew upgrade; echo; read -rp "Press enter to close "' ;;
+      # softwareupdate -ia needs sudo; a password prompt out of a launcher is
+      # bad UX, so open the pane instead - one click and no elevation here.
+      macos)       settings "com.apple.Software-Update-Settings.extension" ;;
       config)      edit "$HOME/.config/omni/config.sh" ;;
       wifi)        settings "com.apple.wifi-settings-extension" ;;
       bluetooth)   settings "com.apple.BluetoothSettings" ;;

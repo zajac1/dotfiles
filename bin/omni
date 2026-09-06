@@ -104,7 +104,7 @@ set -- \
 if [ "$mode" = search ]; then
   fzf --disabled \
       --bind "start:reload(omni-query '')" \
-      --bind "change:reload(omni-query {q})" \
+      --bind "change:reload(omni-query {q})+first" \
       --bind "ctrl-p:execute-silent(omni-toggle-pin {})+reload(omni-query {q})" \
       "$@"
 else
@@ -114,7 +114,7 @@ else
   # `start` fires BEFORE the list is loaded, so both {} and pos() are no-ops
   # there - the position has to be set on `load`.
   startacts="transform(omni-skip {} down)"
-  case "$ITEMS" in sep"$TAB"*) extra+=("--bind=load:pos(2)") ;; esac
+  extra+=("--bind=load:transform(omni-skip {} down)")
   if [ "$level" = theme ]; then
     if [ -z "$at" ]; then
       at=$(omni-menu-query theme | awk -F'\t' -v c="$OMNI_THEME" '$3==c{print NR-1; exit}')
@@ -123,7 +123,7 @@ else
   fi
   case "$at" in ""|*[!0-9]*) : ;; *) startacts="pos($((at+1)))+$startacts" ;; esac
   extra+=("--bind=start:$startacts")
-  extra+=("--bind=change:reload(omni-menu-query '$level' {q})")
+  extra+=("--bind=change:reload(omni-menu-query '$level' {q})+first")
   printf '%s\n' "$ITEMS" | \
     fzf --disabled \
         --bind 'ctrl-p:execute-silent(omni-toggle-pin {})+become(omni --menu)' \

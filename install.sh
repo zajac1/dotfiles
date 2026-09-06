@@ -38,6 +38,7 @@ else
 fi
 [ -f "$CFG/favorites" ] || : > "$CFG/favorites"
 [ -f "$CFG/glyphs" ] || cp "$SRC/config/glyphs.example" "$CFG/glyphs"
+[ -f "$CFG/sections" ] || cp "$SRC/config/sections.example" "$CFG/sections"
 
 echo "==> Ghostty terminal theme (optional)"
 echo "    add this line to ~/.config/ghostty/config to theme all your terminals:"

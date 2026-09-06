@@ -23,16 +23,29 @@ emit_favorites() {
   printf 'sep\t\t\n'
 }
 
+SECTIONS="$HOME/.config/omni/sections"
+if [ -s "$SECTIONS" ]; then
+  ids=$(grep -vE '^[[:space:]]*(#|$)' "$SECTIONS" | tr -d ' ')
+else
+  ids="apps style setup capture update system"
+fi
+
 rows() {
 case "${1-$level}" in
   "")
     emit_favorites
-    printf 'search\t  Apps\t\n'
-    printf 'menu\t  Style\tstyle\n'
-    printf 'menu\t  Setup\tsetup\n'
-    printf 'menu\t  Capture\tcapture\n'
-    printf 'run\t  Update\tupdate\n'
-    printf 'menu\t  System\tsystem\n'
+    # Root entries are listed in ~/.config/omni/sections, one id per line.
+    # Comment a line out to hide that section; reorder lines to reorder the menu.
+    for id in $ids; do
+      case "$id" in
+        apps)    printf 'search\t%s  Apps\t\n'      "" ;;
+        style)   printf 'menu\t%s  Style\tstyle\n'  "" ;;
+        setup)   printf 'menu\t%s  Setup\tsetup\n'  "" ;;
+        capture) printf 'menu\t%s  Capture\tcapture\n' "" ;;
+        update)  printf 'menu\t%s  Update\tupdate\n' "" ;;
+        system)  printf 'menu\t%s  System\tsystem\n' "" ;;
+      esac
+    done
     ;;
   style)
     printf 'menu\t%s  Theme\ttheme\n' "$(printf '\xef\x87\x9e')"
@@ -74,6 +87,14 @@ case "${1-$level}" in
     printf 'run\t  Displays\tdisplays\n'
     printf 'run\t  Config\tconfig\n'
     ;;
+  update)
+    printf 'run\t  Homebrew\tbrew\n'
+    printf 'run\t  macOS\tmacos\n'
+    ;;
+  update)
+    printf 'run\t  Homebrew\tbrew\n'
+    printf 'run\t  macOS\tmacos\n'
+    ;;
   capture)
     printf 'run\t  Screenshot\tscreenshot\n'
     printf 'run\t  Color Picker\tcolorpicker\n'
@@ -110,7 +131,19 @@ esac
 looks_like_math "$q" && emit_calc "$q"
 
 if [ -z "$level" ]; then
-  for lvl in "" style theme setup capture system; do rows "$lvl"; done
+  # Flatten only the sections that are actually enabled, so hiding one in
+  # ~/.config/omni/sections also removes it from search. `font` is left out on
+  # purpose: half the family names contain "Mono"/"Nerd" and match everything.
+  rows ""
+  for id in $ids; do
+    case "$id" in
+      style)   rows style; rows theme ;;
+      setup)   rows setup ;;
+      capture) rows capture ;;
+      update)  rows update ;;
+      system)  rows system ;;
+    esac
+  done
 else
   rows "$level"
 fi | grep -v "^sep$TAB" | awk -F'\t' -v OFS='\t' '!seen[$2]++' |

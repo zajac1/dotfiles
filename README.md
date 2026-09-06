@@ -116,6 +116,23 @@ Everything lives in `~/.config/omni/config.sh`. The values worth knowing:
 | `OMNI_PROJECT_ROOT` | directory scanned for project entries |
 | `OMNI_APP_COLORS` | tint each app glyph with its icon's dominant colour |
 
+### Menu sections
+
+`~/.config/omni/sections` lists the root entries, one id per line. Comment one
+out to hide it, reorder the lines to reorder the menu:
+
+```
+apps
+style
+setup
+# capture      <- hidden, and dropped from search too
+update
+system
+```
+
+Hiding a section also removes its entries from the flat search, so a hidden
+*Capture* takes *Screenshot* with it.
+
 ### Icons
 
 Each app's glyph is tinted with the dominant colour extracted from its real
