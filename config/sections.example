@@ -1,6 +1,8 @@
 # omni root menu sections. One id per line, in the order you want them.
-# Comment a line out to hide it. Valid ids:
-#   apps style setup capture utilities update system
+# Comment a line out to hide it — its rows, its box and its trailing gap
+# all disappear together. Valid ids:
+#   favorites apps style setup capture utilities passwords update system
+favorites
 apps
 style
 setup
