@@ -45,14 +45,12 @@ if [ -s "$CACHE" ]; then
     | [ $rest[] | select((.WindGustKmph|tonumber)    >= 40) ] as $gust
     | [ row(""; "\($c.temp_C)°C · feels \($c.FeelsLikeC)°C"),
         row("";
-            ($c.weatherDesc[0].value | gsub("^ +| +$";""))
-            + (if ($c.precipMM|tonumber) > 0 then " · \($c.precipMM) mm/h" else " · dry now" end)),
-        ( ($rest | max_by(.chanceofrain|tonumber)) as $peak
-          | ($peak.chanceofrain|tonumber) as $rmax
-          | ($peak.time|tonumber/100|floor|tostring) as $rhour
-          | if ($rain|length) > 0
-            then row(""; "Rain \($rmax)% at \($rain|map((.time|tonumber/100|floor|tostring)+"h")|join(", "))")
-            else row(""; "Rain unlikely · \($rmax)% at \($rhour)h") end ),
+            (if ($c.precipMM|tonumber) > 0 then "\($c.precipMM) mm/h now" else "Dry now" end)
+            + " · cloud \($c.cloudcover)%"),
+        ( if ($rest|length) == 0 then empty
+          else row("";
+                   ($rest | map("\((.time|tonumber/100|floor|tostring))h \(.chanceofrain)%") | join(" · ")))
+          end ),
         ( if ($snow|length) > 0 then row(""; "Snow \($snow|map(.chanceofsnow|tonumber)|max)%") else empty end ),
         ( if ($thun|length) > 0 then row(""; "Thunder \($thun|map(.chanceofthunder|tonumber)|max)%") else empty end ),
         ( if ($gust|length) > 0

@@ -147,21 +147,21 @@ JSON:
 
 ```
    15°C · feels 10°C
-   Patchy rain nearby · dry now      <- observation + is it falling on you
-   Rain unlikely · 19% at 21h        <- forecast peak, with the hour
+   Dry now · cloud 56%
+   15h 18% · 18h 15% · 21h 19%
    Wind 26 km/h WNW
    Powisle, Poland
 ```
 
-Two lines that look like they disagree are answering different questions: the
-condition is a **current observation** (`weatherDesc`, which is why "nearby" can
-sit next to "dry now" — showers are around but nothing is falling on you), while
-the rain line is a **forecast** over the 3-hour slots left today. Both now carry
-the number that disambiguates them: `precipMM` for now, and the peak percentage
-*with its hour* for later.
+Every remaining 3-hour slot today is listed rather than just the peak — rain
+starting earlier at a slightly lower chance is exactly what a single peak
+figure hides. Snow, thunder and gusts appear only above a threshold, so quiet
+weather stays short.
 
-Snow, thunder and gusts appear only above a threshold, so quiet weather stays
-short.
+There is deliberately **no weather description**. `weatherDesc` ranges over
+"Cloudy / Overcast / Partly Cloudy / Light rain shower / Patchy rain nearby",
+and the vague ones tell you nothing you can act on. `precipMM` and `cloudcover`
+say the same thing as facts. The full report still carries the description.
 
 *Full report* opens wttr.in's ASCII rendering in a window. *Refresh* re-fetches
 without leaving the menu. Informational rows are `sep`: arrow keys step over
