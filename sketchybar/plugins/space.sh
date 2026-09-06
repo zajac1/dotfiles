@@ -15,10 +15,14 @@ fi
 [ -n "$CUR" ] && [ "$CUR" != "null" ] || CUR=1
 
 N="${NAME#space.}"
+# --animate applies to the NEXT --set, so it has to precede it on the same
+# invocation. sin is the gentlest of SketchyBar's curves; 12 ticks is ~200ms.
 if [ "$N" = "$CUR" ]; then
-  sketchybar --set "$NAME" label.color=$BAR_COLOR \
+  sketchybar --animate sin 12 \
+             --set "$NAME" label.color=$BAR_COLOR \
                            background.color=$ACCENT background.drawing=on \
                            background.corner_radius=6 background.height=18
 else
-  sketchybar --set "$NAME" label.color=$DIM background.drawing=off
+  sketchybar --animate sin 12 \
+             --set "$NAME" label.color=$DIM background.color=$BAR_COLOR
 fi
