@@ -36,7 +36,10 @@ sketchybar --add item logo left \
                       icon.padding_left=4 icon.padding_right=10 label.drawing=off \
                       click_script="$PLUGINS/toggle_omni.sh"
 
-SPACES="${OMNI_BAR_SPACES:-5}"
+# How many Space indicators to draw. macOS exposes no reliable public way to
+# count Desktops, so this is manual - set it to however many you actually have
+# (Mission Control > hover the top edge > "+" to add more).
+SPACES="${OMNI_BAR_SPACES:-2}"
 for i in $(seq 1 "$SPACES"); do
   sketchybar --add item space.$i left \
              --set space.$i label="$i" icon.drawing=off \
