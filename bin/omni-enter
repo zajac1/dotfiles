@@ -16,6 +16,10 @@ case "$kind" in
     omni-ghostty-theme "$payload" >/dev/null 2>&1
     sed -i '' -e '$d' "$STACK" 2>/dev/null
     echo 'become(omni --menu)' ;;
+  font)
+    sed -i '' "s|^OMNI_FONT=\".*\"|OMNI_FONT=\"$payload\"|" "$HOME/.config/omni/config.sh"
+    nohup bash -c 'sleep 0.3; omni-start --restart' >/dev/null 2>&1 &
+    echo 'abort' ;;
   menu)   printf '%s\n' "$payload" >> "$STACK"; echo 'become(omni --menu)' ;;
   search) echo 'become(omni --search)' ;;
   back)   sed -i '' -e '$d' "$STACK" 2>/dev/null; echo 'become(omni --menu)' ;;

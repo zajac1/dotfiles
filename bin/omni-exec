@@ -23,7 +23,6 @@ case "$kind" in
   run)
     case "$payload" in
       update)      open -na Ghostty.app --args -e bash -lc 'brew update && brew upgrade; echo; read -rp "Press enter to close "' ;;
-      font)        edit "$HOME/.config/omni/config.sh" ;;
       config)      edit "$HOME/.config/omni/config.sh" ;;
       wifi)        settings "com.apple.wifi-settings-extension" ;;
       bluetooth)   settings "com.apple.BluetoothSettings" ;;

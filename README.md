@@ -84,8 +84,14 @@ omni-theme              # list, active marked
 omni-theme tokyo-night  # switch
 ```
 
-Style → Theme in the menu previews **live** as you arrow through the list, and
-reverts on `Esc`. Preview never writes to disk, so backing out is free.
+Style → Theme previews **live** as you arrow through the list, and reverts on
+`Esc`. Preview never writes to disk, so backing out is free.
+
+Style → Font lists the monospace families Ghostty can see. It cannot preview:
+colours can be pushed into a running terminal with OSC escapes, fonts cannot, so
+applying one writes the config and restarts the launcher instance. Fonts are
+deliberately left out of the flat menu search — half of them contain the words
+"Mono" or "Nerd" and would match almost anything.
 
 Theme switching also writes `~/.config/ghostty/omni-theme`, a real Ghostty theme
 file with all 16 palette colours. Add `config-file = omni-theme` to

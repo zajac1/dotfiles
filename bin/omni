@@ -110,7 +110,10 @@ if [ "$mode" = search ]; then
 else
   at=""
   extra=()
+  # the title is a sep row; fzf's `start` fires before an item is focused, so
+  # omni-skip cannot move off it. Position explicitly instead.
   startacts="transform(omni-skip {} down)"
+  case "$ITEMS" in sep"$TAB"*) startacts="pos(2)+$startacts" ;; esac
   if [ "$level" = theme ]; then
     if [ -z "$at" ]; then
       at=$(omni-menu-query theme | awk -F'\t' -v c="$OMNI_THEME" '$3==c{print NR-1; exit}')

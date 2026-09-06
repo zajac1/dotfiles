@@ -35,8 +35,26 @@ case "${1-$level}" in
     printf 'menu\t  System\tsystem\n'
     ;;
   style)
-    printf 'menu\t  Theme\ttheme\n'
-    printf 'run\t  Font\tfont\n'
+    printf 'menu\t%s  Theme\ttheme\n' "$(printf '\xef\x87\x9e')"
+    printf 'menu\t%s  Font\tfont\n'  "$(printf '\xef\x80\xb1')"
+    ;;
+  font)
+    # Ghostty has no escape sequence for changing font, so unlike themes this
+    # cannot preview live - Enter writes the config and restarts the instance.
+    FONTS="$HOME/.cache/omni/fonts.txt"
+    if [ ! -s "$FONTS" ] || [ -n "$(find "$FONTS" -mtime +7 2>/dev/null)" ]; then
+      /Applications/Ghostty.app/Contents/MacOS/ghostty +list-fonts 2>/dev/null |
+        grep -E '^[A-Za-z]' | grep -iE 'mono|nerd|code|consol|menlo|courier' |
+        sort -u > "$FONTS"
+    fi
+    while IFS= read -r fam; do
+      [ -n "$fam" ] || continue
+      if [ "$fam" = "$OMNI_FONT" ]; then
+        printf 'font\t%s  %s\t%s\n' "$(printf '\xef\x80\x8c')" "$fam" "$fam"
+      else
+        printf 'font\t   %s\t%s\n' "$fam" "$fam"
+      fi
+    done < "$FONTS"
     ;;
   theme)
     current=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$HOME/.config/omni/config.sh")
