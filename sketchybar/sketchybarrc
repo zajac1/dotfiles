@@ -62,7 +62,10 @@ sketchybar --add item cpu right \
 
 sketchybar --add item volume right \
            --set volume script="$PLUGINS/volume.sh" \
-                        click_script="$PLUGINS/toggle_mute.sh" \
+                        click_script="$PLUGINS/volume_popup.sh" \
+                        popup.background.color=$ITEM_BG popup.background.corner_radius=8 \
+                        popup.background.border_width=1 popup.background.border_color=$DIM \
+                        popup.align=right popup.y_offset=2 \
            --subscribe volume volume_change
 
 sketchybar --add item wifi right \

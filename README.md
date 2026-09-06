@@ -266,3 +266,29 @@ rows), true 2px borders, sub-cell padding, per-pixel corner radius.
 Read [`docs/GOTCHAS.md`](docs/GOTCHAS.md). This looks like ordinary shell but
 several values are empirical, and there is a class of bug here that a test
 harness will actively lie to you about.
+
+## Top bar
+
+SketchyBar, modelled on omarchy's waybar — flat, icon-led, clock centred.
+
+```
+󰀵 1 2 3 4 5              Sun 18:28              󰂀 75%  󰍛 58%  󰕾 81%  󰖩
+```
+
+`omni-bar-theme` regenerates its colours from the active palette and reloads it;
+`omni-theme` calls it, so launcher, terminal and bar re-theme together.
+
+Clicking the volume icon opens a device popup (needs `switchaudio-osx`).
+
+**Permissions macOS requires, none of which can be granted from a script:**
+
+| what | where | needed for |
+|---|---|---|
+| hide the native menu bar | Control Centre → Menu Bar → Automatically hide → Always | seeing the bar at all |
+| Accessibility for `sketchybar` | Privacy & Security → Accessibility → **+** | Space switching, logo → launcher |
+| Switch to Desktop 1…5 | Keyboard → Shortcuts → Mission Control | Space switching |
+| Location Services (optional) | Privacy & Security → Location Services | showing the Wi-Fi name; macOS returns `<redacted>` without it |
+
+sketchybar will not appear in the Accessibility list on its own — it is a CLI
+started by launchd and never triggers a prompt. Add it with **+**, then
+Cmd+Shift+G and `/opt/homebrew/bin/sketchybar`.
