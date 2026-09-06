@@ -45,6 +45,7 @@ for i in $(seq 1 "$SPACES"); do
                             script="$PLUGINS/space.sh" \
                             click_script="$PLUGINS/goto_space.sh $i" \
              --subscribe space.$i space_change
+  sketchybar --set space.$i updates=on
 done
 
 # ---------------- centre: clock (omarchy puts it here, not right) ---------
