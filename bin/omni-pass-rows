@@ -20,7 +20,7 @@ refresh() {
   mv "$STAT.new" "$STAT" 2>/dev/null
   if [ "$(cat "$STAT" 2>/dev/null)" = unlocked ]; then
     umask 077
-    omni-pass list > "$CACHE.new" 2>/dev/null
+    omni-pass list | omni-brandify > "$CACHE.new" 2>/dev/null
     [ -s "$CACHE.new" ] && mv "$CACHE.new" "$CACHE" || rm -f "$CACHE.new"
   fi
 }
@@ -44,7 +44,7 @@ case "$(cat "$STAT" 2>/dev/null)" in
 esac
 
 if [ -s "$CACHE" ]; then
-  awk -F'\t' -v g="" '{ printf "pass\t%s  %s\t%s\n", g, $2, $1 }' "$CACHE"
+  awk -F'\t' '{ printf "pass\t%s  %s\t%s\n", ($3 == "" ? "" : $3), $2, $1 }' "$CACHE"
 else
   printf 'sep\t  No items cached yet\t\n'
 fi

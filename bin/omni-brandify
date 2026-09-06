@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# Reads "id<TAB>title" on stdin, writes "id<TAB>title<TAB>glyph".
+#
+# Matches the title against Nerd Font BRAND glyphs (fa-/dev-/linux-/seti-)
+# using the same idea as omni-index's app glyph map, but driven by the generated
+# glyph index rather than a hand-written case statement.
+#
+# Runs at CACHE time, not render time: 500+ titles resolved once, then the menu
+# is a plain awk pass.
+set -u
+IDX="$HOME/.config/omni/glyphs.tsv"
+FALLBACK=""
+
+[ -s "$IDX" ] || { awk -F'\t' -v OFS='\t' -v f="$FALLBACK" '{print $1,$2,f}'; exit 0; }
+
+awk -F'\t' -v OFS='\t' -v fb="$FALLBACK" '
+  NR==FNR {
+    # index brand glyphs by their last name segment, e.g. fa-github -> github
+    n = $3
+    if (n !~ /^(fa|dev|linux|seti|cod)-/) next
+    seg = n; sub(/^[a-z]+-/, "", seg)
+    if (length(seg) < 3 || seg ~ /_/) next
+    if (!(seg in brand)) brand[seg] = $1
+    next
+  }
+  {
+    t = tolower($2)
+    gsub(/^https?:\/\//, "", t)
+    gsub(/^www\./, "", t)
+    sub(/[\/:].*$/, "", t)          # strip path/port
+    np = split(t, parts, /[._ -]/)   # length(array) is a gawk extension; macOS awk returns 0
+    g = fb
+    for (i = 1; i <= np; i++) {
+      p = parts[i]
+      if (p == "com" || p == "org" || p == "net" || p == "io" || p == "co" || length(p) < 3) continue
+      if (p in brand) { g = brand[p]; break }
+    }
+    print $1, $2, g
+  }
+' "$IDX" -
