@@ -38,11 +38,21 @@ mem)
   used=$(( (act + wir + cmp) * ps ))
   row "" "$(awk -v u="$used" -v t="$total" 'BEGIN{printf "%.1f", u/1073741824}') GB of $(awk -v t="$total" 'BEGIN{printf "%.0f", t/1073741824}') GB used"
   row "" "$(awk -v u="$used" -v t="$total" 'BEGIN{printf "%.0f", (u/t)*100}')% · free $(awk -v f="$fre" -v p="$ps" 'BEGIN{printf "%.1f", (f*p)/1073741824}') GB"
-  # top three by RSS - the point of this view is spotting what is making the
-  # machine feel slow. /bin/ps because ps is often aliased; 87ms, versus 573ms
-  # for ps -A -o %cpu and 947ms for top.
-  /bin/ps -A -o rss=,comm= | sort -rn | head -3 | while read -r kb cmd; do
-    row "" "$(awk -v k="$kb" 'BEGIN{printf "%.1f GB", k/1048576}')  $(basename "$cmd")"
+  # Top three by memory, AGGREGATED BY APP. Raw comm gives "plugin-container"
+  # three times, which tells you nothing; folding helpers into their .app
+  # bundle gives "Zen 5.6 GB". /bin/ps explicitly: ps is aliased to procs here,
+  # and procs costs 150ms against /bin/ps at 55ms.
+  #
+  # Caveat: RSS over-counts shared memory, so these read higher than Activity
+  # Monitor, which shows phys_footprint. True footprint needs a compiled helper.
+  /bin/ps -axo rss=,comm= | awk '
+    { rss=$1; $1=""; p=substr($0,2); n=p
+      if (match(p,/\/[^\/]+\.app\//)) n=substr(p,RSTART+1,RLENGTH-6)
+      else { k=split(p,a,"/"); n=a[k] }
+      m[n]+=rss }
+    END { for (x in m) printf "%d\t%s\n", m[x], x }' | sort -rn | head -3 |
+  while IFS="$(printf '\t')" read -r kb name; do
+    row "" "$(awk -v k="$kb" 'BEGIN{printf "%.1f GB", k/1048576}')  $name"
   done
   ;;
 net)

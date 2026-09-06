@@ -32,14 +32,14 @@ sketchybar --default updates=when_shown \
 
 # ---------------- left: omni launcher, spaces, focused app ----------------
 sketchybar --add item logo left \
-           --set logo icon=󰀵 icon.color=$ACCENT icon.font="$FONT:Regular:14.0" \
+           --set logo icon=󰀵 icon.color=$ACCENT icon.font="$FONT:Regular:14.0" y_offset=1 \
                       icon.padding_left=4 icon.padding_right=10 label.drawing=off \
                       click_script="$PLUGINS/toggle_omni.sh"
 
 # How many Space indicators to draw. macOS exposes no reliable public way to
 # count Desktops, so this is manual - set it to however many you actually have
 # (Mission Control > hover the top edge > "+" to add more).
-SPACES="${OMNI_BAR_SPACES:-2}"
+SPACES="${OMNI_BAR_SPACES:-5}"
 for i in $(seq 1 "$SPACES"); do
   sketchybar --add item space.$i left \
              --set space.$i label="$i" icon.drawing=off \
@@ -77,11 +77,18 @@ sketchybar --add item volume right \
                         popup.background.color=$ITEM_BG popup.background.corner_radius=8 \
                         popup.background.border_width=1 popup.background.border_color=$DIM \
                         popup.align=right popup.y_offset=2 \
-           --subscribe volume volume_change
+           --subscribe volume volume_change mouse.scrolled mouse.exited.global
 
 sketchybar --add item wifi right \
            --set wifi script="$PLUGINS/wifi.sh" update_freq=60 \
                       click_script="open 'x-apple.systempreferences:com.apple.wifi-settings-extension'" \
            --subscribe wifi wifi_change
+
+# Rift treatment: the right-hand items sit inside ONE rounded container rather
+# than each carrying its own pill. The left side stays flat, omarchy-style.
+sketchybar --add bracket status battery cpu volume wifi \
+           --set status background.color=$ITEM_BG background.corner_radius=9 \
+                        background.height=24 background.drawing=on \
+                        background.padding_left=6 background.padding_right=6
 
 sketchybar --update
