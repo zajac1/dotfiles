@@ -1,0 +1,51 @@
+#!/bin/bash
+#
+# Menu rows for the Passwords section.
+#
+# WHY THERE IS A CACHE AT ALL: `pass-cli` measures 3378 ms to list and 781 ms
+# for status. That is unusable per menu render, never mind per keystroke, so the
+# item list is cached and refreshed in the background - the weather pattern.
+#
+# WHAT IS CACHED: ids and titles ONLY. Never a secret. The file is still
+# sensitive (it reveals which services you hold accounts with), so it is 0600.
+set -u
+. "$HOME/.config/omni/config.sh" 2>/dev/null || true
+
+CACHE="$HOME/.cache/omni/pass.tsv"
+STAT="$HOME/.cache/omni/pass.status"
+TTL="${OMNI_PASS_CACHE_TTL:-900}"
+
+refresh() {
+  omni-pass status > "$STAT.new" 2>/dev/null
+  mv "$STAT.new" "$STAT" 2>/dev/null
+  if [ "$(cat "$STAT" 2>/dev/null)" = unlocked ]; then
+    umask 077
+    omni-pass list > "$CACHE.new" 2>/dev/null
+    [ -s "$CACHE.new" ] && mv "$CACHE.new" "$CACHE" || rm -f "$CACHE.new"
+  fi
+}
+
+if [ ! -s "$STAT" ]; then
+  refresh
+else
+  age=$(( $(date +%s) - $(stat -f %m "$STAT") ))
+  [ "$age" -gt "$TTL" ] && ( refresh >/dev/null 2>&1 & )
+fi
+
+case "$(cat "$STAT" 2>/dev/null)" in
+  unavailable) printf 'sep\t  pass-cli not installed\t\n'
+               printf 'sep\t󰖩  brew install proton-pass-cli\t\n'; exit 0 ;;
+  logged-out)  printf 'sep\t  Not logged in\t\n'
+               printf 'run\t  Log in\tpass-login\n'
+               printf 'back\t  Back\t\n'; exit 0 ;;
+  locked)      printf 'sep\t  Vault locked\t\n'
+               printf 'run\t  Unlock\tpass-unlock\n'
+               printf 'back\t  Back\t\n'; exit 0 ;;
+esac
+
+if [ -s "$CACHE" ]; then
+  awk -F'\t' -v g="" '{ printf "pass\t%s  %s\t%s\n", g, $2, $1 }' "$CACHE"
+else
+  printf 'sep\t  No items cached yet\t\n'
+fi
+printf 'act\t  Refresh\tpass-refresh\n'

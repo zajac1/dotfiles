@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+# Proton Pass adapter. Contract (every provider implements exactly this):
+#   status        -> "unlocked" | "locked" | "logged-out" | "unavailable"
+#   list          -> id<TAB>label   (id is "share_id|item_id")
+#   get <id>      -> the password on stdout, nothing else
+#
+# SECURITY: `item list` returns only {id, share_id, title, item_type, ...} -
+# no username, no URL. Getting those needs --show-secrets, which pulls FULL item
+# content (passwords included) into this process. We deliberately do not, so the
+# label is the item title only. Secrets are read one at a time, on demand, and
+# go straight to stdout for the caller to pipe into pbcopy.
+set -u
+
+command -v pass-cli >/dev/null 2>&1 || { echo unavailable; exit 0; }
+
+case "${1-}" in
+  status)
+    info=$(pass-cli info 2>/dev/null) || { echo logged-out; exit 0; }
+    case "$info" in *"Session has lock: yes"*) echo locked ;; *) echo unlocked ;; esac
+    ;;
+  list)
+    pass-cli vault list --output json 2>/dev/null |
+      jq -r '.vaults[]?.share_id' | while IFS= read -r sid; do
+        [ -n "$sid" ] || continue
+        pass-cli item list --share-id "$sid" --filter-type login --filter-state active \
+                 --sort-by alphabetic-asc --output json 2>/dev/null |
+          jq -r --arg s "$sid" '.items[]? | "\($s)|\(.id)\t\(.title)"'
+      done
+    ;;
+  get)
+    id="${2-}"
+    # ids come from an external tool and are interpolated into a command line,
+    # so they are validated. share/item ids are base64url with padding.
+    case "$id" in *[!A-Za-z0-9+/=_-\|]*|"") exit 1 ;; esac
+    sid=${id%%|*}; iid=${id##*|}
+    [ -n "$sid" ] && [ -n "$iid" ] || exit 1
+    pass-cli item view --share-id "$sid" --item-id "$iid" --field password --output human 2>/dev/null
+    ;;
+  login)  exec pass-cli login ;;
+  unlock) exec pass-cli session unlock ;;
+esac

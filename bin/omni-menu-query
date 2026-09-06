@@ -83,7 +83,7 @@ SECTIONS="$HOME/.config/omni/sections"
 if [ -s "$SECTIONS" ]; then
   ids=$(grep -vE '^[[:space:]]*(#|$)' "$SECTIONS" | tr -d ' ')
 else
-  ids="apps style setup capture utilities update system"
+  ids="apps style setup capture utilities passwords update system"
 fi
 
 rows() {
@@ -101,6 +101,7 @@ case "$lvl" in
         capture) printf 'menu\t%s  Capture\tcapture\n' "" ;;
         update)  printf 'menu\t%s  Update\tupdate\n' "" ;;
         utilities) printf 'menu\t%s  Utilities\tutilities\n' "" ;;
+        passwords) printf 'menu\t%s  Passwords\tpasswords\n' "" ;;
         system)  printf 'menu\t%s  System\tsystem\n' "" ;;
       esac
     done
@@ -163,6 +164,9 @@ case "$lvl" in
     ;;
   weather)
     omni-weather
+    ;;
+  passwords)
+    omni-pass-rows
     ;;
   cpu|mem*|net*)
     case "$lvl" in cpu) k=cpu ;; mem*) k=mem ;; *) k=net ;; esac

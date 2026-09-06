@@ -28,6 +28,10 @@ OMNI_PROJECT_ROOT="$HOME/git"
 OMNI_WEATHER_LOCATION=""   # empty = wttr.in IP geolocation
 OMNI_WEATHER_TTL=900
 
+OMNI_PASS_PROVIDER="protonpass"
+OMNI_PASS_CACHE_TTL=900      # item TITLES only are cached, never secrets
+OMNI_PASS_CLIPBOARD_TTL=30
+
 OMNI_SEARCH_URL="https://www.google.com/search?q="
 
 . "$HOME/.config/omni/themes/$OMNI_THEME.sh"

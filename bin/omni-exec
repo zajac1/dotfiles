@@ -20,11 +20,15 @@ case "$kind" in
   file)    open -R "$payload" ;;
   calc)    printf '%s' "$payload" | pbcopy ;;
   web)     open "${OMNI_SEARCH_URL}$(printf '%s' "$payload" | jq -sRr @uri)" ;;
+  pass)    omni-pass-copy "$payload" ;;
   run|act)
     case "$payload" in
       brew)        open -na Ghostty.app --args -e bash -lc 'brew update && brew upgrade; echo; read -rp "Press enter to close "' ;;
       # softwareupdate -ia needs sudo; a password prompt out of a launcher is
       # bad UX, so open the pane instead - one click and no elevation here.
+      pass-login)   open -na Ghostty.app --args -e "$HOME/.local/bin/omni-pass" login ;;
+      pass-unlock)  open -na Ghostty.app --args -e "$HOME/.local/bin/omni-pass" unlock ;;
+      pass-refresh) rm -f "$HOME/.cache/omni/pass.status"; omni-pass-rows >/dev/null 2>&1 ;;
       btop-cpu)    open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" cpu ;;
       btop-mem)    open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" mem ;;
       btop-net)    open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" net ;;

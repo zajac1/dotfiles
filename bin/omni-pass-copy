@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Copy one password to the clipboard, then clear it.
+#
+# The secret is passed on a PIPE, never in argv - argv is world-readable via ps.
+# The clear is detached and compares first, so it cannot wipe something you
+# copied in the meantime.
+set -u
+. "$HOME/.config/omni/config.sh" 2>/dev/null || true
+ttl="${OMNI_PASS_CLIPBOARD_TTL:-30}"
+id="${1-}"
+[ -n "$id" ] || exit 1
+
+secret=$(omni-pass get "$id" 2>/dev/null) || exit 1
+[ -n "$secret" ] || { osascript -e 'display notification "No password on that item" with title "omni"' 2>/dev/null; exit 1; }
+printf '%s' "$secret" | pbcopy
+
+osascript -e "display notification \"Password copied · clears in ${ttl}s\" with title \"omni\"" 2>/dev/null
+
+nohup bash -c '
+  sleep "$1"
+  [ "$(pbpaste)" = "$2" ] && printf "" | pbcopy
+' _ "$ttl" "$secret" >/dev/null 2>&1 &
