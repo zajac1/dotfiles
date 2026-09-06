@@ -1,9 +1,10 @@
 # omni root menu sections. One id per line, in the order you want them.
 # Comment a line out to hide it. Valid ids:
-#   apps style setup capture update system
+#   apps style setup capture utilities update system
 apps
 style
 setup
 capture
+utilities
 update
 system

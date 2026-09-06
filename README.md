@@ -29,7 +29,7 @@ It does **not** replace Raycast. It sits on its own hotkey alongside it.
 Two surfaces on one hotkey, mirroring how omarchy splits them:
 
 - **Menu** (`Alt+Space`) — pinned favourites plus categories: Apps, Style,
-  Setup, Capture, Update, System.
+  Setup, Capture, Utilities, Update, System.
 - **Search** — reached from *Apps*. Fuzzy app and project search, with prefixes:
 
   | prefix | mode |
@@ -127,9 +127,18 @@ order, so you can also just edit it.
 
 omarchy has no equivalent — I checked both the quattro menu (336 entries, no
 `section`/`group`/`header` keys) and the v3 Walker CSS. This is ours, so the
-heading is styled as a plain dim label rather than a filled band: only the
-selected row is filled, which is what omarchy does and what a terminal can size
-reliably.
+heading is drawn as an open bracket with the label on the top rule:
+
+```
+╭─ Favorites
+│   Ghostty
+│   Sleep
+╰─
+```
+
+It has deliberately **no right edge**. A closed box would need an exact width,
+and that is the one number fzf and Ghostty disagree about (see GOTCHAS 5).
+Only the selected row is filled, and fzf sizes that itself.
 
 ### Menu sections
 
@@ -141,6 +150,7 @@ apps
 style
 setup
 # capture      <- hidden, and dropped from search too
+utilities
 update
 system
 ```
