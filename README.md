@@ -185,11 +185,20 @@ otherwise every keystroke at the top level would hit the network.
 | entry | what it does |
 |---|---|
 | Weather | compact view; see below |
-| CPU / Memory / Network | `btop` showing only that box |
+| CPU / Memory / Network | live readings, with *Open in btop* one keypress away |
 | System Monitor | full `btop` |
 | Caffeinate | placeholder |
 
-The per-box views copy **your** `~/.config/btop/btop.conf` and override only
+btop cannot be shown *inside* the menu — it is a full-screen TUI with no
+one-shot mode, and fzf renders text rows. So each submenu shows a cheap
+snapshot (load, memory pressure, network throughput) and hands off to btop for
+the real thing. Cost drove the choice of commands: `top -l 1 -n 0` takes 947 ms
+and `ps -A -o %cpu` 573 ms, both far too slow for a menu render, so CPU uses
+load average from `sysctl` (24 ms) and memory uses `vm_stat` (27 ms). Network
+throughput is a delta between two `netstat -ib` samples, so rates appear from
+the second visit onward.
+
+The per-box btop views copy **your** `~/.config/btop/btop.conf` and override only
 `shown_boxes`, so your theme and update rate carry over. btop has no CLI switch
 for that key, and its numbered presets would fight whatever you have configured.
 

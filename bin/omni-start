@@ -1,14 +1,4 @@
 #!/bin/bash
-#
-# omni-start - renders ~/.cache/omni/ghostty.conf from config.sh, then launches
-# the dedicated Ghostty instance that owns the global hotkey.
-# --restart kills the running one first (needed after a theme or font change).
-#
-# TRAP: do NOT add `set -o pipefail` here. The running-instance guard is
-# `ps | grep -q`; grep exits on first match, ps takes SIGPIPE (141), and
-# pipefail turns that into a failure - so the guard never fires and every call
-# spawns ANOTHER Ghostty, each registering the same global hotkey.
-#
 set -u
 
 . "$HOME/.config/omni/config.sh"
@@ -57,6 +47,12 @@ shell-integration = none
 confirm-close-surface = false
 resize-overlay = never
 mouse-hide-while-typing = true
+
+# background-opacity=0 makes the window invisible, but macOS still draws its
+# drop shadow and Ghostty its decoration - which reads as a stray border
+# around the launcher. Both off.
+macos-window-shadow = false
+window-decoration = false
 
 keybind = global:$OMNI_HOTKEY=toggle_quick_terminal
 CONF

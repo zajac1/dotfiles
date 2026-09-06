@@ -234,3 +234,18 @@ Centring the weather art measured 22 for a 14-character line, because `‘` is
 three bytes, so the offset computed to zero and nothing moved. `wc -m` is
 locale-aware and counts characters. This is the third distinct bug from this
 one behaviour; assume `length()` is bytes everywhere in this codebase.
+
+## 25. The skip cap must exceed the longest run of sep rows
+
+`omni-skip` recurses with a depth cap so an all-sep level cannot loop. The cap
+was 6; the Weather view has a run of **eight** sep rows (five art lines plus
+three readings), so the cursor stopped inside the art. Raised to 40. Any new
+informational view lengthens that run — check it against the cap.
+
+## 26. The window "border" is the macOS shadow
+
+`background-opacity = 0` makes the window invisible, but macOS still draws its
+drop shadow, and per ghostty-org/ghostty#9582 a window with `hasShadow = true`
+gets a 1px border drawn around it. `macos-window-shadow = false` plus
+`window-decoration = false` removes it. Not a Ghostty limitation — just two
+options we had never set.

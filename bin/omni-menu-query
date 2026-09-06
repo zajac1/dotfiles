@@ -87,7 +87,8 @@ else
 fi
 
 rows() {
-case "${1-$level}" in
+lvl="${1-$level}"
+case "$lvl" in
   "")
     emit_favorites
     # Root entries are listed in ~/.config/omni/sections, one id per line.
@@ -154,14 +155,21 @@ case "${1-$level}" in
     ;;
   utilities)
     printf 'menu\t  Weather\tweather\n'
-    printf 'run\t  CPU\tcpu\n'
-    printf 'run\t  Memory\tmemory\n'
-    printf 'run\t  Network\tnetwork\n'
+    printf 'menu\t  CPU\tcpu\n'
+    printf 'menu\t  Memory\tmemory\n'
+    printf 'menu\t  Network\tnetwork\n'
     printf 'run\t  System Monitor\tmonitor\n'
     printf 'run\t  Caffeinate\tcaffeinate\n'
     ;;
   weather)
     omni-weather
+    ;;
+  cpu|mem*|net*)
+    case "$lvl" in cpu) k=cpu ;; mem*) k=mem ;; *) k=net ;; esac
+    omni-sysinfo "$k"
+    printf 'run\t  Open in btop\tbtop-%s\n' "$k"
+    printf 'act\t  Refresh\t%s-refresh\n' "$k"
+    printf 'back\t  Back\t\n'
     ;;
   capture)
     printf 'run\t  Screenshot\tscreenshot\n'
