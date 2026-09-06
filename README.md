@@ -71,7 +71,8 @@ brew install --cask ghostty font-caskaydia-mono-nerd-font
 | `Alt+Space` | open / close |
 | `Enter` | run, or descend into a submenu |
 | `Esc` | back one level, then close |
-| `Ctrl+P` | pin / unpin the highlighted app |
+| `Ctrl+P` | pin / unpin the highlighted row (apps *or* menu actions) |
+| `Shift+↑` `Shift+↓` | reorder a favourite |
 | `↑ ↓` / `Ctrl+K` `Ctrl+J` | move (spacers are skipped) |
 
 ## Theming
@@ -115,6 +116,20 @@ Everything lives in `~/.config/omni/config.sh`. The values worth knowing:
 | `OMNI_SEARCH_URL` | search engine prefix (Google by default) |
 | `OMNI_PROJECT_ROOT` | directory scanned for project entries |
 | `OMNI_APP_COLORS` | tint each app glyph with its icon's dominant colour |
+
+### Favourites
+
+`Ctrl+P` pins whatever is highlighted — an app, or a menu action like *Sleep*.
+Pinned entries appear under a `FAVORITES` heading at the top of the menu, and
+carry a ★ in their own section so you can see what is pinned. `Shift+↑/↓`
+reorders them; the file order in `~/.config/omni/favorites` is the display
+order, so you can also just edit it.
+
+omarchy has no equivalent — I checked both the quattro menu (336 entries, no
+`section`/`group`/`header` keys) and the v3 Walker CSS. This is ours, so the
+heading is styled as a plain dim label rather than a filled band: only the
+selected row is filled, which is what omarchy does and what a terminal can size
+reliably.
 
 ### Menu sections
 

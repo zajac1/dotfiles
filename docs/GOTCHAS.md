@@ -177,3 +177,12 @@ Consequence: anything that lives in the Ghostty config - the font, chiefly -
 cannot be changed live. Colours escape this because they can be pushed into a
 running terminal as OSC sequences; fonts have no equivalent. Applying a font
 therefore has to restart the instance, which closes the launcher window.
+
+## 18. Do not right-align anything
+
+A filled section band has to be padded to an exact width, and fzf and Ghostty
+disagree about what that width is (see 5). Padded to the edge it truncated;
+after `--wrap` landed it wrapped into a stray coloured fragment on the next
+line. The fix was to stop needing the width: the `FAVORITES` heading is a dim
+label with no fill, and the pinned-item marker is appended after the text rather
+than right-aligned. Only `--highlight-line` fills a row, and fzf sizes that.

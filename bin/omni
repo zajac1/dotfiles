@@ -97,6 +97,8 @@ set -- \
   --bind 'down:down+transform(omni-skip {} down)' \
   --bind 'up:up+transform(omni-skip {} up)' \
   --bind 'ctrl-j:down+transform(omni-skip {} down)' \
+  --bind 'shift-up:execute-silent(omni-fav-move {} up)+become(omni --menu)' \
+  --bind 'shift-down:execute-silent(omni-fav-move {} down)+become(omni --menu)' \
   --bind 'ctrl-k:up+transform(omni-skip {} up)' \
   --bind 'enter:transform(omni-enter {})' \
   --color="bg:${bg},fg:17,current-bg:23,current-fg:19:regular,hl:17,hl+:19,border:18,input-border:18,input-bg:${bg},list-bg:${bg},header-bg:${bg},selected-bg:${bg},preview-bg:${bg},query:17,ghost:20,gutter:${bg}"

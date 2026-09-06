@@ -1,0 +1,20 @@
+#!/bin/bash
+# Move the highlighted favourite up or down in ~/.config/omni/favorites.
+# File order IS display order, so this is a plain line swap.
+set -u
+FAVS="$HOME/.config/omni/favorites"
+line="${1-}"; dir="${2-up}"
+[ -s "$FAVS" ] || exit 0
+kind=$(printf '%s' "$line" | cut -f1)
+pay=$(printf '%s' "$line" | cut -f3)
+[ -n "$pay" ] || exit 0
+entry=$(printf '%s\t%s' "$kind" "$pay")
+awk -v e="$entry" -v p="$pay" -v d="$dir" '
+  { l[NR]=$0; if ($0==e || $0==p) i=NR }
+  END{
+    if (!i) { for(n=1;n<=NR;n++) print l[n]; exit }
+    j = (d=="up") ? i-1 : i+1
+    if (j<1 || j>NR) { for(n=1;n<=NR;n++) print l[n]; exit }
+    t=l[i]; l[i]=l[j]; l[j]=t
+    for(n=1;n<=NR;n++) print l[n]
+  }' "$FAVS" > "$FAVS.tmp" && mv "$FAVS.tmp" "$FAVS"
