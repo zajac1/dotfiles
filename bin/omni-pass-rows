@@ -23,8 +23,14 @@ TTL="${OMNI_PASS_CACHE_TTL:-900}"
 LOCK="$HOME/.cache/omni/pass.lock"
 
 refresh() {
+  # A trap EXIT inside a backgrounded subshell did not fire reliably, leaving a
+  # stale lock that would block every future refresh. Release explicitly, and
+  # reap a lock older than 120s in case a refresh is killed outright.
+  if [ -d "$LOCK" ]; then
+    age=$(( $(date +%s) - $(stat -f %m "$LOCK" 2>/dev/null || echo 0) ))
+    [ "$age" -gt 120 ] && rmdir "$LOCK" 2>/dev/null
+  fi
   mkdir "$LOCK" 2>/dev/null || return 0
-  trap 'rmdir "$LOCK" 2>/dev/null' EXIT
   omni-pass status > "$STAT.new" 2>/dev/null
   mv "$STAT.new" "$STAT" 2>/dev/null
   if [ "$(cat "$STAT" 2>/dev/null)" = unlocked ]; then
@@ -32,6 +38,7 @@ refresh() {
     omni-pass list | omni-brandify > "$CACHE.new" 2>/dev/null
     [ -s "$CACHE.new" ] && mv "$CACHE.new" "$CACHE" || rm -f "$CACHE.new"
   fi
+  rmdir "$LOCK" 2>/dev/null
 }
 
 if [ ! -s "$STAT" ]; then
