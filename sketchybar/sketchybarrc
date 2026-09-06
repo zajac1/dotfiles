@@ -44,22 +44,11 @@ for i in $(seq 1 "$SPACES"); do
              --subscribe space.$i space_change
 done
 
-sketchybar --add item front_app left \
-           --set front_app icon.drawing=off label.color=$ACCENT \
-                           label.font="$FONT:Bold:12.0" label.padding_left=8 \
-                           script="$PLUGINS/front_app.sh" \
-           --subscribe front_app front_app_switched
-
-# ---------------- centre: clock and weather (omarchy puts them here) ------
+# ---------------- centre: clock (omarchy puts it here, not right) ---------
 sketchybar --add item clock center \
            --set clock icon.drawing=off label.font="$FONT:Bold:12.0" \
                        update_freq=10 script="$PLUGINS/clock.sh" \
                        click_script="open -a Calendar"
-
-sketchybar --add item weather center \
-           --set weather icon=󰖐 icon.color=$ACCENT update_freq=900 \
-                         script="$PLUGINS/weather.sh" \
-                         click_script="$PLUGINS/toggle_omni.sh"
 
 # ---------------- right: icon-led status, like omarchy --------------------
 sketchybar --add item battery right \
