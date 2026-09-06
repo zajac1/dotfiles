@@ -39,6 +39,11 @@ Two surfaces on one hotkey, mirroring how omarchy splits them:
   | `@` | web search — `OMNI_SEARCH_URL`, Google by default. macOS exposes no way to ask the default browser for its configured engine, so this is ours to set. |
   | `.` | file search (Spotlight, plus a bounded `find` for dotfiles) |
 
+Typing in the menu searches **every level of the menu tree at once** — `sl`
+finds *Sleep*, `wifi` finds *Wifi*, `nord` finds the theme — so you rarely have
+to drill. Apps are excluded from that (use *Apps*), and so are the confirmation
+screens, since their rows restart or shut down immediately.
+
 Numbers with an operator trigger the calculator without a prefix, so `2+2` just
 works — **and the menu prompt accepts the same input**, so `Alt+Space` then
 `2+2` answers immediately without going through Apps.

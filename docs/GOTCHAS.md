@@ -150,3 +150,12 @@ colour.
 
 Extraction costs ~3.7s for ~106 apps, so results are cached by path in
 `~/.cache/omni/colors.tsv`.
+
+## 15. Flat menu search excludes confirm levels
+
+`omni-menu-query` flattens every level into one searchable list when the query
+is non-empty. `confirm:*` levels are deliberately left out: their rows execute a
+restart or shutdown the moment Enter lands, and a fuzzy match one keypress away
+from that is too close. Typing "restart" surfaces the *menu* row that leads to
+the confirmation screen, never the confirmation itself. Verified: "yes" matches
+nothing but a web search.

@@ -24,7 +24,7 @@ emit_favorites() {
 }
 
 rows() {
-case "$level" in
+case "${1-$level}" in
   "")
     emit_favorites
     printf 'search\t  Apps\t\n'
@@ -90,5 +90,12 @@ case "$q" in
 esac
 
 looks_like_math "$q" && emit_calc "$q"
-rows | grep -v "^sep$TAB" | fzf --ansi --filter="$q" --delimiter="$TAB" --nth=2 2>/dev/null
+
+if [ -z "$level" ]; then
+  for lvl in "" style theme setup capture system; do rows "$lvl"; done
+else
+  rows "$level"
+fi | grep -v "^sep$TAB" | awk -F'\t' -v OFS='\t' '!seen[$2]++' |
+  fzf --ansi --filter="$q" --delimiter="$TAB" --nth=2 2>/dev/null
+
 emit_web "$q"
