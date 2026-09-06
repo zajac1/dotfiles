@@ -242,10 +242,18 @@ was 6; the Weather view has a run of **eight** sep rows (five art lines plus
 three readings), so the cursor stopped inside the art. Raised to 40. Any new
 informational view lengthens that run — check it against the cap.
 
-## 26. The window "border" is the macOS shadow
+## 26. The window edge cannot be removed on macOS
 
-`background-opacity = 0` makes the window invisible, but macOS still draws its
-drop shadow, and per ghostty-org/ghostty#9582 a window with `hasShadow = true`
-gets a 1px border drawn around it. `macos-window-shadow = false` plus
-`window-decoration = false` removes it. Not a Ghostty limitation — just two
-options we had never set.
+`background-opacity = 0` makes the window invisible, but a faint edge remains.
+`macos-window-shadow = false` and `window-decoration = false` (the docs say
+`false` is equivalent to `none`) are both set and do **not** remove it.
+
+Per ghostty-org/ghostty discussion #9611 this is not fixable today: in AppKit
+the shadow and the edge styling are the same property (`hasShadow`), so they
+cannot be separated. A collaborator tried adding `.borderless` to the window
+style mask and reported it "makes no difference". iTerm2 works around it by
+removing the native window entirely and rebuilding the chrome by hand, which is
+fragile across macOS releases.
+
+Do not spend more time on this. Follow #9611.
+
