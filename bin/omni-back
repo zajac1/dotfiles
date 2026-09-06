@@ -1,0 +1,17 @@
+#!/bin/bash
+set -u
+CACHE="$HOME/.cache/omni"
+STACK="$CACHE/stack"
+q="${1-}"
+mode=$(cat "$CACHE/mode" 2>/dev/null)
+
+if [ -n "$q" ]; then
+  echo 'clear-query'
+elif [ "$mode" = search ]; then
+  echo 'become(omni --menu)'
+elif [ -s "$STACK" ]; then
+  sed -i '' -e '$d' "$STACK" 2>/dev/null
+  echo 'become(omni --menu)'
+else
+  echo 'abort'
+fi

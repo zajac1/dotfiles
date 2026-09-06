@@ -1,0 +1,73 @@
+#!/bin/bash
+#
+# omni-start - renders ~/.cache/omni/ghostty.conf from config.sh, then launches
+# the dedicated Ghostty instance that owns the global hotkey.
+# --restart kills the running one first (needed after a theme or font change).
+#
+# TRAP: do NOT add `set -o pipefail` here. The running-instance guard is
+# `ps | grep -q`; grep exits on first match, ps takes SIGPIPE (141), and
+# pipefail turns that into a failure - so the guard never fires and every call
+# spawns ANOTHER Ghostty, each registering the same global hotkey.
+#
+set -u
+
+. "$HOME/.config/omni/config.sh"
+
+if [ "$OMNI_FRAME" = "boxed" ]; then
+  OPACITY=0
+  BLUR=false
+else
+  OPACITY=$OMNI_OPACITY
+  BLUR=$OMNI_BLUR
+fi
+
+CONFIG="$HOME/.cache/omni/ghostty.conf"
+mkdir -p "$(dirname "$CONFIG")"
+
+cat > "$CONFIG" <<CONF
+command = $HOME/.local/bin/omni
+initial-command = /usr/bin/true
+abnormal-command-exit-runtime = 0
+macos-hidden = always
+quit-after-last-window-closed = false
+
+font-family = $OMNI_FONT
+font-size = $OMNI_FONT_SIZE
+background = $OMNI_BASE
+foreground = $OMNI_TEXT
+cursor-color = $OMNI_CURSOR
+cursor-style = bar
+selection-background = $OMNI_ACCENT
+selection-foreground = $OMNI_BASE
+
+background-opacity = $OPACITY
+background-blur = $BLUR
+window-padding-x = 2
+window-padding-y = 1
+window-padding-balance = true
+window-width = $OMNI_COLS
+window-height = $OMNI_ROWS
+
+quick-terminal-position = center
+quick-terminal-autohide = true
+quick-terminal-animation-duration = $OMNI_ANIMATION
+quick-terminal-space-behavior = move
+
+shell-integration = none
+confirm-close-surface = false
+resize-overlay = never
+mouse-hide-while-typing = true
+
+keybind = global:$OMNI_HOTKEY=toggle_quick_terminal
+CONF
+
+if [ "${1-}" = "--restart" ]; then
+  pkill -f "ghostty .*--config-file=$CONFIG" 2>/dev/null
+  sleep 1
+elif /bin/ps -ax -o command= | grep -q -- "[g]hostty .*--config-file=$CONFIG"; then
+  echo running
+  exit 0
+fi
+
+open -na Ghostty.app --args --config-default-files=false --config-file="$CONFIG"
+echo started

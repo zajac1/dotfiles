@@ -1,0 +1,14 @@
+#!/bin/bash
+set -u
+FAVS="$HOME/.config/omni/favorites"
+INDEX="$HOME/.cache/omni/index.tsv"
+touch "$FAVS"
+
+[ $# -eq 0 ] && { cat "$FAVS"; exit 0; }
+
+for name in "$@"; do
+  path=$(grep -i -m1 "	.*${name}" "$INDEX" | cut -f3)
+  [ -z "$path" ] && { echo "not found: $name" >&2; continue; }
+  grep -qxF "$path" "$FAVS" || printf '%s\n' "$path" >> "$FAVS"
+  echo "pinned: $path"
+done

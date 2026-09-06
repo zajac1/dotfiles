@@ -1,0 +1,20 @@
+#!/bin/bash
+set -u
+
+FAVS="$HOME/.config/omni/favorites"
+touch "$FAVS"
+
+line="${1-}"
+[ -n "$line" ] || exit 0
+
+kind=$(printf '%s' "$line" | cut -f1)
+path=$(printf '%s' "$line" | cut -f3)
+
+[ "$kind" = "app" ] || exit 0
+[ -n "$path" ] || exit 0
+
+if grep -qxF "$path" "$FAVS"; then
+  grep -vxF "$path" "$FAVS" > "$FAVS.tmp" && mv "$FAVS.tmp" "$FAVS"
+else
+  printf '%s\n' "$path" >> "$FAVS"
+fi

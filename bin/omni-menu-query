@@ -1,0 +1,91 @@
+#!/bin/bash
+#
+# omni-menu-query - emits the menu tree for one level.
+#
+# ROW PROTOCOL (every producer and consumer in omni obeys this):
+#     kind <TAB> display <TAB> payload
+#   kind: app project file calc web menu search run theme sep back
+#   `sep`    - inert row (title or spacer). omni-enter ignores it, omni-skip
+#              makes arrow keys step over it.
+#   `menu`   - pushes payload onto the stack (confirm:<x> is a namespaced level)
+#   `search` - hands off to search mode
+#
+# The kind MUST be a literal in the printf FORMAT string, never interpolated.
+# That is what stops a hostile app-bundle filename from forging a row kind.
+#
+# TRAP: only the Favorites TITLE carries a background. Favourite rows are plain
+# text with no padding - anything padded to the edge gets truncated (see the
+# --ellipsis note in omni).
+#
+set -u
+
+. "$HOME/.config/omni/config.sh"
+
+INDEX="$HOME/.cache/omni/index.tsv"
+FAVS="$HOME/.config/omni/favorites"
+TAB=$(printf '\t')
+level="${1-}"
+
+emit_favorites() {
+  [ -s "$FAVS" ] || return 0
+  w=${OMNI_ROW_WIDTH:-26}
+  printf 'sep\t\033[48;5;22;38;5;20m  Favorites%*s\033[0m\t\n' $((w - 12)) ''
+  head -3 "$FAVS" | while IFS= read -r fav; do
+    [ -n "$fav" ] || continue
+    row=$(grep -F "$TAB$fav" "$INDEX" 2>/dev/null | head -1)
+    [ -n "$row" ] || continue
+    printf '%s\n' "$row"
+  done
+  printf 'sep\t\t\n'
+}
+
+case "$level" in
+  "")
+    emit_favorites
+    printf 'search\t  Apps\t\n'
+    printf 'menu\t  Style\tstyle\n'
+    printf 'menu\t  Setup\tsetup\n'
+    printf 'menu\t  Capture\tcapture\n'
+    printf 'run\t  Update\tupdate\n'
+    printf 'menu\t  System\tsystem\n'
+    ;;
+  style)
+    printf 'menu\t  Theme\ttheme\n'
+    printf 'run\t  Font\tfont\n'
+    ;;
+  theme)
+    current=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$HOME/.config/omni/config.sh")
+    for f in "$HOME"/.config/omni/themes/*.sh; do
+      name="${f##*/}"; name="${name%.sh}"
+      if [ "$name" = "$current" ]; then
+        printf 'theme\t  %s\t%s\n' "$name" "$name"
+      else
+        printf 'theme\t   %s\t%s\n' "$name" "$name"
+      fi
+    done
+    ;;
+  setup)
+    printf 'run\t  Wifi\twifi\n'
+    printf 'run\t  Bluetooth\tbluetooth\n'
+    printf 'run\t  Audio\taudio\n'
+    printf 'run\t  Displays\tdisplays\n'
+    printf 'run\t  Config\tconfig\n'
+    ;;
+  capture)
+    printf 'run\t  Screenshot\tscreenshot\n'
+    printf 'run\t  Color Picker\tcolorpicker\n'
+    ;;
+  system)
+    printf 'run\t  Lock\tlock\n'
+    printf 'run\t  Screensaver\tsaver\n'
+    printf 'run\t  Sleep\tsleep\n'
+    printf 'menu\t  Logout\tconfirm:logout\n'
+    printf 'menu\t  Restart\tconfirm:restart\n'
+    printf 'menu\t  Shutdown\tconfirm:shutdown\n'
+    ;;
+  confirm:*)
+    what="${level#confirm:}"
+    printf 'run\t  Yes, %s\t%s\n' "$what" "$what"
+    printf 'back\t  Cancel\t\n'
+    ;;
+esac

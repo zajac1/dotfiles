@@ -1,0 +1,5 @@
+#!/bin/bash
+set -u
+line="${1-}"
+dir="${2-down}"
+[ "$(printf '%s' "$line" | cut -f1)" = "sep" ] && echo "$dir" || echo ignore

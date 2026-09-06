@@ -1,0 +1,27 @@
+#!/bin/bash
+set -u
+
+CONF="$HOME/.config/omni/config.sh"
+DIR="$HOME/.config/omni/themes"
+current=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$CONF")
+
+if [ $# -eq 0 ]; then
+  for f in "$DIR"/*.sh; do
+    name="${f##*/}"; name="${name%.sh}"
+    [ "$name" = "$current" ] && printf '* %s\n' "$name" || printf '  %s\n' "$name"
+  done
+  exit 0
+fi
+
+name="$1"
+if [ ! -f "$DIR/$name.sh" ]; then
+  echo "no such theme: $name" >&2
+  echo "available:" >&2
+  omni-theme >&2
+  exit 1
+fi
+
+sed -i '' "s/^OMNI_THEME=\".*\"/OMNI_THEME=\"$name\"/" "$CONF"
+omni-ghostty-theme "$name" >/dev/null 2>&1
+omni-start --restart >/dev/null
+echo "theme: $name"

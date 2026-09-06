@@ -1,0 +1,79 @@
+#!/bin/bash
+#
+# omni-index - builds ~/.cache/omni/index.tsv (apps + project dirs + glyphs).
+# Spawned in the background on cold launch; exits immediately unless a source
+# directory is newer than the index (a full rebuild is ~430ms and used to run
+# on every single launch).
+#
+# TRAP: no command substitution inside the per-app loop. `$(printf | tr)` per
+# app is ~250 extra process spawns and made this 68% slower, during exactly the
+# window where fzf is trying to start. Use bash parameter expansion.
+# Note /bin/bash is 3.2 on macOS: ${var//x/y} works, ${var,,} does NOT.
+#
+set -euo pipefail
+
+. "$HOME/.config/omni/config.sh"
+
+CACHE="$HOME/.cache/omni"
+INDEX="$CACHE/index.tsv"
+mkdir -p "$CACHE"
+
+if [ "${1-}" != "--force" ] && [ -s "$INDEX" ]; then
+  stale=0
+  for d in /Applications /System/Applications "$HOME/Applications" "$OMNI_PROJECT_ROOT"; do
+    [ -d "$d" ] || continue
+    [ "$d" -nt "$INDEX" ] && stale=1
+  done
+  [ "$stale" = 0 ] && exit 0
+fi
+
+glyph_for() {
+  case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
+    *chrome*|*chromium*|*brave*|*edge*)                    printf '' ;;
+    *firefox*|*zen*)                                       printf '' ;;
+    *safari*|*arc*|*orion*)                                printf '' ;;
+    *ghostty*|*iterm*|*terminal*|*warp*|*alacritty*|*kitty*) printf '' ;;
+    *slack*)                                               printf '' ;;
+    *discord*|*messages*|*whatsapp*|*telegram*|*signal*)   printf '' ;;
+    *spotify*)                                             printf '' ;;
+    *tidal*|*music*|*vlc*|*iina*)                          printf '' ;;
+    *mail*|*outlook*|*spark*|*hey*)                        printf '' ;;
+    *calendar*|*fantastical*)                              printf '' ;;
+    *notes*|*obsidian*|*bear*|*notion*)                    printf '' ;;
+    *finder*|*forklift*|*path?finder*)                     printf '' ;;
+    *code*|*cursor*|*sublime*|*zed*|*nova*|*intellij*|*webstorm*|*pycharm*|*android?studio*) printf '' ;;
+    *xcode*)                                               printf '' ;;
+    *docker*|*orbstack*|*podman*)                          printf '' ;;
+    *photos*|*capture*|*lightroom*|*photoshop*)            printf '' ;;
+    *preview*|*acrobat*|*pdf*|*skim*)                      printf '' ;;
+    *settings*|*preferences*|*utility*|*monitor*|*console*|*disk*) printf '' ;;
+    *zoom*|*teams*|*facetime*|*webex*|*quicktime*)         printf '' ;;
+    *books*|*kindle*|*reader*)                             printf '' ;;
+    *1password*|*bitwarden*|*keychain*|*vault*)            printf '' ;;
+    *steam*|*epic*|*battle*|*gog*)                         printf '' ;;
+    *figma*|*sketch*|*affinity*)                           printf '' ;;
+    *github*|*fork*|*tower*|*sourcetree*)                  printf '' ;;
+    *parallels*|*vmware*|*utm*|*virtualbox*)               printf '' ;;
+    *tunnelblick*|*vpn*|*little?snitch*|*malwarebytes*)    printf '' ;;
+    *)                                                     printf '' ;;
+  esac
+}
+
+{
+  find /Applications /System/Applications "$HOME/Applications" \
+       -maxdepth 3 -name '*.app' -prune 2>/dev/null |
+  while IFS= read -r app; do
+    name="${app##*/}"; name="${name%.app}"
+    name=${name//$'\t'/}
+    printf 'app\t%s  %s\t%s\n' "$(glyph_for "$name")" "$name" "$app"
+  done
+
+  if [ -d "$OMNI_PROJECT_ROOT" ]; then
+    find "$OMNI_PROJECT_ROOT" -maxdepth 1 -mindepth 1 -type d 2>/dev/null |
+    while IFS= read -r dir; do
+      printf 'project\t  %s\t%s\n' "${dir##*/}" "$dir"
+    done
+  fi
+} | sort -u -t"$(printf '\t')" -k2,2 > "$INDEX.tmp"
+
+mv "$INDEX.tmp" "$INDEX"

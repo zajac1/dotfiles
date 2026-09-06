@@ -1,0 +1,53 @@
+#!/bin/bash
+set -u
+
+. "$HOME/.config/omni/config.sh"
+
+name="${1:-$OMNI_THEME}"
+TOML="$HOME/.config/omni/palettes/$name.toml"
+OUT="$HOME/.config/ghostty/omni-theme"
+
+[ -f "$TOML" ] || { echo "no palette: $name" >&2; exit 1; }
+mkdir -p "$(dirname "$OUT")"
+
+val() {
+  v=$(sed -n "s/^$1 *= *\"\\(.*\\)\"/\\1/p" "$TOML" | head -1)
+  case "$v" in
+    "#"[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) printf '%s' "$v" ;;
+    *) : ;;
+  esac
+}
+
+bg=$(val background); fg=$(val foreground); cur=$(val cursor)
+selbg=$(val selection_background); selfg=$(val selection_foreground)
+
+{
+  printf 'background = %s\n' "$bg"
+  printf 'foreground = %s\n' "$fg"
+  [ -n "$cur" ]   && printf 'cursor-color = %s\n' "$cur"
+  [ -n "$selbg" ] && printf 'selection-background = %s\n' "$selbg"
+  [ -n "$selfg" ] && printf 'selection-foreground = %s\n' "$selfg"
+  for i in $(seq 0 15); do
+    c=$(val "color$i")
+    [ -n "$c" ] && printf 'palette = %s=%s\n' "$i" "$c"
+  done
+} > "$OUT"
+
+[ "${OMNI_THEME_TERMINALS:-false}" = "true" ] || exit 0
+
+esc=$(printf '\033')
+bel=$(printf '\007')
+{
+  printf '%s]11;%s%s' "$esc" "$bg" "$bel"
+  printf '%s]10;%s%s' "$esc" "$fg" "$bel"
+  [ -n "$cur" ] && printf '%s]12;%s%s' "$esc" "$cur" "$bel"
+  for i in $(seq 0 15); do
+    c=$(val "color$i")
+    [ -n "$c" ] && printf '%s]4;%s;%s%s' "$esc" "$i" "$c" "$bel"
+  done
+} > "$HOME/.cache/omni/osc.seq"
+
+for tty in /dev/ttys*; do
+  [ -w "$tty" ] || continue
+  cat "$HOME/.cache/omni/osc.seq" > "$tty" 2>/dev/null
+done

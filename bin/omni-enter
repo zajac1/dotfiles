@@ -1,0 +1,23 @@
+#!/bin/bash
+set -u
+CACHE="$HOME/.cache/omni"
+STACK="$CACHE/stack"
+PENDING="$CACHE/pending"
+line="${1-}"
+[ -n "$line" ] || { echo "ignore"; exit 0; }
+
+kind=$(printf '%s' "$line" | cut -f1)
+payload=$(printf '%s' "$line" | cut -f3)
+
+case "$kind" in
+  sep)    echo 'ignore' ;;
+  theme)
+    sed -i '' "s/^OMNI_THEME=\".*\"/OMNI_THEME=\"$payload\"/" "$HOME/.config/omni/config.sh"
+    omni-ghostty-theme "$payload" >/dev/null 2>&1
+    sed -i '' -e '$d' "$STACK" 2>/dev/null
+    echo 'become(omni --menu)' ;;
+  menu)   printf '%s\n' "$payload" >> "$STACK"; echo 'become(omni --menu)' ;;
+  search) echo 'become(omni --search)' ;;
+  back)   sed -i '' -e '$d' "$STACK" 2>/dev/null; echo 'become(omni --menu)' ;;
+  *)      printf '%s' "$line" > "$PENDING"; echo 'become(omni-exec)' ;;
+esac

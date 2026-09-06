@@ -1,0 +1,44 @@
+#!/bin/bash
+#
+# omni-osc - pushes the active (or previewed) theme into ANSI palette slots via
+# OSC escapes, written to /dev/tty.
+#
+#   16 base   17 text   18 border   19 selected-text
+#   20 dim    21 input-bg   22 section-bg   23 select-bg   + OSC 12 cursor
+#
+# WHY SLOTS: omni's fzf --color refers to these by NUMBER, so re-emitting the
+# OSC sequences re-themes the launcher live, in place, with no fzf restart. That
+# is what makes theme preview work while arrowing through the theme list.
+# An earlier design restarted fzf per keypress; it reset the cursor every time
+# and looked like the arrow keys were dead.
+#
+# TRAP: $1 is validated. It indexes a file that gets `.`-sourced, so an
+# unvalidated name is arbitrary code execution via ../../ traversal.
+#
+set -u
+
+name="${1-}"
+case "$name" in *[!a-zA-Z0-9._-]*) name="" ;; esac
+THEMES="$HOME/.config/omni/themes"
+
+if [ -n "$name" ] && [ -f "$THEMES/$name.sh" ]; then
+  . "$THEMES/$name.sh"
+else
+  . "$HOME/.config/omni/config.sh"
+fi
+
+OUT="${OMNI_OSC_TARGET:-/dev/tty}"
+[ -w "$OUT" ] || exit 0
+
+esc=$(printf '\033'); bel=$(printf '\007')
+{
+  printf '%s]4;16;%s%s' "$esc" "$OMNI_BASE"          "$bel"
+  printf '%s]4;17;%s%s' "$esc" "$OMNI_TEXT"          "$bel"
+  printf '%s]4;18;%s%s' "$esc" "$OMNI_BORDER"        "$bel"
+  printf '%s]4;19;%s%s' "$esc" "$OMNI_SELECTED_TEXT" "$bel"
+  printf '%s]4;20;%s%s' "$esc" "$OMNI_DIM"           "$bel"
+  printf '%s]4;21;%s%s' "$esc" "$OMNI_INPUT_BG"      "$bel"
+  printf '%s]4;22;%s%s' "$esc" "$OMNI_SECTION_BG"    "$bel"
+  printf '%s]4;23;%s%s' "$esc" "$OMNI_SELECT_BG"     "$bel"
+  printf '%s]12;%s%s'   "$esc" "$OMNI_ACCENT"        "$bel"
+} > "$OUT"

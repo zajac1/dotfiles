@@ -1,0 +1,41 @@
+#!/bin/bash
+set -u
+
+. "$HOME/.config/omni/config.sh"
+PENDING="$HOME/.cache/omni/pending"
+
+line=$(cat "$PENDING" 2>/dev/null)
+: > "$PENDING"
+[ -n "$line" ] || exit 0
+
+kind=$(printf '%s' "$line" | cut -f1)
+payload=$(printf '%s' "$line" | cut -f3)
+
+edit() { open -na Ghostty.app --args -e nvim "$1"; }
+settings() { open "x-apple.systempreferences:$1"; }
+
+case "$kind" in
+  app)     open -a "$payload" ;;
+  project) open -na Ghostty.app --args --working-directory="$payload" ;;
+  file)    open -R "$payload" ;;
+  calc)    printf '%s' "$payload" | pbcopy ;;
+  web)     open "${OMNI_SEARCH_URL}$(printf '%s' "$payload" | jq -sRr @uri)" ;;
+  run)
+    case "$payload" in
+      update)      open -na Ghostty.app --args -e bash -lc 'brew update && brew upgrade; echo; read -rp "Press enter to close "' ;;
+      font)        edit "$HOME/.config/omni/config.sh" ;;
+      config)      edit "$HOME/.config/omni/config.sh" ;;
+      wifi)        settings "com.apple.wifi-settings-extension" ;;
+      bluetooth)   settings "com.apple.BluetoothSettings" ;;
+      audio)       settings "com.apple.Sound-Settings.extension" ;;
+      displays)    settings "com.apple.Displays-Settings.extension" ;;
+      screenshot)  screencapture -i -c ;;
+      colorpicker) open -a "Digital Color Meter" ;;
+      lock)        pmset displaysleepnow ;;
+      saver)       open -a ScreenSaverEngine ;;
+      sleep)       osascript -e 'tell application "System Events" to sleep' ;;
+      logout)      osascript -e 'tell application "System Events" to log out' ;;
+      restart)     osascript -e 'tell application "System Events" to restart' ;;
+      shutdown)    osascript -e 'tell application "System Events" to shut down' ;;
+    esac ;;
+esac
