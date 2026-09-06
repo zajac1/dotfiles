@@ -90,7 +90,14 @@ does not stop that form. A cache file read into `$(( ))` was a live RCE here.
 - An unquoted `$extra` containing `--bind=focus:transform(cmd {3} {n})` is split
   on spaces into three arguments. Use an array.
 
-## 9. `grep -v` exits 1 when it prints nothing
+## 9. `set -e` plus a non-matching `grep` aborts silently
+
+`omni-index` used `set -euo pipefail`. A cache lookup written as
+`c=$(grep -F "$app" "$COLORS" ...)` exits non-zero when the cache is cold, and
+`set -e` then killed the whole index build before `mv "$INDEX.tmp"` — leaving a
+stale index and no error anywhere. It now uses plain `set -u`.
+
+## 10. `grep -v` exits 1 when it prints nothing
 
 ```sh
 grep -vxF "$path" "$FAVS" > "$FAVS.tmp" && mv "$FAVS.tmp" "$FAVS"   # BROKEN
@@ -101,7 +108,7 @@ never fires and the file is left unchanged. Unpinning your only favourite
 silently did nothing. Same family as the `pipefail` trap above: a non-zero exit
 that means "no matches", not "failure".
 
-## 10. Security invariants
+## 11. Security invariants
 
 - The `kind` field must always be a literal in the `printf` **format** string.
   That is what stops a hostile `.app` filename from forging a row kind.
@@ -112,7 +119,7 @@ that means "no matches", not "failure".
   never returns. Both reachable by typing. Hence the whitelist and the perl
   alarm (macOS has no `timeout(1)`).
 
-## 11. Startup sequencing
+## 12. Startup sequencing
 
 Hide the cursor (`ESC[?25l`) *before* the clear. Otherwise it sits at the grid
 origin — eleven columns left of the visible box, over transparent background —
@@ -120,3 +127,16 @@ for ~80ms. About 16ms of that is fzf's own init and cannot be suppressed.
 
 Do not add command substitutions to `omni-index`'s per-app loop. `$(printf | tr)`
 per app is ~250 extra process spawns and made a cold launch 68% slower.
+
+## 13. Icon colours
+
+`sips` can render an `.icns` to a 16x16 32-bit BMP, and the dominant colour can
+be read with `od` + `awk` — no Pillow, no ImageMagick.
+
+Two traps: the BMP pixel-data offset is in bytes 10-13 and is **138** here, not
+the textbook 54; and the 1x1 "average" is useless (Chrome averages to a muddy
+tan). Pick the most *saturated* opaque pixel instead — that lands on the brand
+colour.
+
+Extraction costs ~3.7s for ~106 apps, so results are cached by path in
+`~/.cache/omni/colors.tsv`.

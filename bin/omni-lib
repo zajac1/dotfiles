@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# omni-lib - shared row emitters, SOURCED (not executed) by omni-query and
+# omni-menu-query so the calculator and web-search behave identically in both
+# the menu prompt and the app search.
+#
+# TRAP: qalc is a scripting language. load() reads arbitrary files straight into
+# the row (and Enter copies it to the clipboard); (10^10)! never returns. Both
+# are reachable by typing. Hence the whitelist, the blacklist and the perl alarm
+# (macOS has no timeout(1)). Widen the whitelist only with a matching test.
+#
+# TRAP: looks_like_math gates the slow path. Without the digit+operator gate,
+# "chrome" makes qalc return 5.4e-26 B*m^2 and "1password" returns 1 pa*word*s^2.
+
+emit_web() { printf 'web\t  Search the web for “%s”\t%s\n' "$1" "$1"; }
+
+looks_like_math() {
+  printf '%s' "$1" | grep -qE '[0-9]' || return 1
+  printf '%s' "$1" | grep -qiE '[+*/^%=()]|[0-9] *-|- *[0-9]| (to|in|as) |sqrt|log|sin|cos|tan|!'
+}
+
+emit_calc() {
+  local expr res
+  expr="$1"
+  [ -n "$expr" ] || return 0
+  case "$expr" in *[!0-9a-zA-Z+*/^%.,\(\)=\!\ _-]*) return 0 ;; esac
+  case "$expr" in *load*|*save*|*import*|*export*|*plot*|*command*|*read*|*write*) return 0 ;; esac
+  res=$(/usr/bin/perl -e 'alarm 2; exec @ARGV' qalc -t "$expr" 2>/dev/null | head -1) || return 0
+  res=$(printf '%s' "$res" | sed -E 's/\.([0-9]*[1-9])0+$/.\1/; s/\.0+$//')
+  [ -n "$res" ] || return 0
+  [ "$res" = "$expr" ] && return 0
+  case "$res" in *error*|*Error*) return 0 ;; esac
+  printf 'calc\t  %s\t%s\n' "$res" "$res"
+}

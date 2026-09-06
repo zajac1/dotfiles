@@ -40,7 +40,8 @@ Two surfaces on one hotkey, mirroring how omarchy splits them:
   | `.` | file search (Spotlight, plus a bounded `find` for dotfiles) |
 
 Numbers with an operator trigger the calculator without a prefix, so `2+2` just
-works.
+works — **and the menu prompt accepts the same input**, so `Alt+Space` then
+`2+2` answers immediately without going through Apps.
 
 ## Install
 
@@ -98,6 +99,25 @@ Everything lives in `~/.config/omni/config.sh`. The values worth knowing:
 | `OMNI_FRAME` | `boxed` (exact size, opaque) or `full` (translucent + blur) |
 | `OMNI_HOTKEY` | Ghostty global keybind |
 | `OMNI_PROJECT_ROOT` | directory scanned for project entries |
+| `OMNI_APP_COLORS` | tint each app glyph with its icon's dominant colour |
+
+### Icons
+
+Each app's glyph is tinted with the dominant colour extracted from its real
+`.icns`, using only `sips`, `od` and `awk`. Colours are cached in
+`~/.cache/omni/colors.tsv`, so only newly installed apps pay the cost.
+
+Override any glyph in `~/.config/omni/glyphs`:
+
+```
+*slack*   = 
+*figma*   = 
+```
+
+Real per-row icon *images* are not possible: fzf owns the screen and repaints
+every row as text on each keystroke. Ghostty does support the Kitty graphics
+protocol, but fzf offers no hook to anchor an image to a list row. Its only
+image-capable surface is `--preview`.
 
 Run `omni-start --restart` after changing anything.
 

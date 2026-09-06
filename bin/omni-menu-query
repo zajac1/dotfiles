@@ -1,30 +1,14 @@
 #!/bin/bash
-#
-# omni-menu-query - emits the menu tree for one level.
-#
-# ROW PROTOCOL (every producer and consumer in omni obeys this):
-#     kind <TAB> display <TAB> payload
-#   kind: app project file calc web menu search run theme sep back
-#   `sep`    - inert row (title or spacer). omni-enter ignores it, omni-skip
-#              makes arrow keys step over it.
-#   `menu`   - pushes payload onto the stack (confirm:<x> is a namespaced level)
-#   `search` - hands off to search mode
-#
-# The kind MUST be a literal in the printf FORMAT string, never interpolated.
-# That is what stops a hostile app-bundle filename from forging a row kind.
-#
-# TRAP: only the Favorites TITLE carries a background. Favourite rows are plain
-# text with no padding - anything padded to the edge gets truncated (see the
-# --ellipsis note in omni).
-#
 set -u
 
 . "$HOME/.config/omni/config.sh"
+. "$HOME/.local/bin/omni-lib"
 
 INDEX="$HOME/.cache/omni/index.tsv"
 FAVS="$HOME/.config/omni/favorites"
 TAB=$(printf '\t')
 level="${1-}"
+q="${2-}"
 
 emit_favorites() {
   [ -s "$FAVS" ] || return 0
@@ -39,6 +23,7 @@ emit_favorites() {
   printf 'sep\t\t\n'
 }
 
+rows() {
 case "$level" in
   "")
     emit_favorites
@@ -89,3 +74,21 @@ case "$level" in
     printf 'back\t  Cancel\t\n'
     ;;
 esac
+}
+
+if [ -z "$q" ]; then
+  rows
+  exit 0
+fi
+
+# The menu prompt doubles as a calculator and a web search, so a query can
+# produce rows that are not in the menu tree at all. That is why omni runs the
+# menu with --disabled and filters here instead of letting fzf do it.
+case "$q" in
+  '='*) emit_calc "${q#=}"; exit 0 ;;
+  '@'*) emit_web  "${q#@}"; exit 0 ;;
+esac
+
+looks_like_math "$q" && emit_calc "$q"
+rows | grep -v "^sep$TAB" | fzf --ansi --filter="$q" --delimiter="$TAB" --nth=2 2>/dev/null
+emit_web "$q"

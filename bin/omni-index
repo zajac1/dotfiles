@@ -1,20 +1,12 @@
 #!/bin/bash
-#
-# omni-index - builds ~/.cache/omni/index.tsv (apps + project dirs + glyphs).
-# Spawned in the background on cold launch; exits immediately unless a source
-# directory is newer than the index (a full rebuild is ~430ms and used to run
-# on every single launch).
-#
-# TRAP: no command substitution inside the per-app loop. `$(printf | tr)` per
-# app is ~250 extra process spawns and made this 68% slower, during exactly the
-# window where fzf is trying to start. Use bash parameter expansion.
-# Note /bin/bash is 3.2 on macOS: ${var//x/y} works, ${var,,} does NOT.
-#
-set -euo pipefail
+set -u   # NOT -e: a grep with no match must not abort the build
 
 . "$HOME/.config/omni/config.sh"
 
 CACHE="$HOME/.cache/omni"
+GLYPHS="$HOME/.config/omni/glyphs"
+TMPBMP="$CACHE/.icon.bmp"
+COLORS="$CACHE/colors.tsv"
 INDEX="$CACHE/index.tsv"
 mkdir -p "$CACHE"
 
@@ -24,11 +16,21 @@ if [ "${1-}" != "--force" ] && [ -s "$INDEX" ]; then
     [ -d "$d" ] || continue
     [ "$d" -nt "$INDEX" ] && stale=1
   done
+  [ -f "$GLYPHS" ] && [ "$GLYPHS" -nt "$INDEX" ] && stale=1
   [ "$stale" = 0 ] && exit 0
 fi
 
 glyph_for() {
-  case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
+  # user overrides first: ~/.config/omni/glyphs, lines of  pattern = glyph
+  # pattern is a case-insensitive shell glob matched against the app name.
+  lc=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
+  i=0
+  while [ "$i" -lt "$GN" ]; do
+    eval "pat=\$GPAT_$i; gly=\$GGLY_$i"
+    case "$lc" in $pat) printf '%s' "$gly"; return ;; esac
+    i=$((i+1))
+  done
+  case "$lc" in
     *chrome*|*chromium*|*brave*|*edge*)                    printf '' ;;
     *firefox*|*zen*)                                       printf '' ;;
     *safari*|*arc*|*orion*)                                printf '' ;;
@@ -59,13 +61,74 @@ glyph_for() {
   esac
 }
 
+load_glyph_map() {
+  GN=0
+  [ -f "$GLYPHS" ] || return 0
+  while IFS= read -r line; do
+    case "$line" in ''|'#'*) continue ;; esac
+    pat=${line%%=*}; gly=${line#*=}
+    pat=$(printf '%s' "$pat" | tr -d ' ' | tr '[:upper:]' '[:lower:]')
+    gly=${gly# }
+    [ -n "$pat" ] || continue
+    eval "GPAT_$GN=\$pat; GGLY_$GN=\$gly"
+    GN=$((GN+1))
+  done < "$GLYPHS"
+}
+
+# Dominant icon colour, no dependencies: sips renders the .icns to a 16x16
+# 32-bit BMP, then awk picks the most saturated opaque pixel. The BMP pixel
+# offset lives in bytes 10-13 - it is 138 here, NOT the textbook 54.
+icon_color() {
+  icns=$(/usr/bin/plutil -extract CFBundleIconFile raw "$1/Contents/Info.plist" 2>/dev/null) || return 0
+  f="$1/Contents/Resources/${icns%.icns}.icns"
+  [ -f "$f" ] || f="$1/Contents/Resources/${icns}.icns"
+  [ -f "$f" ] || return 0
+  /usr/bin/sips -s format bmp -z 16 16 "$f" --out "$TMPBMP" >/dev/null 2>&1 || return 0
+  off=$(od -An -tu4 -j10 -N4 "$TMPBMP" | tr -d ' ')
+  [ -n "$off" ] || return 0
+  od -An -tu1 -v -j"$off" "$TMPBMP" | awk '
+    { for(i=1;i<=NF;i++) v[n++]=$i }
+    END{ best=-1
+      for(p=0;p+3<n;p+=4){ b=v[p];g=v[p+1];r=v[p+2];a=v[p+3]
+        if(a<200) continue
+        mx=r; if(g>mx)mx=g; if(b>mx)mx=b
+        mn=r; if(g<mn)mn=g; if(b<mn)mn=b
+        if(mx<50) continue
+        s=mx-mn
+        if(s>best){best=s;br=r;bg=g;bb=b} }
+      if(best>0) printf "38;2;%d;%d;%d", br, bg, bb }'
+}
+
+
+load_glyph_map
+touch "$COLORS"
+: > "$COLORS.new"
+
 {
   find /Applications /System/Applications "$HOME/Applications" \
        -maxdepth 3 -name '*.app' -prune 2>/dev/null |
   while IFS= read -r app; do
     name="${app##*/}"; name="${name%.app}"
     name=${name//$'\t'/}
-    printf 'app\t%s  %s\t%s\n' "$(glyph_for "$name")" "$name" "$app"
+    g=$(glyph_for "$name")
+    if [ "${OMNI_APP_COLORS:-true}" = true ]; then
+      # colours are expensive (sips+od+awk per app), so cache them by path.
+      # Only newly installed apps pay the extraction cost on a rebuild.
+      c=$(grep -F "$app	" "$COLORS" 2>/dev/null | head -1 | cut -f2) || c=""
+      if [ -z "$c" ]; then
+        c=$(icon_color "$app")
+        printf '%s\t%s\n' "$app" "$c" >> "$COLORS.new"
+      else
+        printf '%s\t%s\n' "$app" "$c" >> "$COLORS.new"
+      fi
+    else
+      c=""
+    fi
+    if [ -n "$c" ]; then
+      printf 'app\t\033[%sm%s\033[0m  %s\t%s\n' "$c" "$g" "$name" "$app"
+    else
+      printf 'app\t%s  %s\t%s\n' "$g" "$name" "$app"
+    fi
   done
 
   if [ -d "$OMNI_PROJECT_ROOT" ]; then
@@ -77,3 +140,4 @@ glyph_for() {
 } | sort -u -t"$(printf '\t')" -k2,2 > "$INDEX.tmp"
 
 mv "$INDEX.tmp" "$INDEX"
+[ -s "$COLORS.new" ] && mv "$COLORS.new" "$COLORS" || rm -f "$COLORS.new"

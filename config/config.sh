@@ -1,4 +1,4 @@
-OMNI_THEME="matte-black"
+OMNI_THEME="catppuccin"
 
 OMNI_FONT="CaskaydiaMono Nerd Font Mono"
 OMNI_FONT_SIZE=18
@@ -20,6 +20,8 @@ OMNI_BORDER_STYLE="rounded"
 OMNI_THEME_TERMINALS=false
 
 OMNI_HOTKEY="alt+space"
+OMNI_APP_COLORS=true
+
 OMNI_PROJECT_ROOT="$HOME/git"
 OMNI_SEARCH_URL="https://duckduckgo.com/?q="
 

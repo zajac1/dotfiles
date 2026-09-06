@@ -1,22 +1,8 @@
 #!/bin/bash
-#
-# omni-query - search results. Runs on EVERY keystroke, so keep it cheap
-# (~11ms today). Prefixes: = calculator, @ web, . files. Otherwise: fuzzy app +
-# project match, then a web fallback.
-#
-# TRAP: qalc is a scripting language, not a calculator. `load("/etc/passwd")`
-# reads arbitrary files straight into the row (and Enter copies it to the
-# clipboard), and `(10^10)!` never returns. Both are reachable by typing. Hence
-# the character whitelist, the function blacklist, and the 2s perl alarm
-# (macOS has no timeout(1)). Widen the whitelist only with a matching test.
-#
-# TRAP: looks_like_math gates the slow path. Without the digit+operator gate,
-# typing "chrome" makes qalc return 5.4e-26 B*m^2 and "1password" returns
-# 1 pa*word*s^2. Both were real.
-#
 set -u
 
 . "$HOME/.config/omni/config.sh"
+. "$HOME/.local/bin/omni-lib"
 
 TAB=$(printf '\t')
 INDEX="$HOME/.cache/omni/index.tsv"
@@ -24,22 +10,6 @@ FAVS="$HOME/.config/omni/favorites"
 q="${1-}"
 
 [ -f "$INDEX" ] || omni-index
-
-emit_web()  { printf 'web\t  Search the web for “%s”\t%s\n' "$1" "$1"; }
-
-emit_calc() {
-  local expr res
-  expr="$1"
-  [ -n "$expr" ] || return 0
-  case "$expr" in *[!0-9a-zA-Z+*/^%.,\(\)=\!\ _-]*) return 0 ;; esac
-  case "$expr" in *load*|*save*|*import*|*export*|*plot*|*command*|*read*|*write*) return 0 ;; esac
-  res=$(/usr/bin/perl -e 'alarm 2; exec @ARGV' qalc -t "$expr" 2>/dev/null | head -1) || return 0
-  res=$(printf '%s' "$res" | sed -E 's/\.([0-9]*[1-9])0+$/.\1/; s/\.0+$//')
-  [ -n "$res" ] || return 0
-  [ "$res" = "$expr" ] && return 0
-  case "$res" in *error*|*Error*) return 0 ;; esac
-  printf 'calc\t  %s\t%s\n' "$res" "$res"
-}
 
 emit_files() {
   local term="$1"
@@ -64,10 +34,6 @@ emit_favorites() {
   done < "$FAVS"
 }
 
-looks_like_math() {
-  printf '%s' "$1" | grep -qE '[0-9]' || return 1
-  printf '%s' "$1" | grep -qiE '[+*/^%=()]|[0-9] *-|- *[0-9]| (to|in|as) |sqrt|log|sin|cos|tan|!'
-}
 
 if [ -z "$q" ]; then
   grep "^app$TAB" "$INDEX"
@@ -81,5 +47,5 @@ case "$q" in
 esac
 
 looks_like_math "$q" && emit_calc "$q"
-fzf --filter="$q" --delimiter="$TAB" --nth=2 < "$INDEX" 2>/dev/null | head -40
+fzf --ansi --filter="$q" --delimiter="$TAB" --nth=2 < "$INDEX" 2>/dev/null | head -40
 emit_web "$q"
