@@ -143,9 +143,25 @@ full interior — see GOTCHAS 5 for why chasing the exact width is a trap.
 ### Weather
 
 Utilities → Weather reads [wttr.in](https://github.com/chubin/wttr.in)'s `j1`
-JSON: current temperature and feels-like, conditions, and per-3-hour chances of
-rain, snow and thunder plus wind gusts — only for the hours **left today**, and
-only when a chance clears its threshold, so it stays a few short lines.
+JSON:
+
+```
+   15°C · feels 10°C
+   Patchy rain nearby · dry now      <- observation + is it falling on you
+   Rain unlikely · 19% at 21h        <- forecast peak, with the hour
+   Wind 26 km/h WNW
+   Powisle, Poland
+```
+
+Two lines that look like they disagree are answering different questions: the
+condition is a **current observation** (`weatherDesc`, which is why "nearby" can
+sit next to "dry now" — showers are around but nothing is falling on you), while
+the rain line is a **forecast** over the 3-hour slots left today. Both now carry
+the number that disambiguates them: `precipMM` for now, and the peak percentage
+*with its hour* for later.
+
+Snow, thunder and gusts appear only above a threshold, so quiet weather stays
+short.
 
 *Full report* opens wttr.in's ASCII rendering in a window. *Refresh* re-fetches
 without leaving the menu. Informational rows are `sep`: arrow keys step over
