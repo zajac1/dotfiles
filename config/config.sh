@@ -1,4 +1,4 @@
-OMNI_THEME="nord"
+OMNI_THEME="everforest"
 
 OMNI_FONT="CaskaydiaMono Nerd Font Mono"
 OMNI_FONT_SIZE=18
@@ -25,6 +25,9 @@ OMNI_APP_COLORS=true
 OMNI_PROJECT_ROOT="$HOME/git"
 # We build this URL ourselves; macOS exposes no way to ask the default
 # browser for its configured search engine.
+OMNI_WEATHER_LOCATION=""   # empty = wttr.in IP geolocation
+OMNI_WEATHER_TTL=900
+
 OMNI_SEARCH_URL="https://www.google.com/search?q="
 
 . "$HOME/.config/omni/themes/$OMNI_THEME.sh"

@@ -130,15 +130,34 @@ omarchy has no equivalent — I checked both the quattro menu (336 entries, no
 heading is drawn as an open bracket with the label on the top rule:
 
 ```
-╭─ Favorites
-│   Ghostty
-│   Sleep
-╰─
+╭─ Favorites ─────────╮
+│   Ghostty          │
+│   Sleep            │
+╰─────────────────────╯
 ```
 
-It has deliberately **no right edge**. A closed box would need an exact width,
-and that is the one number fzf and Ghostty disagree about (see GOTCHAS 5).
-Only the selected row is filled, and fzf sizes that itself.
+The box is drawn at a deliberately conservative width rather than spanning the
+full interior — see GOTCHAS 5 for why chasing the exact width is a trap.
+`OMNI_FILL_INSET` controls it.
+
+### Weather
+
+Utilities → Weather reads [wttr.in](https://github.com/chubin/wttr.in)'s `j1`
+JSON: current temperature and feels-like, conditions, and per-3-hour chances of
+rain, snow and thunder plus wind gusts — only for the hours **left today**, and
+only when a chance clears its threshold, so it stays a few short lines.
+
+*Full report* opens wttr.in's ASCII rendering in a window.
+
+Cached for 15 minutes. A stale cache renders immediately and refreshes in the
+background, so the menu never blocks on the network; only a cold cache fetches
+synchronously. Live rows are deliberately excluded from the flat menu search —
+otherwise every keystroke at the top level would hit the network.
+
+| key | meaning |
+|---|---|
+| `OMNI_WEATHER_LOCATION` | empty = wttr.in IP geolocation; or `"Warsaw"` / `"50.06,19.94"` |
+| `OMNI_WEATHER_TTL` | cache seconds, default 900 |
 
 ### Menu sections
 

@@ -1,0 +1,63 @@
+#!/bin/bash
+#
+# omni-weather - rows for the Weather submenu, from wttr.in's j1 JSON.
+#
+# Cached for OMNI_WEATHER_TTL seconds. A stale cache is served immediately and
+# refreshed in the background, so opening the menu never blocks on the network;
+# only a completely cold cache fetches synchronously.
+#
+# Location defaults to wttr.in's IP geolocation. Set OMNI_WEATHER_LOCATION in
+# config.sh to pin it (e.g. "Warsaw" or "50.06,19.94").
+#
+# Rows are emitted as `sep` so they are informational and unselectable-ish:
+# omni-enter ignores sep, and omni-skip steps over them.
+
+set -u
+. "$HOME/.config/omni/config.sh"
+
+CACHE="$HOME/.cache/omni/weather.json"
+LOC="${OMNI_WEATHER_LOCATION:-}"
+TTL="${OMNI_WEATHER_TTL:-900}"
+URL="https://wttr.in/${LOC}?format=j1"
+
+fetch() {
+  curl -sS --max-time 12 -A "omni" "$URL" -o "$CACHE.new" 2>/dev/null &&
+    jq -e .current_condition "$CACHE.new" >/dev/null 2>&1 &&
+    mv "$CACHE.new" "$CACHE" || rm -f "$CACHE.new"
+}
+
+if [ ! -s "$CACHE" ]; then
+  fetch
+else
+  age=$(( $(date +%s) - $(stat -f %m "$CACHE") ))
+  [ "$age" -gt "$TTL" ] && ( fetch >/dev/null 2>&1 & )
+fi
+
+if [ -s "$CACHE" ]; then
+  jq -r --arg hh "$(date +%H)" '
+    def row($g; $t): "sep\t" + $g + "  " + $t + "\t";
+    .current_condition[0] as $c
+    | .nearest_area[0] as $a
+    | [ .weather[0].hourly[] | select((.time|tonumber/100|floor) >= ($hh|tonumber)) ] as $rest
+    | [ $rest[] | select((.chanceofrain|tonumber)    >= 25) ] as $rain
+    | [ $rest[] | select((.chanceofsnow|tonumber)    >= 20) ] as $snow
+    | [ $rest[] | select((.chanceofthunder|tonumber) >= 20) ] as $thun
+    | [ $rest[] | select((.WindGustKmph|tonumber)    >= 40) ] as $gust
+    | [ row(""; "\($c.temp_C)°C · feels \($c.FeelsLikeC)°C"),
+        row(""; ($c.weatherDesc[0].value | gsub("^ +| +$";""))),
+        ( if ($rain|length) > 0
+          then row(""; "Rain \($rain|map(.chanceofrain|tonumber)|max)% · \($rain|map((.time|tonumber/100|floor|tostring)+"h")|join(", "))")
+          else row(""; "No rain expected") end ),
+        ( if ($snow|length) > 0 then row(""; "Snow \($snow|map(.chanceofsnow|tonumber)|max)%") else empty end ),
+        ( if ($thun|length) > 0 then row(""; "Thunder \($thun|map(.chanceofthunder|tonumber)|max)%") else empty end ),
+        ( if ($gust|length) > 0 then row(""; "Gusts to \($gust|map(.WindGustKmph|tonumber)|max) km/h") else empty end ),
+        row(""; "Wind \($c.windspeedKmph) km/h \($c.winddir16Point)"),
+        row(""; "\($a.areaName[0].value), \($a.country[0].value)")
+      ] | .[]
+  ' "$CACHE" 2>/dev/null
+else
+  printf 'sep\t  Weather unavailable\t\n'
+fi
+
+printf 'run\t  Full report\tweather-report\n'
+printf 'run\t  Refresh\tweather-refresh\n'

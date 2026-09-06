@@ -17,6 +17,7 @@ q="${2-}"
 # changes instead of going stale.
 FAV_LEVELS="style theme setup capture update system utilities"
 BOXTOP=$(printf "\xe2\x95\xad"); BOXBOT=$(printf "\xe2\x95\xb0")
+BOXTR=$(printf "\xe2\x95\xae");  BOXBR=$(printf "\xe2\x95\xaf")
 VERT=$(printf "\xe2\x94\x82");   HR=$(printf "\xe2\x94\x80")
 
 fav_lines() { grep -vE '^[[:space:]]*(#|$)' "$FAVS" 2>/dev/null; }
@@ -31,16 +32,36 @@ resolve_fav() {
 
 emit_favorites() {
   [ -s "$FAVS" ] || return 0
-  printf 'sep\t\033[38;5;20m%s%s Favorites\033[0m\t\n' "$BOXTOP" "$HR"
+  w=${OMNI_ROW_WIDTH:-23}
+  # top rule: "╭─ Favorites ───────╮" padded to exactly w cells
+  lbl=" Favorites "
+  n=$(( w - 3 - ${#lbl} ))
+  [ "$n" -lt 0 ] && n=0
+  rule=""; i=0; while [ "$i" -lt "$n" ]; do rule="$rule$HR"; i=$((i+1)); done
+  printf 'sep\t\033[38;5;20m%s%s%s%s%s\033[0m\t\n' "$BOXTOP" "$HR" "$lbl" "$rule" "$BOXTR"
   fav_lines | head -5 | while IFS= read -r line; do
     case "$line" in
       *"$TAB"*) k=${line%%	*}; v=${line#*	} ;;
       *)        k=app; v=$line ;;
     esac
     [ -n "$v" ] || continue
-    resolve_fav "$k" "$v" | awk -F'\t' -v OFS='\t' -v b="$VERT " '{ $2 = b $2; print }'
+    # pad to a fixed inner width so the right edge lines up. Width is measured
+    # in CELLS: strip ANSI, then subtract 2 per Nerd Font glyph (3 bytes, 1 cell).
+    resolve_fav "$k" "$v" | awk -F'\t' -v OFS='\t' -v v="$VERT" -v w="$w" '{
+      plain = $2; gsub(/\033\[[0-9;]*m/, "", plain)
+      # macOS awk length() counts BYTES. Every row carries exactly one leading
+      # Nerd Font glyph: 3 bytes, 1 cell. So cells = bytes - 2.
+      cells = length(plain) - 2
+      pad = w - 3 - cells
+      if (pad < 0) pad = 0
+      $2 = v " " $2 sprintf("%*s", pad, "") v
+      print
+    }'
   done
-  printf 'sep\t\033[38;5;20m%s%s\033[0m\t\n' "$BOXBOT" "$HR"
+  n=$(( w - 2 )); [ "$n" -lt 0 ] && n=0
+  rule=""; i=0; while [ "$i" -lt "$n" ]; do rule="$rule$HR"; i=$((i+1)); done
+  printf 'sep\t\033[38;5;20m%s%s%s\033[0m\t\n' "$BOXBOT" "$rule" "$BOXBR"
+  printf 'sep\t\t\n'
 }
 
 # A row that is already pinned gets a trailing star in its home section - the
@@ -131,11 +152,14 @@ case "${1-$level}" in
     printf 'run\t  macOS\tmacos\n'
     ;;
   utilities)
-    printf 'run\t  Weather\tweather\n'
+    printf 'menu\t  Weather\tweather\n'
     printf 'run\t  CPU Usage\tcpu\n'
     printf 'run\t  Network Usage\tnetwork\n'
     printf 'run\t  Memory Usage\tmemory\n'
     printf 'run\t  Caffeinate\tcaffeinate\n'
+    ;;
+  weather)
+    omni-weather
     ;;
   capture)
     printf 'run\t  Screenshot\tscreenshot\n'
