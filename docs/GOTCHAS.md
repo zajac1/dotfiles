@@ -257,3 +257,18 @@ fragile across macOS releases.
 
 Do not spend more time on this. Follow #9611.
 
+
+## 27. "JetBrains Mono" is not "JetBrainsMono Nerd Font"
+
+The bar rendered no icons at all because a font fallback resolved to plain
+JetBrains Mono, which contains none of the Nerd Font glyphs. Worse, the guard
+was `[ -n "$(fc-list | grep -i 'JetBrainsMono Nerd')" ] || FONT="JetBrains Mono"`
+- fc-list *is* present on this machine (pulled in by a brew dependency), the
+font was not, so the fallback fired silently. Never fall back to a font that
+cannot render your glyphs; fail loudly instead.
+
+## 28. SketchyBar centres between groups, not on screen
+
+`position=center` places an item in the space left over between the left and
+right groups. With an uneven right side it will not sit on the screen centre.
+Balance it with a padding item if true centring matters.

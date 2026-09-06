@@ -14,8 +14,10 @@
 
 source "$HOME/.config/sketchybar/colors.sh"
 PLUGINS="$HOME/.config/sketchybar/plugins"
+# MUST be the Nerd Font variant. Plain "JetBrains Mono" has none of these
+# glyphs and every icon renders as nothing - which is exactly what a fallback
+# test here caused once.
 FONT="JetBrainsMono Nerd Font"
-[ -n "$(fc-list 2>/dev/null | grep -i 'JetBrainsMono Nerd')" ] || FONT="JetBrains Mono"
 
 sketchybar --bar height=30 position=top sticky=on padding_left=10 padding_right=10 \
                  color=$BAR_COLOR shadow=off
@@ -30,7 +32,8 @@ sketchybar --default updates=when_shown \
 
 # ---------------- left: omni launcher, spaces, focused app ----------------
 sketchybar --add item logo left \
-           --set logo icon=󰀵 icon.color=$ACCENT icon.font="$FONT:Bold:15.0" label.drawing=off \
+           --set logo icon=󰀵 icon.color=$ACCENT icon.font="$FONT:Regular:14.0" \
+                      icon.padding_left=4 icon.padding_right=10 label.drawing=off \
                       click_script="$PLUGINS/toggle_omni.sh"
 
 SPACES="${OMNI_BAR_SPACES:-5}"
