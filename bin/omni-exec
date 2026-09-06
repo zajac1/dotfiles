@@ -38,6 +38,7 @@ case "$kind" in
       weather-refresh) rm -f "$HOME/.cache/omni/weather.json"; omni-weather >/dev/null 2>&1 ;;
       macos)       settings "com.apple.Software-Update-Settings.extension" ;;
       config)      edit "$HOME/.config/omni/config.sh" ;;
+      settings)    open -a "System Settings" ;;
       wifi)        settings "com.apple.wifi-settings-extension" ;;
       bluetooth)   settings "com.apple.BluetoothSettings" ;;
       audio)       settings "com.apple.Sound-Settings.extension" ;;

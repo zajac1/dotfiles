@@ -140,6 +140,7 @@ case "$lvl" in
     done
     ;;
   setup)
+    printf 'run\t  System Settings\tsettings\n'
     printf 'run\t  Wifi\twifi\n'
     printf 'run\t  Bluetooth\tbluetooth\n'
     printf 'run\t  Audio\taudio\n'
