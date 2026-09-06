@@ -1,0 +1,17 @@
+#!/bin/bash
+# Regenerate SketchyBar colours from the active omni palette and reload the bar.
+# Same single source of truth as the launcher and the Ghostty theme.
+set -u
+. "$HOME/.config/omni/config.sh" 2>/dev/null || exit 0
+OUT="$HOME/.config/sketchybar/colors.sh"
+mkdir -p "$(dirname "$OUT")"
+hex() { printf '0xff%s' "$(printf '%s' "$1" | tr -d '#')"; }
+cat > "$OUT" <<EOF
+export BAR_COLOR=$(hex "$OMNI_BASE")
+export ITEM_BG=$(hex "$OMNI_SECTION_BG")
+export LABEL=$(hex "$OMNI_TEXT")
+export ACCENT=$(hex "$OMNI_ACCENT")
+export DIM=$(hex "$OMNI_DIM")
+export SELECT_BG=$(hex "$OMNI_SELECT_BG")
+EOF
+command -v sketchybar >/dev/null 2>&1 && sketchybar --reload >/dev/null 2>&1 || true

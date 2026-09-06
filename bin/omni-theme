@@ -23,5 +23,6 @@ fi
 
 sed -i '' "s/^OMNI_THEME=\".*\"/OMNI_THEME=\"$name\"/" "$CONF"
 omni-ghostty-theme "$name" >/dev/null 2>&1
+omni-bar-theme >/dev/null 2>&1
 omni-start --restart >/dev/null
 echo "theme: $name"
