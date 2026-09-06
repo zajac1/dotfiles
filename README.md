@@ -142,55 +142,33 @@ full interior — see GOTCHAS 5 for why chasing the exact width is a trap.
 
 ### Weather
 
-Utilities → Weather reads [wttr.in](https://github.com/chubin/wttr.in)'s `j1`
-JSON:
-
-```
-   15°C · feels 10°C
-   Dry now · cloud 56%
-   15h 18% · 18h 15% · 21h 19%
-   Wind 26 km/h WNW
-   Powisle, Poland
-```
-
-Every remaining 3-hour slot today is listed rather than just the peak — rain
-starting earlier at a slightly lower chance is exactly what a single peak
-figure hides. Snow, thunder and gusts appear only above a threshold, so quiet
-weather stays short.
-
-There is deliberately **no weather description**. `weatherDesc` ranges over
-"Cloudy / Overcast / Partly Cloudy / Light rain shower / Patchy rain nearby",
-and the vague ones tell you nothing you can act on. `precipMM` and `cloudcover`
-say the same thing as facts. The full report still carries the description.
-
-*Full report* opens an expanded view in its own window: wttr.in's ASCII art for
-the current condition, recoloured to your theme, then temperature with a
-clothing cue, the per-slot rain forecast, and wind.
+Utilities → Weather is the compact view — wttr.in's ASCII art for the current
+condition, then the three things you actually act on:
 
 ```
      _`/"".-.
       ,\_(   ).
        /(___(__)
-         ' ' ' '
 
-   󰬡  15°C · feels 10°C  · coat
-   󰝐  15h 18%  18h 15%  21h 19%
-   󰖝  26 km/h WNW
+  󰸜  15°C · feels 10°C
+  󰝐  15h 18% · 18h 15% · 21h 19%
+  󰖝  26 km/h WNW
 ```
 
-The clothing icon keys off **feels-like**, not the raw temperature, since that
-is what you actually dress for: snowflake below 2°C, coat below 14, t-shirt
-below 22, sunglasses above.
+The temperature icon keys off **feels-like** — that is what you dress for.
+Every remaining 3-hour slot is listed rather than just the peak: rain starting
+earlier at a slightly lower chance is exactly what a peak figure hides.
 
-**On location:** `nearest_area` is a label from WorldWeatherOnline's gazetteer,
-not a weather station. Every input around Warsaw — auto, `"Warsaw"`, explicit
-coordinates — reports "Powisle", but the *data* does change with coordinates
-(auto gave 15°C, `52.2297,21.0122` gave 17°C). So set
-`OMNI_WEATHER_LOCATION="52.2297,21.0122"` with your own coordinates for a
-reading at your actual spot; the label will still say Powisle. *Refresh* re-fetches
-without leaving the menu. Informational rows are `sep`: arrow keys step over
-them, but they are still filterable — typing `rain` in the Weather submenu
-narrows to the rain lines.
+*Full report* opens everything else in its own window — today's range, expected
+precipitation, gusts, cloud, humidity, UV, visibility, pressure, sunrise/sunset,
+and tomorrow. *Refresh* re-fetches without leaving the menu.
+
+Icons are configurable if any render badly in your font:
+
+```sh
+OMNI_ICON_COLD=  OMNI_ICON_COOL=  OMNI_ICON_WARM=  OMNI_ICON_HOT=
+OMNI_ICON_RAIN=  OMNI_ICON_WIND=
+```
 
 Cached for 15 minutes. A stale cache renders immediately and refreshes in the
 background, so the menu never blocks on the network; only a cold cache fetches
