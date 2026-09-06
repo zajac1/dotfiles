@@ -78,8 +78,8 @@ if [ "$mode" = search ]; then
   want_cols=$OMNI_COLS
   want_rows=$OMNI_ROWS
   ghost=' Search...'
-  gap="--gap=1"
-  gapline="--gap-line="
+  gap=""
+  gapline=""
 else
   level=$(tail -1 "$STACK" 2>/dev/null)
   level="${level:-}"

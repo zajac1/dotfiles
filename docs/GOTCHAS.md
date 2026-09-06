@@ -90,7 +90,18 @@ does not stop that form. A cache file read into `$(( ))` was a live RCE here.
 - An unquoted `$extra` containing `--bind=focus:transform(cmd {3} {n})` is split
   on spaces into three arguments. Use an array.
 
-## 9. Security invariants
+## 9. `grep -v` exits 1 when it prints nothing
+
+```sh
+grep -vxF "$path" "$FAVS" > "$FAVS.tmp" && mv "$FAVS.tmp" "$FAVS"   # BROKEN
+```
+
+Removing the **last** line means grep outputs nothing and exits 1, so the `&&`
+never fires and the file is left unchanged. Unpinning your only favourite
+silently did nothing. Same family as the `pipefail` trap above: a non-zero exit
+that means "no matches", not "failure".
+
+## 10. Security invariants
 
 - The `kind` field must always be a literal in the `printf` **format** string.
   That is what stops a hostile `.app` filename from forging a row kind.
@@ -101,7 +112,7 @@ does not stop that form. A cache file read into `$(( ))` was a live RCE here.
   never returns. Both reachable by typing. Hence the whitelist and the perl
   alarm (macOS has no `timeout(1)`).
 
-## 10. Startup sequencing
+## 11. Startup sequencing
 
 Hide the cursor (`ESC[?25l`) *before* the clear. Otherwise it sits at the grid
 origin — eleven columns left of the visible box, over transparent background —

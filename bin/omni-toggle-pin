@@ -14,7 +14,10 @@ path=$(printf '%s' "$line" | cut -f3)
 [ -n "$path" ] || exit 0
 
 if grep -qxF "$path" "$FAVS"; then
-  grep -vxF "$path" "$FAVS" > "$FAVS.tmp" && mv "$FAVS.tmp" "$FAVS"
+  # grep -v exits 1 when it prints nothing (i.e. removing the last entry),
+  # so it must NOT gate the mv. This silently broke unpinning the last app.
+  grep -vxF "$path" "$FAVS" > "$FAVS.tmp" || true
+  mv "$FAVS.tmp" "$FAVS"
 else
   printf '%s\n' "$path" >> "$FAVS"
 fi

@@ -1,14 +1,3 @@
-# omni configuration. Re-run `omni-start --restart` after changing anything
-# that appears in the generated Ghostty config (font, colours, hotkey, frame).
-#
-# OMNI_CHROME is the number of rows fzf spends on borders/padding/input box.
-# It is MEASURED on a real Ghostty quick terminal. A pty harness will tell you
-# it is 7; it is 13. Setting it to 7 renders a 3-item menu. See bin/omni.
-#
-# OMNI_FILL_INSET controls how far the Favorites title band stops short of the
-# right edge. Larger = safer. It exists because fzf and Ghostty disagree about
-# usable width; see the --ellipsis note in bin/omni.
-#
 OMNI_THEME="matte-black"
 
 OMNI_FONT="CaskaydiaMono Nerd Font Mono"
