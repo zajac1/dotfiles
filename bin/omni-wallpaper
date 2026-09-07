@@ -65,7 +65,14 @@ PY
 set_wallpaper() {
   [ -f "$1" ] || { echo "no such file: $1" >&2; return 1; }
   osascript -l JavaScript -e "$JS" "$1" || return 1
-  [ "${OMNI_WALLPAPER_ALL_SPACES:-1}" = 1 ] && { sleep 0.5; all_spaces; }
+  if [ "${OMNI_WALLPAPER_ALL_SPACES:-1}" = 1 ]; then
+    sleep 0.5; all_spaces
+    # The restarted agent can put the PREVIOUS picture back on the current
+    # Space even though every store entry now names the new one - it restores
+    # what it last drew. Setting once more after it is up makes it redraw from
+    # the request. The other Spaces draw from their (new) entries on first visit.
+    sleep 1.5; osascript -l JavaScript -e "$JS" "$1" || return 1
+  fi
   mkdir -p "${STATE%/*}"
   printf '%s\n' "$1" > "$STATE"
 }
