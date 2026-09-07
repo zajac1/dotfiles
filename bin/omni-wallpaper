@@ -3,13 +3,15 @@
 #
 # NSWorkspace sets the picture for the CURRENT Space only; every other Space
 # keeps its own override in Apple's wallpaper store and there is no public API
-# for those. What works, measured on macOS 26: set (which updates SystemDefault
-# and the current Space), then copy that Desktop entry over every other live
-# Space's override in the store, then restart WallpaperAgent so it rereads.
-# Because every entry already points at the new picture when the agent comes
-# back, there is no moment with no wallpaper - the earlier strip-then-restart
-# order showed the stock macOS picture for the ~2s until the set landed. Idle
-# (screensaver) entries are left alone. The store is backed up before edits.
+# for those. Measured on macOS 26:
+#   - WallpaperAgent only rereads the store when restarted;
+#   - on restart it first redraws whatever it last showed, not the store;
+#   - a set made after it is up sticks.
+# So: write the new entry into every Space's override in the store, restart
+# the agent (it redraws the old picture, which is already on screen - nothing
+# visible happens), then set once. One visible transition, old to new. The
+# earlier set-first orders showed the new picture, then the old, then the new.
+# Idle (screensaver) entries are left alone. The store is backed up first.
 set -u
 
 . "$HOME/.config/omni/config.sh"
@@ -44,35 +46,40 @@ pool() {
 
 STORE="$HOME/Library/Application Support/com.apple.wallpaper/Store/Index.plist"
 
-all_spaces() {
+stage_all_spaces() { # path
   [ -f "$STORE" ] || return 0
   cp "$STORE" "$HOME/.cache/omni/Index.plist.bak" 2>/dev/null || true
-  /usr/bin/python3 - "$STORE" <<'PY' || return 0
-import copy, plistlib, sys
-p = sys.argv[1]; d = plistlib.load(open(p, "rb"))
-src = d.get("SystemDefault", {}).get("Desktop")
-if not src: sys.exit(0)
-n = 0
+  /usr/bin/python3 - "$STORE" "$1" <<'PY' || return 1
+import copy, datetime, plistlib, sys, urllib.parse
+store, path = sys.argv[1], sys.argv[2]
+d = plistlib.load(open(store, "rb"))
+tmpl = d.get("SystemDefault", {}).get("Desktop")
+if not tmpl: sys.exit(1)
+entry = copy.deepcopy(tmpl)
+now = datetime.datetime.now()
+entry["LastSet"] = entry["LastUse"] = now
+entry["Content"]["Choices"] = [{
+    "Provider": "com.apple.wallpaper.choice.image", "Files": [],
+    "Configuration": plistlib.dumps({"type": "imageFile", "url": {"relative": "file://" + urllib.parse.quote(path)}}, fmt=plistlib.FMT_BINARY),
+}]
+d["SystemDefault"]["Desktop"] = copy.deepcopy(entry)
+for v in d.get("Displays", {}).values():
+    if "Desktop" in v: v["Desktop"] = copy.deepcopy(entry)
 for v in d.get("Spaces", {}).values():
-    if "Desktop" in v.get("Default", {}): v["Default"]["Desktop"] = copy.deepcopy(src); n += 1
+    if "Desktop" in v.get("Default", {}): v["Default"]["Desktop"] = copy.deepcopy(entry)
     for dv in v.get("Displays", {}).values():
-        if "Desktop" in dv: dv["Desktop"] = copy.deepcopy(src); n += 1
-if n: plistlib.dump(d, open(p, "wb"), fmt=plistlib.FMT_BINARY)
+        if "Desktop" in dv: dv["Desktop"] = copy.deepcopy(entry)
+plistlib.dump(d, open(store, "wb"), fmt=plistlib.FMT_BINARY)
 PY
   killall WallpaperAgent 2>/dev/null
+  i=0; while [ "$i" -lt 30 ] && ! pgrep -x WallpaperAgent >/dev/null 2>&1; do sleep 0.1; i=$((i+1)); done
+  sleep 0.6
 }
 
 set_wallpaper() {
   [ -f "$1" ] || { echo "no such file: $1" >&2; return 1; }
+  [ "${OMNI_WALLPAPER_ALL_SPACES:-1}" = 1 ] && stage_all_spaces "$1"
   osascript -l JavaScript -e "$JS" "$1" || return 1
-  if [ "${OMNI_WALLPAPER_ALL_SPACES:-1}" = 1 ]; then
-    sleep 0.5; all_spaces
-    # The restarted agent can put the PREVIOUS picture back on the current
-    # Space even though every store entry now names the new one - it restores
-    # what it last drew. Setting once more after it is up makes it redraw from
-    # the request. The other Spaces draw from their (new) entries on first visit.
-    sleep 1.5; osascript -l JavaScript -e "$JS" "$1" || return 1
-  fi
   mkdir -p "${STATE%/*}"
   printf '%s\n' "$1" > "$STATE"
 }
