@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Propose an omni theme from a picture, omarchy-style.
 
-    omni-theme-propose IMAGE [--name NAME] [--light|--dark] [--write]
+    omni-theme-propose IMAGE [IMAGE...] [--name NAME] [--light|--dark] [--write]
+
+Several images pool their pixels into one palette - a folder of related
+pictures becomes one theme with all of them as backgrounds.
 
 Prints the palette (with terminal swatches) and, with --write, creates
 ~/.config/omni/themes/NAME/colors.toml (omarchy's format) and
@@ -149,9 +152,18 @@ def propose(px, light=None):
 
     # accent: the most saturated dominant colour that is not near-grey
     vivid = sorted(dom, key=lambda d: -hls(d[0])[2] * (d[1] ** 0.25))
-    acc = vivid[0][0] if hls(vivid[0][0])[2] > 0.15 else rgb(th, 0.6, 0.5)
-    ah, al, as_ = hls(acc)
-    acc = rgb(ah, 0.45 if light else 0.65, max(as_, 0.45))
+    # A monochrome picture has no hue to borrow: a grey tint reports hue 0 and
+    # the theme came out red. Keep it monochrome - a near-neutral accent and
+    # subdued ANSI hues - rather than inventing a colour the image never had.
+    mono = hls(vivid[0][0])[2] <= 0.15
+    if mono:
+        acc = mix(fg, bg, 0.15)
+        ah, al, as_ = hls(acc)
+        as_ = 0.3
+    else:
+        acc = vivid[0][0]
+        ah, al, as_ = hls(acc)
+        acc = rgb(ah, 0.45 if light else 0.65, max(as_, 0.45))
     acc = ensure_contrast(acc, bg, 3.0, fg_dir)
 
     roles = {
@@ -191,8 +203,8 @@ def swatch(c, text=""):
 def main(argv):
     if not argv or argv[0] in ("-h", "--help"):
         sys.exit(__doc__)
-    image, name, light, write = argv[0], None, None, False
-    it = iter(argv[1:])
+    images, name, light, write = [], None, None, False
+    it = iter(argv)
     for a in it:
         if a == "--name":
             name = next(it)
@@ -202,15 +214,23 @@ def main(argv):
             light = False
         elif a == "--write":
             write = True
-        else:
+        elif a.startswith("--"):
             sys.exit(f"unknown option {a}")
-    if not os.path.isfile(image):
-        sys.exit(f"no such file: {image}")
-    name = name or os.path.splitext(os.path.basename(image))[0].lower().replace(" ", "-")
+        else:
+            images.append(a)
+    if not images:
+        sys.exit(__doc__)
+    for image in images:
+        if not os.path.isfile(image):
+            sys.exit(f"no such file: {image}")
+    name = name or os.path.splitext(os.path.basename(images[0]))[0].lower().replace(" ", "-")
     if not all(ch.isalnum() or ch in "-_." for ch in name):
         sys.exit("name may contain only letters, digits, - _ .")
 
-    light, roles, colors = propose(pixels(image), light)
+    px = []
+    for image in images:
+        px += pixels(image)
+    light, roles, colors = propose(px, light)
 
     print(f"{name}  ({'light' if light else 'dark'})")
     for k, v in roles.items():
@@ -245,7 +265,8 @@ def main(argv):
         for k, v in toml.items():
             f.write(f'{k} = "{v if isinstance(v, str) else hexs(v)}"\n')
     # copyfile, not copy2: copying flags/xattrs off a /System image is refused
-    shutil.copyfile(image, f"{d}/backgrounds/{os.path.basename(image)}")
+    for image in images:
+        shutil.copyfile(image, f"{d}/backgrounds/{os.path.basename(image)}")
     subprocess.run([os.path.expanduser("~/.local/bin/omni-theme-build"), name], check=True)
     print(f"\nwritten: themes/{name}/colors.toml + backgrounds/  ->  omni-theme {name}")
 

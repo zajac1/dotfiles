@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Convert an old-format omarchy colors.toml (accent/cursor/foreground/
+background/selection_*/color0-15 - the format third-party omarchy themes on
+GitHub still use) into the current format omni-theme-build reads.
+
+    omni-theme-convert SRC.toml DST.toml [--light|--dark]
+
+Mode: --light/--dark if given, else a `light.mode` file next to SRC, else the
+luminance of the background. The keys the old format lacks (background and
+foreground tiers, muted, selection tint, orange, brown) are derived the same way
+omni-theme-propose derives them, so a converted theme and a proposed theme
+behave identically in the launcher and the bar.
+"""
+import os
+import re
+import sys
+
+
+def parse(path):
+    d = {}
+    for m in re.finditer(r'^([a-z_0-9]+)\s*=\s*"(#[0-9a-fA-F]{6})"', open(path).read(), re.M):
+        d[m.group(1)] = m.group(2)
+    return d
+
+
+def rgb(h):
+    return tuple(int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
+
+
+def hexs(c):
+    return "#%02x%02x%02x" % tuple(round(v * 255) for v in c)
+
+
+def mix(a, b, t):
+    return tuple(a[i] * (1 - t) + b[i] * t for i in range(3))
+
+
+def lum(c):
+    def ch(v):
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    return 0.2126 * ch(c[0]) + 0.7152 * ch(c[1]) + 0.0722 * ch(c[2])
+
+
+def main(argv):
+    if len(argv) < 2:
+        sys.exit(__doc__)
+    src, dst = argv[0], argv[1]
+    old = parse(src)
+    for k in ("background", "foreground", "accent"):
+        if k not in old:
+            sys.exit(f"{src}: missing {k}")
+    bg, fg, acc = rgb(old["background"]), rgb(old["foreground"]), rgb(old["accent"])
+    if "--light" in argv:
+        light = True
+    elif "--dark" in argv:
+        light = False
+    elif os.path.exists(os.path.join(os.path.dirname(src), "light.mode")):
+        light = True
+    else:
+        light = lum(bg) > 0.4
+    black = (0.0, 0.0, 0.0)
+
+    def col(i, fallback):
+        return rgb(old[f"color{i}"]) if f"color{i}" in old else fallback
+
+    red, green, yellow = col(1, acc), col(2, acc), col(3, acc)
+    blue, magenta, cyan = col(4, acc), col(5, acc), col(6, acc)
+    orange = mix(red, yellow, 0.5)
+    out = {
+        "mode": "light" if light else "dark",
+        "accent": acc, "selection": mix(bg, acc, 0.22), "muted": mix(bg, fg, 0.12),
+        "background": bg, "dark_background": mix(bg, black, 0.2), "darker_background": mix(bg, black, 0.35),
+        "lighter_background": mix(bg, fg, 0.07),
+        "foreground": fg, "dark_foreground": mix(fg, bg, 0.7), "light_foreground": mix(fg, bg, 0.45),
+        "bright_foreground": col(15, fg),
+        "red": red, "yellow": yellow, "orange": orange, "green": green, "cyan": cyan,
+        "blue": blue, "magenta": magenta, "brown": mix(orange, black, 0.45),
+        "bright_red": col(9, red), "bright_yellow": col(11, yellow), "bright_green": col(10, green),
+        "bright_cyan": col(14, cyan), "bright_blue": col(12, blue), "bright_magenta": col(13, magenta),
+    }
+    with open(dst, "w") as f:
+        for k, v in out.items():
+            f.write(f'{k} = "{v if isinstance(v, str) else hexs(v)}"\n')
+    print(f"{dst}: converted ({out['mode']})")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
