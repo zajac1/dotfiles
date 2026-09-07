@@ -62,23 +62,19 @@ sketchybar --add event aerospace_workspace_change
 SPACES="${OMNI_BAR_SPACES:-5}"
 # One indicator that slides between the numbers, rather than a pill that pops
 # from one to the next. SketchyBar cannot reposition an item directly, but an
-# item's padding_left animates - so the cursor is ONE item exactly one cell
-# wide, added before the numbers (so it sits under them), and its padding_left
-# is the offset of the current number. The first number is pulled back by
-# (offset + CELL) in the same animation, which keeps the numbers still.
-# TRAP: background.padding_* is the SAME property as the item's padding in
-# SketchyBar, not an inset - it moves the item, it does not shrink the pill.
-# Each number is exactly CELL points wide (8 + glyph + 8).
+# item's padding animates. The cursor is added AFTER the numbers - so it is
+# laid out last and nothing has to compensate for its movement - and reaches
+# back over the row with a negative padding_left: -(ROW - offset of the current
+# number). Being last it is also drawn on top, so it carries the digit itself.
+# TRAP: background.padding_* is the SAME property as item padding, not an
+# inset. TRAP: a negative padding on the item AFTER the cursor is clamped, so
+# "cursor first, pull the numbers back" cannot work. Each number is exactly
+# CELL points wide (8 + glyph + 8); the cursor uses the same paddings.
 CELL=23
-sketchybar --add item space.cursor left \
-           --set space.cursor icon.drawing=off label.drawing=off width=$CELL \
-                              padding_left=0 padding_right=0 \
-                              background.drawing=on background.color=$BLUE \
-                              background.corner_radius=8 background.height=20
+ROW=$(( CELL * SPACES ))
 for i in $(seq 1 "$SPACES"); do
-  [ "$i" = 1 ] && PULL="padding_left=-$CELL" || PULL=""
   sketchybar --add item space.$i left \
-             --set space.$i label="$i" icon.drawing=off $PULL \
+             --set space.$i label="$i" icon.drawing=off \
                             label.font="$FONT:Bold:12.0" \
                             label.padding_left=8 label.padding_right=8 \
                             background.drawing=off \
@@ -86,6 +82,14 @@ for i in $(seq 1 "$SPACES"); do
                             click_script="$PLUGINS/goto_space.sh $i" \
              --subscribe space.$i space_change aerospace_workspace_change
 done
+sketchybar --add item space.cursor left \
+           --set space.cursor label="1" icon.drawing=off \
+                              label.font="$FONT:Bold:12.0" label.color=$BAR_COLOR \
+                              label.padding_left=8 label.padding_right=8 \
+                              padding_left=-$ROW padding_right=0 \
+                              background.drawing=on background.color=$BLUE \
+                              background.corner_radius=8 background.height=20 \
+                              click_script="$PLUGINS/goto_space.sh 1"
 
 # SketchyBar only runs an item's script on its events, so nothing paints the
 # markers at startup. Invoke the plugin once per space to set the initial state

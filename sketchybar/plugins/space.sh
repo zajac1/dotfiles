@@ -33,19 +33,16 @@ N="${NAME#space.}"
 PALETTE=($BLUE $MAGENTA $GREEN $YELLOW $CYAN $RED)
 COL=${PALETTE[$(( (N - 1) % ${#PALETTE[@]} ))]}
 
-# The cursor is one shared item one cell wide (see sketchybarrc). Moving it is
-# animating its padding_left to the current number's offset; the first number's
-# padding_left goes to -(offset + CELL) in the SAME call so the row of numbers
-# does not shift. Only the item whose number is now current moves the cursor.
-CELL=23
+# The cursor is one shared item laid out after the numbers and reaching back
+# over them (see sketchybarrc). Moving it = animating its padding_left to
+# -(ROW - offset of the current number); its colour and digit change with it.
+# Only the item whose number is now current moves the cursor; every item
+# recolours its own label.
+CELL=23; SPACES="${OMNI_BAR_SPACES:-5}"; ROW=$(( CELL * SPACES ))
+sketchybar --animate sin 20 --set "$NAME" label.color=$COL
 if [ "$N" = "$CUR" ]; then
   OFF=$(( CELL * (N - 1) ))
   sketchybar --animate sin 20 \
-             --set space.cursor padding_left=$OFF background.color=$COL \
-             --animate sin 20 \
-             --set space.1 padding_left=$(( -(OFF + CELL) )) \
-             --animate sin 20 \
-             --set "$NAME" label.color=$BAR_COLOR
-else
-  sketchybar --animate sin 20 --set "$NAME" label.color=$COL
+             --set space.cursor padding_left=$(( -(ROW - OFF) )) background.color=$COL label="$N" \
+                                click_script="$HOME/.config/sketchybar/plugins/goto_space.sh $N"
 fi
