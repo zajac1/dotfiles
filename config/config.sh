@@ -4,8 +4,12 @@ OMNI_FONT="CaskaydiaMono Nerd Font Mono"
 OMNI_FONT_SIZE=18
 
 OMNI_MENU_COLS=38
-OMNI_MENU_MAX_ROWS=26
-OMNI_CHROME=13
+OMNI_MENU_MAX_ROWS=30
+# Rows the fzf box spends on things that are not list items: borders, the
+# input box, padding. It cannot be measured from outside the real terminal, so
+# it is a calibration knob: too low and the last items are cut off, too high
+# and there is dead space under the list.
+OMNI_CHROME=17
 OMNI_FILL_INSET=15
 
 OMNI_COLS=60
@@ -20,7 +24,7 @@ OMNI_ROW_GAP=0
 OMNI_ROW_PAD="30%"
 # Height of the (invisible) Ghostty window the box is centred in. Must exceed
 # OMNI_MENU_MAX_ROWS or tall menus get clipped instead of centred.
-OMNI_TERM_ROWS=28
+OMNI_TERM_ROWS=30
 
 OMNI_FRAME="boxed"
 OMNI_OPACITY=0.95

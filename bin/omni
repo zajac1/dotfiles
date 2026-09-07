@@ -88,7 +88,7 @@ set -- \
   --cycle \
   --border="$OMNI_BORDER_STYLE" \
   --input-border="$OMNI_BORDER_STYLE" \
-  --padding=1,1 \
+  --padding=0,1 \
   --margin="$margin" \
   --prompt='' \
   --ghost="$ghost" \
@@ -102,7 +102,7 @@ set -- \
   ${gap:+$gap} ${gapline:+$gapline} \
   --ellipsis='' \
   --delimiter="$TAB" \
-  --with-nth=2 \
+  --with-nth=' {2}' \
   --bind 'esc:transform(omni-back {q})' \
   --bind 'down:down+transform(omni-skip {} down)' \
   --bind 'up:up+transform(omni-skip {} up)' \

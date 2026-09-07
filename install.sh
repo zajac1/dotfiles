@@ -15,6 +15,7 @@ command -v fzf  >/dev/null || missing+=("fzf")
 command -v qalc >/dev/null || missing+=("libqalculate")
 command -v jq   >/dev/null || missing+=("jq")
 command -v btop >/dev/null || echo "    note: btop not found - Utilities CPU/Memory/Network need it"
+command -v nowplaying-cli >/dev/null || echo "    note: nowplaying-cli not found - the bar's Now Playing item stays blank"
 [ -d /Applications/Ghostty.app ] || missing+=("ghostty (cask)")
 if [ ${#missing[@]} -gt 0 ]; then
   echo "    missing: ${missing[*]}"

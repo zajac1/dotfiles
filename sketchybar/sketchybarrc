@@ -95,7 +95,7 @@ sketchybar --add item battery right \
            --subscribe battery power_source_change system_woke mouse.exited.global
 
 sketchybar --add item volume right \
-           --set volume script="$PLUGINS/volume.sh" icon.color=$MAGENTA \
+           --set volume script="$PLUGINS/volume.sh" icon.color=$YELLOW \
                         click_script="$PLUGINS/volume_popup.sh" \
                         popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
                         popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
@@ -105,7 +105,14 @@ sketchybar --add item wifi right \
            --set wifi script="$PLUGINS/wifi.sh" update_freq=60 icon.color=$CYAN \
                       click_script="open 'x-apple.systempreferences:com.apple.wifi-settings-extension'" \
            --subscribe wifi wifi_change
-sketchybar --add bracket right.pill clock battery volume wifi \
+sketchybar --add item media right \
+           --set media script="$PLUGINS/media.sh" update_freq=30 \
+                       label.padding_right=14 \
+                       click_script="/opt/homebrew/bin/nowplaying-cli togglePlayPause" \
+           --subscribe media media_change
+"$PLUGINS/media.sh" >/dev/null 2>&1 &
+
+sketchybar --add bracket right.pill clock battery volume wifi media \
            --set right.pill background.color=$GROUP_BG background.corner_radius=12 \
                             background.height=24 background.drawing=on \
                             background.border_width=1 background.border_color=$GROUP_BORDER
