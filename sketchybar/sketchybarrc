@@ -21,9 +21,12 @@ FONT="JetBrainsMono Nerd Font"
 
 # margin insets the whole bar from the screen edges, which is what stops it
 # reading as a full-width strip even before the transparent colour.
-sketchybar --bar height=34 position=top sticky=on \
+# height is deliberately tight: SketchyBar is an overlay that reserves no
+# screen space, so with the menu bar auto-hidden every pixel here is a pixel
+# taken off the top of the window underneath.
+sketchybar --bar height=30 position=top sticky=on \
                  color=$BAR_BG shadow=off \
-                 margin=12 y_offset=2 \
+                 margin=12 y_offset=0 \
                  padding_left=0 padding_right=0 \
                  border_width=0 corner_radius=0
 
@@ -39,11 +42,6 @@ sketchybar --add item logo left \
            --set logo icon=󰀵 icon.color=$RED icon.font="$FONT:Regular:14.0" y_offset=1 \
                       icon.padding_left=12 icon.padding_right=10 label.drawing=off \
                       click_script="$PLUGINS/toggle_omni.sh"
-
-# Rift separates the logo from the workspaces with a hairline. Purely cosmetic.
-sketchybar --add item logo.sep left \
-           --set logo.sep icon="│" icon.color=$DIM icon.font="$FONT:Regular:13.0" \
-                          icon.padding_left=0 icon.padding_right=10 label.drawing=off
 
 # How many Space indicators to draw. macOS exposes no reliable public way to
 # count Desktops, so this is manual - set it to however many you actually have
@@ -64,9 +62,9 @@ done
 # - cheaper than giving them an update_freq and polling forever.
 for i in $(seq 1 "$SPACES"); do NAME="space.$i" "$PLUGINS/space.sh"; done
 
-sketchybar --add bracket left.pill logo logo.sep $(seq -f "space.%g" 1 "$SPACES") \
-           --set left.pill background.color=$GROUP_BG background.corner_radius=14 \
-                           background.height=28 background.drawing=on \
+sketchybar --add bracket left.pill logo $(seq -f "space.%g" 1 "$SPACES") \
+           --set left.pill background.color=$GROUP_BG background.corner_radius=12 \
+                           background.height=24 background.drawing=on \
                            background.border_width=1 background.border_color=$GROUP_BORDER
 
 # ---------------- right pill: status, then the clock (Rift's order) -------
@@ -109,8 +107,8 @@ sketchybar --add item clock right \
            --subscribe clock mouse.exited.global
 
 sketchybar --add bracket right.pill clock battery cpu volume wifi \
-           --set right.pill background.color=$GROUP_BG background.corner_radius=14 \
-                            background.height=28 background.drawing=on \
+           --set right.pill background.color=$GROUP_BG background.corner_radius=12 \
+                            background.height=24 background.drawing=on \
                             background.border_width=1 background.border_color=$GROUP_BORDER
 
 sketchybar --update
