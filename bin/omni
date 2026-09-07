@@ -32,8 +32,10 @@ if [ "$mode" = search ]; then
   want_rows=$OMNI_ROWS
   ghost=' Search...'
   gap=""
-  [ "$ROW_GAP" -gt 0 ] && gap="--gap=$ROW_GAP"
-  gapline=""
+  # fzf 0.74 draws a "..." rule in every gap unless gap-line is set to blank.
+  # --gap on its own is NOT just whitespace, whatever the help text implies.
+  [ "$ROW_GAP" -gt 0 ] && { gap="--gap=$ROW_GAP"; gapline="--gap-line="; }
+  gapline="${gapline:-}"
 else
   level=$(tail -1 "$STACK" 2>/dev/null)
   level="${level:-}"
@@ -53,8 +55,10 @@ EOF
   esac
   ghost="${label}…"
   gap=""
-  [ "$ROW_GAP" -gt 0 ] && gap="--gap=$ROW_GAP"
-  gapline=""
+  # fzf 0.74 draws a "..." rule in every gap unless gap-line is set to blank.
+  # --gap on its own is NOT just whitespace, whatever the help text implies.
+  [ "$ROW_GAP" -gt 0 ] && { gap="--gap=$ROW_GAP"; gapline="--gap-line="; }
+  gapline="${gapline:-}"
   hdr=0
   case "$ITEMS" in sep"$TAB"*) hdr=1 ;; esac
   gap_rows=0

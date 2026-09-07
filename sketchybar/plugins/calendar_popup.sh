@@ -13,19 +13,22 @@ for it in $(sketchybar --query clock 2>/dev/null | jq -r '.popup.items[]?'); do
   ARGS+=(--remove "$it")
 done
 
+# EVERY row uses the same font. Mixing Bold and Regular is the one thing that
+# can make rows of identical character count lay out to different widths, which
+# both misaligns the columns and inflates the popup. Emphasis is colour only.
 MONO="JetBrainsMono Nerd Font:Regular:12.0"
 i=0
 while IFS="$(printf '\t')" read -r kind text; do
   i=$((i+1))
   case "$kind" in
-    head) col=$ACCENT; font="JetBrainsMono Nerd Font:Bold:12.0" ;;
-    dow)  col=$DIM;    font="$MONO" ;;
-    now)  col=$ACCENT; font="JetBrainsMono Nerd Font:Bold:12.0" ;;
-    *)    col=$LABEL;  font="$MONO" ;;
+    head) col=$ACCENT ;;
+    dow)  col=$DIM ;;
+    now)  col=$ACCENT ;;
+    *)    col=$LABEL ;;
   esac
   ARGS+=(--add item "clock.row$i" popup.clock
          --set "clock.row$i" icon.drawing=off label="$text" label.color="$col"
-               label.font="$font" label.padding_left=12 label.padding_right=12)
+               label.font="$MONO" label.padding_left=12 label.padding_right=12)
 done < <(python3 "$HOME/.config/sketchybar/plugins/calendar_grid.py")
 
 ARGS+=(--add item clock.open popup.clock
