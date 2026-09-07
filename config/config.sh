@@ -9,7 +9,7 @@ OMNI_MENU_MAX_ROWS=30
 # input box, padding. It cannot be measured from outside the real terminal, so
 # it is a calibration knob: too low and the last items are cut off, too high
 # and there is dead space under the list.
-OMNI_CHROME=17
+OMNI_CHROME=18
 OMNI_FILL_INSET=15
 
 OMNI_COLS=60

@@ -25,6 +25,8 @@ quit-after-last-window-closed = false
 
 font-family = $OMNI_FONT
 font-size = $OMNI_FONT_SIZE
+# the theme's ANSI palette, so coloured rows (weather art) use the theme's hues
+config-file = $HOME/.config/ghostty/omni-theme
 background = $OMNI_BASE
 foreground = $OMNI_TEXT
 cursor-color = $OMNI_CURSOR

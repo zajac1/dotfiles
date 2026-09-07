@@ -416,3 +416,11 @@ system layer takes the key first. Synthetic key events cannot test this: both
 layers ignore them for these shortcuts. Disable the four entries (backup with
 `defaults export com.apple.symbolichotkeys`, edit, `defaults import`, then
 `activateSettings -u`) and the binding works.
+
+## 46. The weather art was not broken, it was scrolled
+
+Three of four art lines showed: OMNI_CHROME was one row short for that level,
+fzf kept the cursor in view and scrolled the first sep row off the top. The
+art itself is wttr's, complete. When a list "loses" its first row, count the
+visible rows against `omni-menu-query <level> | wc -l` before touching the
+content.
