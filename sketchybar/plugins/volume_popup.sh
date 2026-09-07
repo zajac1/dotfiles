@@ -32,6 +32,6 @@ ARGS+=(--add item volume.mute popup.volume
        --add item volume.settings popup.volume
        --set volume.settings icon="" label="Sound settings"
              click_script="open 'x-apple.systempreferences:com.apple.Sound-Settings.extension'; sketchybar --set volume popup.drawing=off"
-       --set volume popup.drawing=toggle)
+       --set volume popup.drawing=toggle --set clock popup.drawing=off --set battery popup.drawing=off)
 
 sketchybar "${ARGS[@]}"

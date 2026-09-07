@@ -43,8 +43,15 @@ nav() { # name icon label offset
                click_script="$SELF $4")
 }
 
-nav prev "󰅁"  "Previous month" "$((OFF - 1))"
-nav next "󰅂" "Next month"     "$((OFF + 1))"
+PREV=$(python3 -c 'import datetime,sys
+o=int(sys.argv[1]); t=datetime.date.today()
+y,m=divmod(t.year*12+(t.month-1)+o,12); print(datetime.date(y,m+1,1).strftime("%B"))' "$((OFF - 1))")
+NEXT=$(python3 -c 'import datetime,sys
+o=int(sys.argv[1]); t=datetime.date.today()
+y,m=divmod(t.year*12+(t.month-1)+o,12); print(datetime.date(y,m+1,1).strftime("%B"))' "$((OFF + 1))")
+
+nav prev "󰅁" "$PREV" "$((OFF - 1))"
+nav next "󰅂" "$NEXT" "$((OFF + 1))"
 [ "$OFF" -ne 0 ] && nav today "󰃶" "Back to today" "0"
 
 # hey-calendar already has its own Ghostty instance with a global hotkey; spawning
@@ -59,9 +66,9 @@ ARGS+=(--add item clock.open popup.clock
              click_script="$HOME/.local/bin/hey-calendar-start >/dev/null 2>&1; osascript -e 'tell application \"System Events\" to key code 8 using {control down, option down, shift down, command down}' >/dev/null 2>&1; sketchybar --set clock popup.drawing=off")
 
 if [ "$OFF" -eq 0 ] && [ $# -eq 0 ]; then
-  ARGS+=(--set clock popup.drawing=toggle)
+  ARGS+=(--set clock popup.drawing=toggle --set battery popup.drawing=off --set volume popup.drawing=off)
 else
-  ARGS+=(--set clock popup.drawing=on)
+  ARGS+=(--set clock popup.drawing=on --set battery popup.drawing=off --set volume popup.drawing=off)
 fi
 
 sketchybar "${ARGS[@]}"

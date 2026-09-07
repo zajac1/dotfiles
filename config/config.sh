@@ -31,6 +31,9 @@ OMNI_OPACITY=0.95
 OMNI_BLUR=20
 OMNI_ANIMATION=0
 OMNI_BORDER_STYLE="rounded"
+# Input box border, separate from the outer box. "rounded" is a 3-row box;
+# "bottom" is a 2-row underline, the only shorter option fzf offers.
+OMNI_INPUT_BORDER="rounded"
 
 OMNI_THEME_TERMINALS=false
 

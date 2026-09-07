@@ -87,7 +87,7 @@ set -- \
   --layout=reverse \
   --cycle \
   --border="$OMNI_BORDER_STYLE" \
-  --input-border="$OMNI_BORDER_STYLE" \
+  --input-border="${OMNI_INPUT_BORDER:-$OMNI_BORDER_STYLE}" \
   --padding=0,1 \
   --margin="$margin" \
   --prompt='' \

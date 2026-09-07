@@ -62,6 +62,6 @@ ARGS+=(--add item battery.settings popup.battery
              label.font="JetBrainsMono Nerd Font:Regular:12.0"
              icon.padding_left=12 icon.padding_right=8 label.padding_right=14
              click_script="open 'x-apple.systempreferences:com.apple.Battery-Settings.extension'; sketchybar --set battery popup.drawing=off"
-       --set battery popup.drawing=toggle)
+       --set battery popup.drawing=toggle --set clock popup.drawing=off --set volume popup.drawing=off)
 
 sketchybar "${ARGS[@]}"
