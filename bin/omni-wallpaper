@@ -97,9 +97,13 @@ PY
 
 stage_all_spaces() { # path
   [ -f "$STORE" ] || return 0
-  # With a single Space (the AeroSpace way) the plain set reaches everything:
-  # skip the store edit and the agent restart, and with them the black frame.
+  # The store edit and the agent restart exist only to reach OTHER macOS
+  # Spaces, and the restart is the black frame between wallpapers. With one
+  # Space, or with AeroSpace running (its workspaces all live on one macOS
+  # Space, so the others are never seen), the plain set is enough - and macOS
+  # crossfades it.
   [ "$(live_spaces)" -le 1 ] && return 0
+  pgrep -x AeroSpace >/dev/null 2>&1 && return 0
   cp "$STORE" "$HOME/.cache/omni/Index.plist.bak" 2>/dev/null || true
   /usr/bin/python3 - "$STORE" "$1" "$PLACE_ID" "$FILL" <<'PY' || return 1
 import copy, datetime, plistlib, sys, urllib.parse
