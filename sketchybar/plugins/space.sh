@@ -33,19 +33,17 @@ N="${NAME#space.}"
 PALETTE=($BLUE $MAGENTA $GREEN $YELLOW $CYAN $RED)
 COL=${PALETTE[$(( (N - 1) % ${#PALETTE[@]} ))]}
 
-# --animate applies to the NEXT --set, so it has to precede it on the same
-# invocation. The active pill GROWS in: its height is dropped to 2 without
-# animation first, then animated to 20 - a change you see, not just a colour
-# that is suddenly different. The pill that lost focus shrinks away.
+# The cursor is one shared item (see sketchybarrc); every space item runs this
+# script on the event, so only the item whose number is now current moves it -
+# the others just recolour their own label. Offsets: CELL points per number.
+CELL=23; SPACES="${OMNI_BAR_SPACES:-5}"; ROW=$(( CELL * SPACES ))
 if [ "$N" = "$CUR" ]; then
-  sketchybar --set "$NAME" background.drawing=on background.color=$COL background.corner_radius=8 background.height=2 \
-             --animate sin 16 \
-             --set "$NAME" label.color=$BAR_COLOR background.height=20
+  sketchybar --animate sin 20 \
+             --set space.cursor background.padding_left=$(( CELL * (N - 1) )) \
+                                background.padding_right=$(( ROW - CELL * N )) \
+                                background.color=$COL \
+             --animate sin 20 \
+             --set "$NAME" label.color=$BAR_COLOR
 else
-  if [ "$(sketchybar --query "$NAME" | jq -r '.geometry.background.drawing')" = on ]; then
-    sketchybar --animate sin 12 --set "$NAME" background.height=2 label.color=$COL
-    sketchybar --set "$NAME" background.drawing=off background.height=20
-  else
-    sketchybar --set "$NAME" label.color=$COL background.drawing=off
-  fi
+  sketchybar --animate sin 20 --set "$NAME" label.color=$COL
 fi
