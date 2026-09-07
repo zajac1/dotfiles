@@ -27,12 +27,31 @@ FILL=$(tval fill); FILL="${FILL:-$OMNI_BASE}"
 case "$FILL" in '#'[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) ;; *) FILL="#000000" ;; esac
 # NSWorkspace scaling / clipping, and the id the store uses - measured, see
 # GOTCHAS: fill=Crop, fit=SizeToFit, center=Centered, stretch=FillScreen.
+# "gradient" is not a macOS placement: the picture is rendered onto a screen-
+# sized canvas whose surround is a gradient fitted from its own corners
+# (omni-wallpaper-render), and THAT file is set as a plain fill. scale is the
+# picture's height as a fraction of the screen's.
+SCALE=$(tval scale); SCALE="${SCALE:-0.9}"
 case "$PLACEMENT" in
   fit)     SCALING=3; CLIP=0; PLACE_ID=SizeToFit ;;
   center)  SCALING=2; CLIP=0; PLACE_ID=Centered ;;
   stretch) SCALING=1; CLIP=0; PLACE_ID=FillScreen ;;
+  gradient) SCALING=3; CLIP=1; PLACE_ID=Crop ;;
   *)       SCALING=3; CLIP=1; PLACE_ID=Crop; PLACEMENT=fill ;;
 esac
+
+# For gradient, swap the picture for its rendered canvas (cached by source
+# mtime under ~/.cache/omni/wallpapers). Every other placement uses the file.
+render_if_needed() { # path -> path to set
+  [ "$PLACEMENT" = gradient ] || { printf '%s' "$1"; return 0; }
+  out="$HOME/.cache/omni/wallpapers/$OMNI_THEME/${1##*/}.png"
+  mkdir -p "${out%/*}"
+  # re-render when the source, the override, or the renderer itself is newer
+  if [ ! -f "$out" ] || [ "$1" -nt "$out" ] || [ "$WP_TOML" -nt "$out" ] || [ "$HOME/.local/bin/omni-wallpaper-render" -nt "$out" ]; then
+    omni-wallpaper-render "$1" "$out" --scale "$SCALE" >/dev/null 2>&1 || { printf '%s' "$1"; return 0; }
+  fi
+  printf '%s' "$out"
+}
 
 DIR="$HOME/.config/omni/backgrounds"
 THEME_DIR="$HOME/.config/omni/themes/$OMNI_THEME/backgrounds"
@@ -113,10 +132,11 @@ PY
 
 set_wallpaper() {
   [ -f "$1" ] || { echo "no such file: $1" >&2; return 1; }
+  src="$1"; set -- "$(render_if_needed "$1")"
   [ "${OMNI_WALLPAPER_ALL_SPACES:-1}" = 1 ] && stage_all_spaces "$1"
   osascript -l JavaScript -e "$JS" "$1" "$SCALING" "$CLIP" "$FILL" || return 1
   mkdir -p "${STATE%/*}"
-  printf '%s\n' "$1" > "$STATE"
+  printf '%s\n' "$src" > "$STATE"
 }
 
 case "${1-}" in

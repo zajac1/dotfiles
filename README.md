@@ -125,9 +125,17 @@ be forced with `--light` / `--dark`.
 A theme can say how its pictures are placed, in `themes/<name>/wallpaper.toml`:
 
 ```toml
-placement = "center"     # fill | fit | center | stretch   (default: fill)
+placement = "gradient"   # fill | fit | center | stretch | gradient   (default: fill)
 fill = "#ededed"         # colour around the image for fit/center (default: the theme background)
+scale = "0.86"           # gradient only: the picture's height as a fraction of the screen's
 ```
+
+`gradient` is for prints and posters: the picture is rendered onto a
+screen-sized canvas whose margins continue the picture's own edges - each edge
+strip averaged to a line and stretched outward, so the paper's tone and shading
+carry on past the print instead of stopping at a flat colour. macOS cannot do
+this itself; `omni-wallpaper-render` builds the canvas with `sips` and AppKit
+(no dependencies) and caches it under `~/.cache/omni/wallpapers/`.
 
 `OMNI_WALLPAPER_PLACEMENT` in `config.sh` sets the default for themes without
 one. `omni-theme-propose` writes a `center` override itself when every picture

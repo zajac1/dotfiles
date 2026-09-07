@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""Render a picture onto a screen-sized canvas whose surround continues the
+picture's own edges: each edge strip is averaged to a single pixel line and
+stretched outward, so the paper's tone and gradient carry on past the print
+instead of stopping at a flat colour like a pasted sticker. A gradient fitted
+from the picture's corners is the alternative (--blur 0).
+
+    omni-wallpaper-render IMAGE OUT.png [--scale 0.9] [--blur 90]
+
+--scale is the picture's height as a fraction of the screen height; --blur is
+the width of the edge strip that is averaged and extended, in per-mille of the
+picture's short side (0 = plain corner gradient instead).
+
+Zero dependencies: sips samples the corners (via a tiny BMP) and turns a 2x2
+BMP of those colours into a smooth bilinear gradient at canvas size; AppKit,
+through JXA, composites the picture on top and writes a PNG at Retina size.
+"""
+import os
+import struct
+import subprocess
+import sys
+import tempfile
+
+SAMPLE = 64      # size of the thumbnail the corners are read from
+PATCH = 6        # corner patch (SAMPLE units) averaged for each colour
+
+
+def bmp_pixels(path):
+    b = open(path, "rb").read()
+    off = struct.unpack_from("<I", b, 10)[0]
+    w, h = struct.unpack_from("<ii", b, 18)
+    bpp = struct.unpack_from("<H", b, 28)[0]
+    step = bpp // 8
+    row = (w * step + 3) & ~3
+    px = {}
+    for y in range(abs(h)):
+        base = off + y * row
+        for x in range(w):
+            i = base + x * step
+            # BMP rows run bottom-up
+            px[(x, abs(h) - 1 - y)] = (b[i + 2], b[i + 1], b[i])
+    return px, w, abs(h)
+
+
+def corner_colours(image):
+    with tempfile.NamedTemporaryFile(suffix=".bmp", delete=False) as t:
+        bmp = t.name
+    try:
+        subprocess.run(["/usr/bin/sips", "-s", "format", "bmp", "-z", str(SAMPLE), str(SAMPLE),
+                        image, "--out", bmp], check=True, capture_output=True)
+        px, w, h = bmp_pixels(bmp)
+    finally:
+        os.unlink(bmp)
+
+    def avg(x0, y0):
+        pts = [px[(x, y)] for x in range(x0, x0 + PATCH) for y in range(y0, y0 + PATCH)]
+        return tuple(sum(p[c] for p in pts) // len(pts) for c in range(3))
+    # order: top-left, top-right, bottom-left, bottom-right
+    return [avg(0, 0), avg(w - PATCH, 0), avg(0, h - PATCH), avg(w - PATCH, h - PATCH)]
+
+
+def write_bmp_2x2(path, colours):
+    tl, tr, bl, br = colours
+    # 24-bit BMP, 2x2, rows bottom-up, each row padded to 4 bytes (6 -> 8)
+    def row(a, b):
+        return bytes([a[2], a[1], a[0], b[2], b[1], b[0], 0, 0])
+    pixels = row(*[bl, br]) + row(*[tl, tr])
+    header = struct.pack("<2sIHHI", b"BM", 54 + len(pixels), 0, 0, 54)
+    dib = struct.pack("<IiiHHIIiiII", 40, 2, 2, 1, 24, 0, len(pixels), 2835, 2835, 0, 0)
+    open(path, "wb").write(header + dib + pixels)
+
+
+def screen_size():
+    out = subprocess.run(["osascript", "-l", "JavaScript", "-e",
+                          'ObjC.import("AppKit"); var s=$.NSScreen.mainScreen; var f=s.frame.size; '
+                          'f.width+" "+f.height+" "+s.backingScaleFactor'],
+                         capture_output=True, text=True).stdout.split()
+    w, h, scale = float(out[0]), float(out[1]), float(out[2])
+    return int(w * scale), int(h * scale)
+
+
+JS = r"""
+ObjC.import("AppKit");
+function run(argv) {
+  var bgPath = argv[0], fgPath = argv[1], outPath = argv[2];
+  var W = parseInt(argv[3], 10), H = parseInt(argv[4], 10), scale = parseFloat(argv[5]), blur = parseFloat(argv[6]);
+  var fg = $.NSImage.alloc.initWithContentsOfFile($(fgPath));
+  var rep = $.NSBitmapImageRep.alloc.initWithBitmapDataPlanesPixelsWidePixelsHighBitsPerSampleSamplesPerPixelHasAlphaIsPlanarColorSpaceNameBytesPerRowBitsPerPixel(
+              null, W, H, 8, 4, true, false, $.NSCalibratedRGBColorSpace, 0, 0);
+  var ctx = $.NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
+  $.NSGraphicsContext.saveGraphicsState; $.NSGraphicsContext.setCurrentContext(ctx);
+  ctx.imageInterpolation = $.NSImageInterpolationHigh;
+  var fs = fg.size, fh = H * scale, fw = fh * fs.width / fs.height;
+  if (fw > W * 0.96) { fw = W * 0.96; fh = fw * fs.height / fs.width; }
+  var fx = (W - fw) / 2, fy = (H - fh) / 2;
+  var surround = null;
+  if (blur > 0) {
+    // Explicit edge extension, AppKit only. Each edge strip of the picture is
+    // averaged down to ONE pixel across (drawInRect with high interpolation does
+    // the averaging), which removes grain, then that pixel line is stretched
+    // outward over the margin - so the paper's own top-to-bottom gradient and
+    // tone continue past the print's edge. Corners get the averaged corner
+    // patch. Core Image's CIAffineClamp was tried first and left the margin
+    // semi-transparent under JXA; this never can.
+    var STRIP = Math.max(4, Math.round(Math.min(fs.width, fs.height) * blur / 1000));   // blur = strip width in per-mille
+    var sw = fs.width, sh = fs.height;
+    function avg(srcRect, w, h) {            // picture region -> tiny averaged NSImage (w x h px)
+      var img = $.NSImage.alloc.initWithSize($.NSMakeSize(w, h));
+      img.lockFocus; $.NSGraphicsContext.currentContext.imageInterpolation = $.NSImageInterpolationHigh;
+      fg.drawInRectFromRectOperationFraction($.NSMakeRect(0, 0, w, h), srcRect, $.NSCompositingOperationCopy, 1.0);
+      img.unlockFocus; return img;
+    }
+    function put(img, dst) { img.drawInRectFromRectOperationFraction(dst, $.NSMakeRect(0, 0, 0, 0), $.NSCompositingOperationSourceOver, 1.0); }
+    // TRAP: measured, not assumed - in this context fromRect y=0 is the TOP row
+    // of the picture. The first cut had it the other way round and painted the
+    // print's bottom rows (where a reflection nearly touches the edge) above it.
+    var L = avg($.NSMakeRect(0, 0, STRIP, sh), 1, Math.round(fh));
+    var R = avg($.NSMakeRect(sw - STRIP, 0, STRIP, sh), 1, Math.round(fh));
+    var T = avg($.NSMakeRect(0, 0, sw, STRIP), Math.round(fw), 1);
+    var B = avg($.NSMakeRect(0, sh - STRIP, sw, STRIP), Math.round(fw), 1);
+    var TL = avg($.NSMakeRect(0, 0, STRIP, STRIP), 1, 1), TR = avg($.NSMakeRect(sw - STRIP, 0, STRIP, STRIP), 1, 1);
+    var BL = avg($.NSMakeRect(0, sh - STRIP, STRIP, STRIP), 1, 1), BR = avg($.NSMakeRect(sw - STRIP, sh - STRIP, STRIP, STRIP), 1, 1);
+    surround = $.NSImage.alloc.initWithSize($.NSMakeSize(W, H));
+    surround.lockFocus; $.NSGraphicsContext.currentContext.imageInterpolation = $.NSImageInterpolationHigh;
+    put(L, $.NSMakeRect(0, fy, fx, fh));            put(R, $.NSMakeRect(fx + fw, fy, W - fx - fw, fh));
+    put(T, $.NSMakeRect(fx, fy + fh, fw, H - fy - fh)); put(B, $.NSMakeRect(fx, 0, fw, fy));
+    put(TL, $.NSMakeRect(0, fy + fh, fx, H - fy - fh)); put(TR, $.NSMakeRect(fx + fw, fy + fh, W - fx - fw, H - fy - fh));
+    put(BL, $.NSMakeRect(0, 0, fx, fy));            put(BR, $.NSMakeRect(fx + fw, 0, W - fx - fw, fy));
+    surround.unlockFocus;
+  }
+  if (!surround) surround = $.NSImage.alloc.initWithContentsOfFile($(bgPath));
+  surround.drawInRectFromRectOperationFraction($.NSMakeRect(0, 0, W, H), $.NSMakeRect(0, 0, 0, 0), $.NSCompositingOperationSourceOver, 1.0);
+  // No feathering: a soft edge exposes the averaged margin through the ramp and
+  // reads as a halo. A hard edge against a matching margin is cleaner.
+  fg.drawInRectFromRectOperationFraction($.NSMakeRect(fx, fy, fw, fh), $.NSMakeRect(0, 0, 0, 0), $.NSCompositingOperationSourceOver, 1.0);
+  $.NSGraphicsContext.restoreGraphicsState;
+  var png = rep.representationUsingTypeProperties($.NSBitmapImageFileTypePNG, $.NSDictionary.dictionary);
+  return png.writeToFileAtomically($(outPath), true) ? "ok" : "write failed";
+}
+"""
+
+
+def main(argv):
+    if len(argv) < 2:
+        sys.exit(__doc__)
+    image, out, scale, blur = argv[0], argv[1], 0.9, 25.0
+    if "--scale" in argv:
+        scale = float(argv[argv.index("--scale") + 1])
+    if "--blur" in argv:
+        blur = float(argv[argv.index("--blur") + 1])
+    if not os.path.isfile(image):
+        sys.exit(f"no such file: {image}")
+    W, H = screen_size()
+    colours = corner_colours(image)
+    with tempfile.TemporaryDirectory() as tmp:
+        tiny, grad = os.path.join(tmp, "g2.bmp"), os.path.join(tmp, "grad.png")
+        write_bmp_2x2(tiny, colours)
+        subprocess.run(["/usr/bin/sips", "-s", "format", "png", "-z", str(H), str(W), tiny, "--out", grad],
+                       check=True, capture_output=True)
+        r = subprocess.run(["osascript", "-l", "JavaScript", "-e", JS, grad, image, out, str(W), str(H), str(scale), str(blur)],
+                           capture_output=True, text=True)
+        if (r.returncode or "ok" not in r.stdout) and blur > 0:      # Core Image failed: gradient fallback
+            r = subprocess.run(["osascript", "-l", "JavaScript", "-e", JS, grad, image, out, str(W), str(H), str(scale), "0"],
+                               capture_output=True, text=True)
+        if r.returncode or "ok" not in r.stdout:
+            sys.exit(f"render failed: {r.stderr.strip() or r.stdout.strip()}")
+    print(f"{out}: {W}x{H}, corners {['#%02x%02x%02x' % c for c in colours]}")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

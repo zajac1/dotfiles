@@ -360,3 +360,20 @@ the UI calls Stretch). Tile is not reachable through NSWorkspace at all. The
 fill colour lands in `EncodedOptionValues` as 0..1 components in GenericRGB;
 reuse the colour-space blob the agent wrote last rather than building one.
 Discovered by setting each mode through NSWorkspace and reading the store.
+
+## 40. JXA: zero-argument ObjC methods are invoked by property access
+
+`img.lockFocus` runs lockFocus. `img.lockFocus()` runs it and then tries to
+call its return value: "lockFocus is not a function". Use the bare form for
+every no-argument method.
+
+## 41. CIAffineClamp under JXA leaves the margin semi-transparent
+
+The Core Image route to an edge-extended surround (clamp, blur, crop) gave a
+uniform `(113,113,113,alpha 77)` outside the picture regardless of blur radius.
+Whatever the bridging reason, the AppKit route is deterministic: average each
+edge strip to a one-pixel line with `drawInRect:fromRect:` and stretch it
+outward. Also measured, not assumed: in that context `fromRect` y = 0 is the
+TOP row of the picture; the first cut painted the print's bottom rows above it.
+A feathered print edge reads as a halo against the averaged margin - keep the
+edge hard.
