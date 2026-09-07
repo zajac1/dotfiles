@@ -28,6 +28,7 @@ command -v jq   >/dev/null || missing+=("jq")
 command -v btop >/dev/null || echo "    note: btop not found - Utilities CPU/Memory/Network need it"
 command -v nowplaying-cli >/dev/null || echo "    note: nowplaying-cli not found - the bar's Now Playing item stays blank"
 command -v python3 >/dev/null || missing+=("python3 (xcode-select --install)")
+command -v magick >/dev/null || echo "    note: imagemagick not found - gradient wallpapers fall back to a plainer renderer (brew install imagemagick)"
 [ -d /Applications/Ghostty.app ] || missing+=("ghostty (cask)")
 if [ ${#missing[@]} -gt 0 ]; then
   echo "    missing: ${missing[*]}"

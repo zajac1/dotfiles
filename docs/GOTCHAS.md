@@ -377,3 +377,14 @@ outward. Also measured, not assumed: in that context `fromRect` y = 0 is the
 TOP row of the picture; the first cut painted the print's bottom rows above it.
 A feathered print edge reads as a halo against the averaged margin - keep the
 edge hard.
+
+## 42. A smooth near-white gradient bands into stripes; grain fixes it
+
+A margin going from #f7 to #f4 over 1800px is three 8-bit steps, each a band
+hundreds of pixels wide - and on a light field the eye sees every one. No
+amount of smarter averaging removes that; it is quantisation. A whisper of
+Gaussian noise (`-attenuate 0.03 +noise Gaussian`, sd ~0.6 of a level) does.
+Measure it: longest run of one value in a margin column went from 588px to
+28px. ImageMagick's `-virtual-pixel Edge -distort SRT 0` with a viewport is the
+edge extension; do it on a 3% copy and resize up, which is both the smoothing
+and the difference between 12s and 1s.

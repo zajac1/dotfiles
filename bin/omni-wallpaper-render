@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Render a picture onto a screen-sized canvas whose surround continues the
-picture's own edges: each edge strip is averaged to a single pixel line and
-stretched outward, so the paper's tone and gradient carry on past the print
-instead of stopping at a flat colour like a pasted sticker. A gradient fitted
-from the picture's corners is the alternative (--blur 0).
+picture's own edges, so the paper's tone and gradient carry on past the print
+instead of stopping at a flat colour like a pasted sticker.
+
+With ImageMagick (`magick`, brew install imagemagick) the surround is the
+picture's edge pixels extended outward (-virtual-pixel Edge), smoothed, and
+given a whisper of grain: a smooth near-white gradient quantised to 8 bits
+shows 1-level steps hundreds of pixels wide - visible stripes - and that noise
+is what hides them. Without ImageMagick an AppKit renderer does the extension
+(no grain, so faint banding can remain).
 
     omni-wallpaper-render IMAGE OUT.png [--scale 0.9] [--blur 90]
 
@@ -16,6 +21,7 @@ BMP of those colours into a smooth bilinear gradient at canvas size; AppKit,
 through JXA, composites the picture on top and writes a PNG at Retina size.
 """
 import os
+import shutil
 import struct
 import subprocess
 import sys
@@ -145,6 +151,29 @@ function run(argv) {
 """
 
 
+def render_magick(image, out, W, H, scale):
+    """Edge-extend + smooth + grain, all in one magick call. The extension is
+    done on a 3% copy and scaled back up: that IS the smoothing, and it turns
+    a 12s render into ~1s."""
+    iw, ih = map(int, subprocess.run(["magick", "identify", "-format", "%w %h", image],
+                                     capture_output=True, text=True, check=True).stdout.split())
+    fh = int(H * scale); fw = fh * iw // ih
+    if fw > int(W * 0.96):
+        fw = int(W * 0.96); fh = fw * ih // iw
+    ox, oy = (W - fw) // 2, (H - fh) // 2
+    k = 0.03                                        # working scale of the surround
+    sw, sh, sox, soy = [max(1, round(v * k)) for v in (W, H, ox, oy)]
+    cmd = ["magick", image, "-resize", f"{fw}x{fh}!", "+repage",
+           "(", "+clone", "-resize", f"{k*100}%", "+repage",
+                "-set", "option:distort:viewport", f"{sw}x{sh}-{sox}-{soy}",
+                "-virtual-pixel", "Edge", "-distort", "SRT", "0", "+repage",
+                "-resize", f"{W}x{H}!", "-attenuate", "0.03", "+noise", "Gaussian", ")",
+           "+swap", "-gravity", "center", "-composite", "-depth", "8", out]
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.returncode:
+        sys.exit(f"magick failed: {r.stderr.strip()[:300]}")
+
+
 def main(argv):
     if len(argv) < 2:
         sys.exit(__doc__)
@@ -156,6 +185,12 @@ def main(argv):
     if not os.path.isfile(image):
         sys.exit(f"no such file: {image}")
     W, H = screen_size()
+    magick = shutil.which("magick") or next((p for p in ("/opt/homebrew/bin/magick", "/usr/local/bin/magick") if os.path.exists(p)), None)
+    if magick and blur > 0:
+        os.environ["PATH"] = os.path.dirname(magick) + os.pathsep + os.environ.get("PATH", "")
+        render_magick(image, out, W, H, scale)
+        print(f"{out}: {W}x{H} (imagemagick)")
+        return
     colours = corner_colours(image)
     with tempfile.TemporaryDirectory() as tmp:
         tiny, grad = os.path.join(tmp, "g2.bmp"), os.path.join(tmp, "grad.png")
