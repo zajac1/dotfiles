@@ -1,22 +1,26 @@
 #!/bin/bash
-# Month grid with today marked, then a way into the real calendar.
+# Month grid with today marked, month navigation, and a way into the real
+# calendar.
 #
-# SketchyBar labels have no per-character colouring, so today cannot simply be
-# recoloured inside a week row. Instead every day is rendered in a fixed FOUR
-# character cell - " 07 " normally, "[07]" for today - which keeps the columns
-# aligned whether today is a one or two digit number, and the week row that
-# contains today is drawn in the accent colour.
+# $1 is a month offset: absent or 0 is this month and TOGGLES the popup (the
+# bar click), anything else re-renders in place and leaves it open (the arrows).
+#
+# EVERY row uses the same font. Mixing Bold and Regular makes rows of identical
+# character count lay out to different widths, which misaligns the columns.
+# Emphasis is colour only. Row padding is U+00A0, see calendar_grid.py.
 source "$HOME/.config/sketchybar/colors.sh"
+PLUGINS="$HOME/.config/sketchybar/plugins"
+SELF="$PLUGINS/calendar_popup.sh"
 
+OFF="${1:-0}"
+case "$OFF" in ''|*[!0-9-]*) OFF=0 ;; esac
+
+MONO="JetBrainsMono Nerd Font:Regular:12.0"
 ARGS=()
 for it in $(sketchybar --query clock 2>/dev/null | jq -r '.popup.items[]?'); do
   ARGS+=(--remove "$it")
 done
 
-# EVERY row uses the same font. Mixing Bold and Regular is the one thing that
-# can make rows of identical character count lay out to different widths, which
-# both misaligns the columns and inflates the popup. Emphasis is colour only.
-MONO="JetBrainsMono Nerd Font:Regular:12.0"
 i=0
 while IFS="$(printf '\t')" read -r kind text; do
   i=$((i+1))
@@ -29,13 +33,35 @@ while IFS="$(printf '\t')" read -r kind text; do
   ARGS+=(--add item "clock.row$i" popup.clock
          --set "clock.row$i" icon.drawing=off label="$text" label.color="$col"
                label.font="$MONO" label.padding_left=12 label.padding_right=12)
-done < <(python3 "$HOME/.config/sketchybar/plugins/calendar_grid.py")
+done < <(python3 "$PLUGINS/calendar_grid.py" "$OFF")
 
+nav() { # name icon label offset
+  ARGS+=(--add item "clock.$1" popup.clock
+         --set "clock.$1" icon="$2" icon.color=$ACCENT label="$3" label.color=$LABEL
+               label.font="$MONO"
+               icon.padding_left=12 icon.padding_right=8 label.padding_right=14
+               click_script="$SELF $4")
+}
+
+nav prev "󰅁"  "Previous month" "$((OFF - 1))"
+nav next "󰅂" "Next month"     "$((OFF + 1))"
+[ "$OFF" -ne 0 ] && nav today "󰃶" "Back to today" "0"
+
+# hey-calendar already has its own Ghostty instance with a global hotkey; spawning
+# a second terminal for it just gets you an unstyled duplicate. Start the instance
+# if it is not up, then press its hotkey (ctrl+alt+shift+cmd+C, key code 8 = "c").
+# The keystroke needs Accessibility permission for SketchyBar.
 ARGS+=(--add item clock.open popup.clock
        --set clock.open icon="󰃭" icon.color=$BLUE
              label="Open Calendar" label.color=$LABEL
-             icon.padding_left=12 icon.padding_right=8 label.padding_right=12
-             click_script="open -na Ghostty.app --args -e $HOME/.local/bin/hey-calendar; sketchybar --set clock popup.drawing=off"
-       --set clock popup.drawing=toggle)
+             label.font="$MONO"
+             icon.padding_left=12 icon.padding_right=8 label.padding_right=14
+             click_script="$HOME/.local/bin/hey-calendar-start >/dev/null 2>&1; osascript -e 'tell application \"System Events\" to key code 8 using {control down, option down, shift down, command down}' >/dev/null 2>&1; sketchybar --set clock popup.drawing=off")
+
+if [ "$OFF" -eq 0 ] && [ $# -eq 0 ]; then
+  ARGS+=(--set clock popup.drawing=toggle)
+else
+  ARGS+=(--set clock popup.drawing=on)
+fi
 
 sketchybar "${ARGS[@]}"

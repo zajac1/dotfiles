@@ -1,5 +1,6 @@
 #!/bin/bash
-# Rift spells the date out - "8th of May 12:50:50". Seconds are deliberately
+# Rift spells the date out - "8th of May 12:50:50"; the "of" is dropped here.
+# Seconds are deliberately
 # dropped: they would need update_freq=1, and every sketchybar call costs
 # ~25ms, so that is a fork per second forever for a digit nobody reads.
 # The item subscribes to mouse.exited.global purely to dismiss its popup;
@@ -15,4 +16,4 @@ case "$D" in
   3|23)    S=rd ;;
   *)       S=th ;;
 esac
-sketchybar --set "$NAME" label="$(date "+${D}${S} of %B %H:%M")"
+sketchybar --set "$NAME" label="$(date "+${D}${S} %B %H:%M")"

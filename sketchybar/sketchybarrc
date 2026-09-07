@@ -68,34 +68,14 @@ sketchybar --add bracket left.pill logo $(seq -f "space.%g" 1 "$SPACES") \
                            background.border_width=1 background.border_color=$GROUP_BORDER
 
 # ---------------- right pill: status, then the clock (Rift's order) -------
-sketchybar --add item wifi right \
-           --set wifi script="$PLUGINS/wifi.sh" update_freq=60 icon.color=$CYAN \
-                      click_script="open 'x-apple.systempreferences:com.apple.wifi-settings-extension'" \
-           --subscribe wifi wifi_change
-
-sketchybar --add item volume right \
-           --set volume script="$PLUGINS/volume.sh" icon.color=$MAGENTA \
-                        click_script="$PLUGINS/volume_popup.sh" \
-                        popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
-                        popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
-                        popup.align=right popup.y_offset=4 \
-           --subscribe volume volume_change mouse.scrolled mouse.exited.global
-
-sketchybar --add item cpu right \
-           --set cpu icon=󰍛 icon.color=$YELLOW update_freq=15 script="$PLUGINS/cpu.sh" \
-                     click_script="open -na Ghostty.app --args -e $HOME/.local/bin/omni-btop 'cpu mem net proc'"
-
-sketchybar --add item battery right \
-           --set battery script="$PLUGINS/battery.sh" update_freq=120 \
-                         click_script="$PLUGINS/battery_popup.sh" \
-                         popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
-                         popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
-                         popup.align=right popup.y_offset=4 \
-           --subscribe battery power_source_change system_woke mouse.exited.global
-
+# Added right-to-left: clock first so it lands furthest right, wifi last so it
+# lands furthest left. Displayed order is wifi | volume | battery | clock.
 # Rift keeps the clock in the right-hand pill, not centred, and spells the date
-# out ("8th of May"). update_freq stays coarse: adding seconds means a fork per
-# second forever, and each sketchybar call costs ~25ms.
+# out ("8th September"). update_freq stays coarse: adding seconds means a fork
+# per second forever, and each sketchybar call costs ~25ms.
+#
+# It is added FIRST on purpose: SketchyBar stacks right-side items right to
+# left in the order they are added, so the first one added sits furthest right.
 sketchybar --add item clock right \
            --set clock icon=󰥔 icon.color=$BLUE \
                        label.font="$FONT:Regular:12.0" \
@@ -106,7 +86,26 @@ sketchybar --add item clock right \
                        popup.align=right popup.y_offset=4 \
            --subscribe clock mouse.exited.global
 
-sketchybar --add bracket right.pill clock battery cpu volume wifi \
+sketchybar --add item battery right \
+           --set battery script="$PLUGINS/battery.sh" update_freq=120 \
+                         click_script="$PLUGINS/battery_popup.sh" \
+                         popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
+                         popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
+                         popup.align=right popup.y_offset=4 \
+           --subscribe battery power_source_change system_woke mouse.exited.global
+
+sketchybar --add item volume right \
+           --set volume script="$PLUGINS/volume.sh" icon.color=$MAGENTA \
+                        click_script="$PLUGINS/volume_popup.sh" \
+                        popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
+                        popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
+                        popup.align=right popup.y_offset=4 \
+           --subscribe volume volume_change mouse.scrolled mouse.exited.global
+sketchybar --add item wifi right \
+           --set wifi script="$PLUGINS/wifi.sh" update_freq=60 icon.color=$CYAN \
+                      click_script="open 'x-apple.systempreferences:com.apple.wifi-settings-extension'" \
+           --subscribe wifi wifi_change
+sketchybar --add bracket right.pill clock battery volume wifi \
            --set right.pill background.color=$GROUP_BG background.corner_radius=12 \
                             background.height=24 background.drawing=on \
                             background.border_width=1 background.border_color=$GROUP_BORDER

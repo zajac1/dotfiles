@@ -32,6 +32,7 @@ selection-foreground = $OMNI_BASE
 
 background-opacity = $OPACITY
 background-blur = $BLUR
+adjust-cell-height = ${OMNI_ROW_PAD:-0}
 window-padding-x = 2
 window-padding-y = 1
 window-padding-balance = true
