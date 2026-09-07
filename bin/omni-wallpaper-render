@@ -114,10 +114,15 @@ function run(argv) {
     // TRAP: measured, not assumed - in this context fromRect y=0 is the TOP row
     // of the picture. The first cut had it the other way round and painted the
     // print's bottom rows (where a reflection nearly touches the edge) above it.
-    var L = avg($.NSMakeRect(0, 0, STRIP, sh), 1, Math.round(fh));
-    var R = avg($.NSMakeRect(sw - STRIP, 0, STRIP, sh), 1, Math.round(fh));
-    var T = avg($.NSMakeRect(0, 0, sw, STRIP), Math.round(fw), 1);
-    var B = avg($.NSMakeRect(0, sh - STRIP, sw, STRIP), Math.round(fw), 1);
+    // Averaged ACROSS the strip to one pixel and ALONG it to a handful of
+    // samples: full length kept the picture's grain per column, and stretching
+    // that outward drew fine stripes through the margins. A dozen samples keep
+    // the broad shading and nothing finer; the upscale interpolates between them.
+    var N = 12;
+    var L = avg($.NSMakeRect(0, 0, STRIP, sh), 1, N);
+    var R = avg($.NSMakeRect(sw - STRIP, 0, STRIP, sh), 1, N);
+    var T = avg($.NSMakeRect(0, 0, sw, STRIP), N, 1);
+    var B = avg($.NSMakeRect(0, sh - STRIP, sw, STRIP), N, 1);
     var TL = avg($.NSMakeRect(0, 0, STRIP, STRIP), 1, 1), TR = avg($.NSMakeRect(sw - STRIP, 0, STRIP, STRIP), 1, 1);
     var BL = avg($.NSMakeRect(0, sh - STRIP, STRIP, STRIP), 1, 1), BR = avg($.NSMakeRect(sw - STRIP, sh - STRIP, STRIP, STRIP), 1, 1);
     surround = $.NSImage.alloc.initWithSize($.NSMakeSize(W, H));

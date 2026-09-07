@@ -19,7 +19,14 @@ RATE=$(nowplaying-cli get playbackRate 2>/dev/null)
 case "$TITLE" in null|"") TITLE="" ;; esac
 case "$ARTIST" in null|"") ARTIST="" ;; esac
 
-if [ -z "$TITLE" ]; then
+# macOS keeps a "Now Playing" session for any browser tab that ever played
+# media - paused, muted, or long forgotten - under the generic title "A site is
+# playing media". That is not something playing. A paused REAL track (artist
+# known, or a non-browser client) is still worth showing, as paused.
+CLIENT=$(nowplaying-cli get-raw 2>/dev/null | sed -n 's/.*ClientBundleIdentifier[^a-zA-Z]*\([a-zA-Z0-9.-]*\).*/\1/p' | head -1)
+case "$CLIENT" in *safari*|*chrome*|*firefox*|*zen*|*arc*|*browser*|*brave*|*edge*|*orion*|*vivaldi*) BROWSER=1 ;; *) BROWSER=0 ;; esac
+case "$TITLE" in "A site is playing media"|"") GENERIC=1 ;; *) GENERIC=0 ;; esac
+if [ "$GENERIC" = 1 ] || { [ "${RATE:-0}" = 0 ] && [ "$BROWSER" = 1 ] && [ -z "$ARTIST" ]; }; then
   sketchybar --set "$NAME" icon="󰎄" icon.color=$DIM label="Not Playing"
   exit 0
 fi
