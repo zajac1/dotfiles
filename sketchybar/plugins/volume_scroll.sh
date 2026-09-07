@@ -4,7 +4,7 @@
 # INTO the popup does not fire it).
 set -u
 case "$SENDER" in
-  mouse.exited.global) sketchybar --set volume popup.drawing=off ;;
+  mouse.exited.global|front_app_switched) sketchybar --set volume popup.drawing=off ;;
   mouse.scrolled)
     V=$(osascript -e "output volume of (get volume settings)" 2>/dev/null)
     D=$(printf '%.0f' "${SCROLL_DELTA:-0}")

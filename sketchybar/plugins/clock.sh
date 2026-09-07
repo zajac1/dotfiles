@@ -6,7 +6,8 @@
 # The item subscribes to mouse.exited.global purely to dismiss its popup;
 # SketchyBar has no click-outside-to-close of its own.
 case "${SENDER:-}" in
-  mouse.exited.global) sketchybar --set "$NAME" popup.drawing=off; exit 0 ;;
+  mouse.exited.global|front_app_switched)
+    sketchybar --set "$NAME" popup.drawing=off; exit 0 ;;
 esac
 
 D=$(date +%-d)

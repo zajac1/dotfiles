@@ -30,6 +30,8 @@ today = datetime.date.today()
 year, month = divmod(today.year * 12 + (today.month - 1) + offset, 12)
 shown = datetime.date(year, month + 1, 1)
 
+# The header is NOT padded to centre it. Leading blanks get clipped (see
+# above); SketchyBar's own label.align=center does the centring instead.
 print("head\t" + shown.strftime("%B %Y"))
 print("dow\t" + "".join(cell(d) for d in ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")))
 

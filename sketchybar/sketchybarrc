@@ -84,7 +84,7 @@ sketchybar --add item clock right \
                        popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
                        popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
                        popup.align=right popup.y_offset=4 \
-           --subscribe clock mouse.exited.global
+           --subscribe clock mouse.exited.global front_app_switched
 
 sketchybar --add item battery right \
            --set battery script="$PLUGINS/battery.sh" update_freq=120 \
@@ -92,7 +92,7 @@ sketchybar --add item battery right \
                          popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
                          popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
                          popup.align=right popup.y_offset=4 \
-           --subscribe battery power_source_change system_woke mouse.exited.global
+           --subscribe battery power_source_change system_woke mouse.exited.global front_app_switched
 
 sketchybar --add item volume right \
            --set volume script="$PLUGINS/volume.sh" icon.color=$YELLOW \
@@ -100,7 +100,7 @@ sketchybar --add item volume right \
                         popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
                         popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
                         popup.align=right popup.y_offset=4 \
-           --subscribe volume volume_change mouse.scrolled mouse.exited.global
+           --subscribe volume volume_change mouse.scrolled mouse.exited.global front_app_switched
 sketchybar --add item wifi right \
            --set wifi script="$PLUGINS/wifi.sh" update_freq=60 icon.color=$CYAN \
                       click_script="open 'x-apple.systempreferences:com.apple.wifi-settings-extension'" \

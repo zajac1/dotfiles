@@ -6,7 +6,8 @@
 # "U000f0084".
 source "$HOME/.config/sketchybar/colors.sh"
 case "${SENDER:-}" in
-  mouse.exited.global) sketchybar --set "$NAME" popup.drawing=off; exit 0 ;;
+  mouse.exited.global|front_app_switched)
+    sketchybar --set "$NAME" popup.drawing=off; exit 0 ;;
 esac
 PCT=$(pmset -g batt | grep -Eo "[0-9]+%" | head -1 | tr -d "%")
 CHG=$(pmset -g batt | grep -c "AC Power")

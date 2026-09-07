@@ -16,6 +16,9 @@ OFF="${1:-0}"
 case "$OFF" in ''|*[!0-9-]*) OFF=0 ;; esac
 
 MONO="JetBrainsMono Nerd Font:Regular:12.0"
+GRID_W=188          # 26 chars of JetBrainsMono at 12pt, in points
+LARROW=$(printf '\u2039')
+RARROW=$(printf '\u203a')
 ARGS=()
 for it in $(sketchybar --query clock 2>/dev/null | jq -r '.popup.items[]?'); do
   ARGS+=(--remove "$it")
@@ -30,9 +33,23 @@ while IFS="$(printf '\t')" read -r kind text; do
     now)  col=$ACCENT ;;
     *)    col=$LABEL ;;
   esac
-  ARGS+=(--add item "clock.row$i" popup.clock
-         --set "clock.row$i" icon.drawing=off label="$text" label.color="$col"
-               label.font="$MONO" label.padding_left=12 label.padding_right=12)
+  if [ "$kind" = head ]; then
+    # Centred by SketchyBar, not by padding the string: a padded label would be
+    # clipped by exactly its leading blanks. GRID_W is the grid's own width,
+    # 26 characters of JetBrainsMono at 12pt, so the header centres over it.
+    ARGS+=(--add item "clock.row$i" popup.clock
+           --set "clock.row$i" icon.drawing=off
+                 label="$LARROW $text $RARROW" label.color="$col"
+                 label.font="$MONO" label.align=center label.width=$GRID_W
+                 label.padding_left=12 label.padding_right=12
+                 click_script="$SELF $((OFF + 1))"
+                 script="$PLUGINS/calendar_scroll.sh $OFF"
+           --subscribe "clock.row$i" mouse.scrolled)
+  else
+    ARGS+=(--add item "clock.row$i" popup.clock
+           --set "clock.row$i" icon.drawing=off label="$text" label.color="$col"
+                 label.font="$MONO" label.padding_left=12 label.padding_right=12)
+  fi
 done < <(python3 "$PLUGINS/calendar_grid.py" "$OFF")
 
 nav() { # name icon label offset
@@ -43,15 +60,6 @@ nav() { # name icon label offset
                click_script="$SELF $4")
 }
 
-PREV=$(python3 -c 'import datetime,sys
-o=int(sys.argv[1]); t=datetime.date.today()
-y,m=divmod(t.year*12+(t.month-1)+o,12); print(datetime.date(y,m+1,1).strftime("%B"))' "$((OFF - 1))")
-NEXT=$(python3 -c 'import datetime,sys
-o=int(sys.argv[1]); t=datetime.date.today()
-y,m=divmod(t.year*12+(t.month-1)+o,12); print(datetime.date(y,m+1,1).strftime("%B"))' "$((OFF + 1))")
-
-nav prev "󰅁" "$PREV" "$((OFF - 1))"
-nav next "󰅂" "$NEXT" "$((OFF + 1))"
 [ "$OFF" -ne 0 ] && nav today "󰃶" "Back to today" "0"
 
 # hey-calendar already has its own Ghostty instance with a global hotkey; spawning
