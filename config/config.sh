@@ -45,6 +45,9 @@ OMNI_APP_COLORS=true
 
 # How a theme's wallpaper is placed: fill | fit | center | stretch. A theme can
 # override this in themes/<name>/wallpaper.toml, with a fill colour too.
+# Let theme switches change the desktop picture at all (0 on a machine where
+# the desktop is not yours to manage).
+OMNI_WALLPAPER=1
 OMNI_WALLPAPER_PLACEMENT="fill"
 # Rotate through the active theme's backgrounds every N seconds (0 = never).
 # Applied by `omni-wallpaper rotate on`, which omni-start runs.

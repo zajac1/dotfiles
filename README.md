@@ -64,23 +64,42 @@ brew install --cask ghostty font-caskaydia-mono-nerd-font
 
 `~/.local/bin` must be on your `PATH`.
 
-## Other machines
+## Components and other machines
 
-The launcher does not need the bar, a window manager or custom wallpapers; it
-is meant to run alone on a work machine.
+omni is one repo, five pieces; take what the machine allows.
+
+| component | what | default |
+|---|---|---|
+| `launcher` | the menu and search, themes, glyphs | always |
+| `terminal` | Ghostty theme file, written on every switch | always |
+| `editor` | Neovim `colorscheme omni`, generated from the same `colors.toml` | always |
+| `wallpaper` | theme-driven desktop pictures, rotation, gradient renders | on |
+| `bar` | SketchyBar top bar | if sketchybar is installed |
+| `wm` | AeroSpace config with the gap that keeps windows off the bar | if AeroSpace is installed |
 
 ```sh
-git clone <this repo> ~/git/omni
-cd ~/git/omni
-./install.sh --no-bar        # launcher only
-./install.sh                 # launcher + top bar, if sketchybar is installed
+git clone <this repo> ~/git/omni && cd ~/git/omni
+./install.sh                          # everything the machine can use
+./install.sh --profile work           # launcher + terminal + editor: no bar, no WM, no wallpaper
+./install.sh --without wallpaper      # opt out of one piece
 ```
 
-`install.sh` never overwrites an existing `config.sh`, `favorites`, `sections`
-or `glyphs`, so re-running it after a `git pull` is the upgrade path. Things
-that differ per machine live in `~/.config/omni/config.sh`: the font, the
-hotkey, `OMNI_PROJECT_ROOT`, and `OMNI_BAR_SPACES` for the bar. Nothing under
-`~/.config/omni/` is tracked here.
+A theme switch (`omni-theme <name>`, or Style -> Theme) drives every installed
+piece and silently skips the rest, so the work machine gets the launcher,
+Ghostty and Neovim changing together from one `colors.toml`. The profile is
+remembered in `~/.config/omni/config.sh` (`OMNI_WALLPAPER=0`); re-running
+`install.sh` after a `git pull` is the upgrade path and never overwrites your
+config, favourites or sections.
+
+### Editor
+
+`omni-nvim-theme` turns the active theme into `~/.cache/omni/nvim/colors/omni.lua`
+- a real colorscheme (treesitter, LSP diagnostics, git signs, terminal
+palette). `config/nvim-omni.lua` is a lazy.nvim spec that loads it, re-applies
+on FocusGained after a switch, and clears backgrounds when
+`vim.g.omni_transparent` is true. Running Neovims are also told directly over
+their server sockets. `~/.config/omni/current/theme` links to the active
+theme's directory, omarchy-style, for anything else that wants to follow.
 
 ## Keys
 

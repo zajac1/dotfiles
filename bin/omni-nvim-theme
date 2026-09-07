@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""Generate a Neovim colorscheme from the active theme's colors.toml.
+
+    omni-nvim-theme [NAME]     -> ~/.cache/omni/nvim/colors/omni.lua
+
+One source of truth for the terminal and the editor: the same colors.toml
+that themes Ghostty and the launcher becomes `colorscheme omni`. Load it by
+adding ~/.cache/omni/nvim to the runtimepath (config/nvim-omni.lua is a
+lazy.nvim spec that does this and re-applies on FocusGained after a switch).
+`vim.g.omni_transparent = true` clears backgrounds for a transparent terminal.
+
+Running Neovim instances are told to re-apply through their server sockets.
+"""
+import glob
+import os
+import re
+import subprocess
+import sys
+
+CFG = os.path.expanduser("~/.config/omni")
+OUT = os.path.expanduser("~/.cache/omni/nvim/colors/omni.lua")
+
+
+def read_toml(path):
+    d = {}
+    for m in re.finditer(r'^([a-z_]+)\s*=\s*"([^"]*)"', open(path).read(), re.M):
+        d[m.group(1)] = m.group(2)
+    return d
+
+
+def mix(a, b, t):
+    ra, ga, ba = (int(a[i:i + 2], 16) for i in (1, 3, 5))
+    rb, gb, bb = (int(b[i:i + 2], 16) for i in (1, 3, 5))
+    return "#%02x%02x%02x" % (round(ra + (rb - ra) * t), round(ga + (gb - ga) * t), round(ba + (bb - ba) * t))
+
+
+def main(argv):
+    name = argv[0] if argv else None
+    if not name:
+        m = re.search(r'^OMNI_THEME="([^"]+)"', open(f"{CFG}/config.sh").read(), re.M)
+        name = m.group(1) if m else "everforest"
+    toml = f"{CFG}/themes/{name}/colors.toml"
+    if not os.path.isfile(toml):
+        sys.exit(f"no theme: {name}")
+    c = read_toml(toml)
+    bg, fg = c["background"], c["foreground"]
+    g = lambda k, d: c.get(k, d)   # noqa: E731
+    p = {
+        "bg": bg, "fg": fg, "accent": g("accent", fg),
+        "bg1": g("lighter_background", mix(bg, fg, 0.07)), "bg2": g("muted", mix(bg, fg, 0.12)),
+        "bg0": g("dark_background", mix(bg, "#000000", 0.2)), "sel": g("selection", mix(bg, g("accent", fg), 0.22)),
+        "fg2": g("light_foreground", mix(fg, bg, 0.45)), "fg3": g("dark_foreground", mix(fg, bg, 0.7)),
+        "red": g("red", fg), "green": g("green", fg), "yellow": g("yellow", fg), "blue": g("blue", fg),
+        "magenta": g("magenta", fg), "cyan": g("cyan", fg), "orange": g("orange", g("yellow", fg)),
+    }
+    mode = c.get("mode", "dark")
+    # highlight groups: modest, consistent, and enough for treesitter/LSP/git
+    groups = {
+        "Normal": ("fg", "bg"), "NormalFloat": ("fg", "bg0"), "NormalNC": ("fg", "bg"),
+        "Comment": ("fg2", None, "italic"), "LineNr": ("fg3", None), "CursorLineNr": ("accent", None, "bold"),
+        "CursorLine": (None, "bg1"), "ColorColumn": (None, "bg1"), "SignColumn": (None, "bg"),
+        "Visual": (None, "sel"), "Search": ("bg", "yellow"), "IncSearch": ("bg", "orange"), "CurSearch": ("bg", "orange"),
+        "MatchParen": ("accent", None, "bold"), "NonText": ("fg3", None), "Whitespace": ("fg3", None),
+        "Pmenu": ("fg", "bg0"), "PmenuSel": ("bg", "accent"), "PmenuSbar": (None, "bg1"), "PmenuThumb": (None, "fg3"),
+        "StatusLine": ("fg", "bg1"), "StatusLineNC": ("fg2", "bg0"), "WinSeparator": ("bg2", None), "VertSplit": ("bg2", None),
+        "TabLine": ("fg2", "bg0"), "TabLineSel": ("bg", "accent"), "TabLineFill": (None, "bg0"),
+        "Title": ("accent", None, "bold"), "Directory": ("blue", None), "Question": ("green", None),
+        "ErrorMsg": ("red", None, "bold"), "WarningMsg": ("yellow", None), "MoreMsg": ("green", None),
+        "Folded": ("fg2", "bg1"), "FoldColumn": ("fg3", None), "SpecialKey": ("fg3", None),
+        "Constant": ("orange", None), "String": ("green", None), "Character": ("green", None), "Number": ("magenta", None),
+        "Boolean": ("magenta", None), "Float": ("magenta", None), "Identifier": ("fg", None), "Function": ("blue", None),
+        "Statement": ("red", None), "Keyword": ("red", None), "Conditional": ("red", None), "Repeat": ("red", None),
+        "Operator": ("fg", None), "Exception": ("red", None), "PreProc": ("magenta", None), "Include": ("magenta", None),
+        "Define": ("magenta", None), "Macro": ("magenta", None), "Type": ("yellow", None), "StorageClass": ("yellow", None),
+        "Structure": ("yellow", None), "Typedef": ("yellow", None), "Special": ("cyan", None), "Delimiter": ("fg2", None),
+        "Tag": ("cyan", None), "Underlined": ("blue", None, "underline"), "Todo": ("bg", "accent", "bold"),
+        "Error": ("red", None), "DiffAdd": (None, None, None, "green"), "DiffChange": (None, None, None, "yellow"),
+        "DiffDelete": (None, None, None, "red"), "DiffText": (None, None, None, "blue"),
+        "DiagnosticError": ("red", None), "DiagnosticWarn": ("yellow", None), "DiagnosticInfo": ("blue", None),
+        "DiagnosticHint": ("cyan", None), "DiagnosticUnderlineError": (None, None, "undercurl"),
+        "GitSignsAdd": ("green", None), "GitSignsChange": ("yellow", None), "GitSignsDelete": ("red", None),
+        "@variable": ("fg", None), "@property": ("cyan", None), "@field": ("cyan", None), "@parameter": ("fg", None, "italic"),
+        "@constructor": ("yellow", None), "@tag": ("red", None), "@tag.attribute": ("yellow", None), "@punctuation": ("fg2", None),
+        "@markup.heading": ("accent", None, "bold"), "@markup.link": ("blue", None, "underline"), "@markup.raw": ("green", None),
+    }
+    lines = ["-- generated by omni-nvim-theme from " + toml.replace(os.path.expanduser("~"), "~") + " - do not edit",
+             "vim.cmd('highlight clear')", "if vim.fn.exists('syntax_on') == 1 then vim.cmd('syntax reset') end",
+             f"vim.o.background = '{mode}'", "vim.g.colors_name = 'omni'",
+             "local p = {"]
+    lines += [f"  {k} = '{v}'," for k, v in p.items()]
+    lines += ["}", "local transparent = vim.g.omni_transparent == true", "local hl = vim.api.nvim_set_hl", "local function set(g, s) hl(0, g, s) end"]
+    for grp, spec in groups.items():
+        fgk = spec[0]; bgk = spec[1]; style = spec[2] if len(spec) > 2 else None; tint = spec[3] if len(spec) > 3 else None
+        parts = []
+        if fgk: parts.append(f"fg = p.{fgk}")
+        if bgk: parts.append(f"bg = p.{bgk}")
+        if tint: parts.append(f"bg = mixbg(p.{tint})")
+        if style:
+            parts += [f"{s} = true" for s in style.split(",")]
+        lines.append(f"set('{grp}', {{ {', '.join(parts)} }})")
+    # 16-colour terminal palette inside neovim, from the same toml
+    for i, key in enumerate(["bg2", "red", "green", "yellow", "blue", "magenta", "cyan", "fg", "fg2", "red", "green", "yellow", "blue", "magenta", "cyan", "fg"]):
+        lines.append(f"vim.g.terminal_color_{i} = p.{key}")
+    lines += ["if transparent then", "  for _, g in ipairs({ 'Normal', 'NormalNC', 'NormalFloat', 'SignColumn', 'LineNr', 'FoldColumn', 'EndOfBuffer', 'StatusLineNC' }) do",
+              "    hl(0, g, { fg = vim.api.nvim_get_hl(0, { name = g }).fg, bg = 'NONE' })", "  end", "end"]
+    body = "\n".join(lines) + "\n"
+    # mixbg: a diff tint is the colour blended into the background
+    body = body.replace("local function set(g, s) hl(0, g, s) end",
+                        "local function set(g, s) hl(0, g, s) end\n"
+                        "local function mixbg(c)\n  local r1, g1, b1 = tonumber(p.bg:sub(2, 3), 16), tonumber(p.bg:sub(4, 5), 16), tonumber(p.bg:sub(6, 7), 16)\n"
+                        "  local r2, g2, b2 = tonumber(c:sub(2, 3), 16), tonumber(c:sub(4, 5), 16), tonumber(c:sub(6, 7), 16)\n"
+                        "  local t = 0.18\n  return string.format('#%02x%02x%02x', r1 + (r2 - r1) * t, g1 + (g2 - g1) * t, b1 + (b2 - b1) * t)\nend")
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    open(OUT, "w").write(body)
+    # omarchy-style pointer to the active theme directory
+    cur = f"{CFG}/current"
+    os.makedirs(cur, exist_ok=True)
+    link = f"{cur}/theme"
+    if os.path.islink(link) or os.path.exists(link):
+        os.unlink(link)
+    os.symlink(f"{CFG}/themes/{name}", link)
+    # tell running editors
+    for sock in glob.glob(os.path.join(os.environ.get("TMPDIR", "/tmp"), "nvim.*", "*", "nvim.*.0")):
+        subprocess.run(["nvim", "--server", sock, "--remote-send", "<Cmd>colorscheme omni<CR>"],
+                       capture_output=True, timeout=3)
+    print(f"{OUT.replace(os.path.expanduser('~'), '~')}: {name} ({mode})")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

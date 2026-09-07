@@ -4,6 +4,7 @@
 set -u
 
 CONF="$HOME/.config/omni/config.sh"
+. "$CONF" 2>/dev/null || true
 DIR="$HOME/.config/omni/themes"
 current=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$CONF")
 
@@ -29,12 +30,16 @@ fi
 
 omni-theme-build "$name" || exit 1
 sed -i '' "s/^OMNI_THEME=\".*\"/OMNI_THEME=\"$name\"/" "$CONF"
-omni-ghostty-theme "$name" >/dev/null 2>&1
-omni-bar-theme >/dev/null 2>&1
+# Every consumer is optional and silent when its half is not installed, so the
+# same switch works on a machine that has only the launcher and an editor.
+omni-ghostty-theme "$name" >/dev/null 2>&1 || true          # terminal
+command -v omni-nvim-theme >/dev/null 2>&1 && omni-nvim-theme "$name" >/dev/null 2>&1   # editor
+command -v sketchybar     >/dev/null 2>&1 && omni-bar-theme >/dev/null 2>&1              # bar
 # omarchy pairs every theme with its backgrounds; do the same when there are any.
-# Detached: it restarts WallpaperAgent and takes ~2s, which must not block the
+# Detached: it can restart WallpaperAgent (~2s), which must not block the
 # launcher when this is called from a menu selection.
-if [ -n "$(ls -A "$DIR/$name/backgrounds" 2>/dev/null)" ]; then
+if [ "${OMNI_WALLPAPER:-1}" = 1 ] && command -v omni-wallpaper >/dev/null 2>&1 \
+   && [ -n "$(ls -A "$DIR/$name/backgrounds" 2>/dev/null)" ]; then
   nohup omni-wallpaper next >/dev/null 2>&1 &
 fi
 [ "$RESTART" = 1 ] && omni-start --restart >/dev/null
