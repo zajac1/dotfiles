@@ -17,8 +17,10 @@ case "$OFF" in ''|*[!0-9-]*) OFF=0 ;; esac
 
 MONO="JetBrainsMono Nerd Font:Regular:12.0"
 GRID_W=188          # 26 chars of JetBrainsMono at 12pt, in points
-LARROW=$(printf '\u2039')
-RARROW=$(printf '\u203a')
+# Literal characters, not printf '\\u2039': /bin/bash is 3.2 on macOS and \\u
+# escapes arrived in 4.2, so that printf emits the text "\\u2039" verbatim.
+LARROW='‹'
+RARROW='›'
 ARGS=()
 for it in $(sketchybar --query clock 2>/dev/null | jq -r '.popup.items[]?'); do
   ARGS+=(--remove "$it")
