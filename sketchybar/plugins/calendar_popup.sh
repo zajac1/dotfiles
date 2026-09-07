@@ -80,3 +80,5 @@ else
 fi
 
 sketchybar "${ARGS[@]}"
+[ "$(sketchybar --query clock | jq -r .popup.drawing)" = on ] && "$HOME/.config/sketchybar/plugins/popup_watch.sh" clock 12 >/dev/null 2>&1 &
+

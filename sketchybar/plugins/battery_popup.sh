@@ -66,3 +66,5 @@ ARGS+=(--add item battery.settings popup.battery
        --set battery popup.drawing="$DRAW" --set clock popup.drawing=off --set volume popup.drawing=off)
 
 sketchybar "${ARGS[@]}"
+[ "$(sketchybar --query battery | jq -r .popup.drawing)" = on ] && "$HOME/.config/sketchybar/plugins/popup_watch.sh" battery 6 >/dev/null 2>&1 &
+
