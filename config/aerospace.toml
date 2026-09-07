@@ -1,3 +1,5 @@
+config-version = 2
+
 # AeroSpace, paired with the omni bar.
 #
 # gaps.outer.top is what keeps windows from sliding under the floating bar:
