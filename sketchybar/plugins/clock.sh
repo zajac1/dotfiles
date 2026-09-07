@@ -6,7 +6,9 @@
 # The item subscribes to mouse.exited.global purely to dismiss its popup;
 # SketchyBar has no click-outside-to-close of its own.
 case "${SENDER:-}" in
-  mouse.entered) exec "$HOME/.config/sketchybar/plugins/calendar_popup.sh" --show ;;
+  mouse.entered)
+    [ "$(sketchybar --query "$NAME" | jq -r '.popup.drawing')" = on ] && exit 0
+    exec "$HOME/.config/sketchybar/plugins/calendar_popup.sh" --show ;;
   mouse.exited.global|front_app_switched)
     sketchybar --set "$NAME" popup.drawing=off; exit 0 ;;
 esac

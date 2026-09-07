@@ -1,6 +1,8 @@
 #!/bin/bash
 case "$SENDER" in
-  mouse.entered) exec "$HOME/.config/sketchybar/plugins/volume_popup.sh" --show ;;
+  mouse.entered)
+    [ "$(sketchybar --query "$NAME" | jq -r '.popup.drawing')" = on ] && exit 0
+    exec "$HOME/.config/sketchybar/plugins/volume_popup.sh" --show ;;
   mouse.scrolled|mouse.exited.global|front_app_switched)
     exec "$HOME/.config/sketchybar/plugins/volume_scroll.sh" ;;
 esac
