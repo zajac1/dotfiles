@@ -329,6 +329,20 @@ Read [`docs/GOTCHAS.md`](docs/GOTCHAS.md). This looks like ordinary shell but
 several values are empirical, and there is a class of bug here that a test
 harness will actively lie to you about.
 
+## Window manager
+
+Nothing on macOS reserves screen space for a floating bar except the native
+menu bar, so with it auto-hidden windows slide under the pills. AeroSpace
+fixes that with `gaps.outer.top`; `config/aerospace.toml` is the config the bar
+expects (arrow-key bindings, so alt+letter diacritics keep working; alt-space
+left free for the launcher). The bar shows AeroSpace workspaces when it is
+installed and macOS Spaces otherwise. AeroSpace needs Accessibility permission
+on first launch.
+
+Wallpapers rotate through the active theme's backgrounds every
+`OMNI_WALLPAPER_ROTATE` seconds (launchd timer, `omni-wallpaper rotate on|off`;
+0 disables). Style -> Next wallpaper skips ahead.
+
 ## Top bar
 
 SketchyBar, modelled on omarchy's waybar — flat, icon-led, clock centred.

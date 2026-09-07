@@ -34,6 +34,7 @@ case "$kind" in
       btop-net)    open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" net ;;
       cpu-refresh|mem-refresh|net-refresh) : ;;
       caffeinate)  omni-caffeinate toggle ;;
+      wallpaper-next) omni-wallpaper next ;;
       monitor)     open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" "cpu mem net proc" ;;
       weather-report) open -na Ghostty.app --args -e "$HOME/.local/bin/omni-weather-report" ;;
       weather-refresh) rm -f "$HOME/.cache/omni/weather.json"; omni-weather >/dev/null 2>&1 ;;

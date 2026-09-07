@@ -43,6 +43,9 @@ OMNI_APP_COLORS=true
 # How a theme's wallpaper is placed: fill | fit | center | stretch. A theme can
 # override this in themes/<name>/wallpaper.toml, with a fill colour too.
 OMNI_WALLPAPER_PLACEMENT="fill"
+# Rotate through the active theme's backgrounds every N seconds (0 = never).
+# Applied by `omni-wallpaper rotate on`, which omni-start runs.
+OMNI_WALLPAPER_ROTATE=1800
 
 OMNI_PROJECT_ROOT="$HOME/git"
 # We build this URL ourselves; macOS exposes no way to ask the default

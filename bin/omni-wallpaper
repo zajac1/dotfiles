@@ -87,8 +87,19 @@ pool() {
 
 STORE="$HOME/Library/Application Support/com.apple.wallpaper/Store/Index.plist"
 
+live_spaces() { # how many Spaces carry their own wallpaper override
+  /usr/bin/python3 - "$STORE" <<'PY' 2>/dev/null || echo 99
+import plistlib, sys
+d = plistlib.load(open(sys.argv[1], "rb"))
+print(sum("Desktop" in v.get("Default", {}) for v in d.get("Spaces", {}).values()))
+PY
+}
+
 stage_all_spaces() { # path
   [ -f "$STORE" ] || return 0
+  # With a single Space (the AeroSpace way) the plain set reaches everything:
+  # skip the store edit and the agent restart, and with them the black frame.
+  [ "$(live_spaces)" -le 1 ] && return 0
   cp "$STORE" "$HOME/.cache/omni/Index.plist.bak" 2>/dev/null || true
   /usr/bin/python3 - "$STORE" "$1" "$PLACE_ID" "$FILL" <<'PY' || return 1
 import copy, datetime, plistlib, sys, urllib.parse
@@ -139,7 +150,28 @@ set_wallpaper() {
   printf '%s\n' "$src" > "$STATE"
 }
 
+AGENT="$HOME/Library/LaunchAgents/com.omni.wallpaper.plist"
+rotate() { # on|off -> (re)install or remove the timer from OMNI_WALLPAPER_ROTATE
+  launchctl bootout "gui/$(id -u)" "$AGENT" >/dev/null 2>&1 || true
+  if [ "$1" = off ] || [ "${OMNI_WALLPAPER_ROTATE:-0}" -le 0 ] 2>/dev/null; then
+    /bin/rm -f "$AGENT"; echo "rotation: off"; return 0
+  fi
+  mkdir -p "${AGENT%/*}"
+  cat > "$AGENT" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.omni.wallpaper</string>
+  <key>ProgramArguments</key><array><string>$HOME/.local/bin/omni-wallpaper</string><string>next</string></array>
+  <key>StartInterval</key><integer>$OMNI_WALLPAPER_ROTATE</integer>
+  <key>EnvironmentVariables</key><dict><key>PATH</key><string>$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string></dict>
+</dict></plist>
+PLIST
+  launchctl bootstrap "gui/$(id -u)" "$AGENT" && echo "rotation: every ${OMNI_WALLPAPER_ROTATE}s"
+}
+
 case "${1-}" in
+  rotate) rotate "${2-on}" ;;
   set)  set_wallpaper "${2-}" ;;
   list) pool ;;
   current) cat "$STATE" 2>/dev/null ;;
@@ -152,5 +184,5 @@ case "${1-}" in
       END { print a[(hit % NR) + 1] }')
     set_wallpaper "$nxt" && printf '%s\n' "${nxt##*/}"
     ;;
-  *) echo "usage: omni-wallpaper [next|set <path>|list|current]" >&2; exit 2 ;;
+  *) echo "usage: omni-wallpaper [next|set <path>|list|current|rotate on|off]" >&2; exit 2 ;;
 esac

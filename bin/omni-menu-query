@@ -110,6 +110,7 @@ case "$lvl" in
   style)
     printf 'menu\t%s  Theme\ttheme\n' "$(printf '\xef\x87\x9e')"
     printf 'menu\t%s  Font\tfont\n'  "$(printf '\xef\x80\xb1')"
+    printf 'act\t󰸉  Next wallpaper\twallpaper-next\n'
     ;;
   font)
     # Ghostty has no escape sequence for changing font, so unlike themes this

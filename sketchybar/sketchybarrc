@@ -52,6 +52,10 @@ sketchybar --add item logo left \
                       icon.padding_left=12 icon.padding_right=10 label.drawing=off \
                       click_script="$PLUGINS/toggle_omni.sh"
 
+# AeroSpace reports workspace changes through this event (exec-on-workspace-
+# change in ~/.aerospace.toml). Declared unconditionally; harmless without it.
+sketchybar --add event aerospace_workspace_change
+
 # How many Space indicators to draw. macOS exposes no reliable public way to
 # count Desktops, so this is manual - set it to however many you actually have
 # (Mission Control > hover the top edge > "+" to add more).
@@ -63,7 +67,7 @@ for i in $(seq 1 "$SPACES"); do
                             label.padding_left=8 label.padding_right=8 \
                             script="$PLUGINS/space.sh" \
                             click_script="$PLUGINS/goto_space.sh $i" \
-             --subscribe space.$i space_change
+             --subscribe space.$i space_change aerospace_workspace_change
 done
 
 # SketchyBar only runs an item's script on its events, so nothing paints the

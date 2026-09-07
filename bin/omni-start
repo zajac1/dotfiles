@@ -68,3 +68,6 @@ fi
 
 open -na Ghostty.app --args --config-default-files=false --config-file="$CONFIG"
 echo started
+
+# wallpaper rotation timer follows OMNI_WALLPAPER_ROTATE
+omni-wallpaper rotate on >/dev/null 2>&1 || true

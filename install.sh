@@ -76,6 +76,15 @@ else
   echo "    sketchybar not installed, skipping - brew install FelixKratz/formulae/sketchybar"
 fi
 
+echo "==> AeroSpace config (optional)"
+if [ -f "$HOME/.aerospace.toml" ]; then
+  echo "    ~/.aerospace.toml exists, left untouched"
+elif command -v aerospace >/dev/null 2>&1 || [ -d /Applications/AeroSpace.app ]; then
+  cp "$SRC/config/aerospace.toml" "$HOME/.aerospace.toml"; echo "    ~/.aerospace.toml created (top gap for the bar)"
+else
+  echo "    AeroSpace not installed, skipping - brew install --cask nikitabobko/tap/aerospace"
+fi
+
 echo "==> Ghostty terminal theme (optional)"
 echo "    add this line to ~/.config/ghostty/config to theme all your terminals:"
 echo "        config-file = omni-theme"
