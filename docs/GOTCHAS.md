@@ -398,3 +398,21 @@ real picture is swapped underneath, then the window's alpha is stepped to 0.
 Window alpha is applied by the window server, so no run loop is needed from
 osascript - a delay loop is enough. Only usable when the agent is not being
 restarted; a restart blanks the desktop regardless.
+
+## 44. AeroSpace tiles Ghostty's quick terminal and strands the session
+
+Once the launcher's quick-terminal window is pulled into a workspace tree,
+Ghostty loses track of it and opens a fresh surface on the next toggle; the
+old `omni` + fzf keep running in a window nobody can reach. The launcher
+window now carries `title = omni-launcher` and an `on-window-detected` rule
+floats it (and the hey-calendar one). If stranded sessions appear anyway,
+`ps -axo pid,etime,command | grep 'exec -l .*/omni$'` shows them by age.
+
+## 45. Mission Control owns ctrl+arrows until told otherwise
+
+An AeroSpace binding on ctrl-left/right loads fine but never fires while
+macOS's "Move left/right a space" (symbolic hotkeys 79-82) is enabled - the
+system layer takes the key first. Synthetic key events cannot test this: both
+layers ignore them for these shortcuts. Disable the four entries (backup with
+`defaults export com.apple.symbolichotkeys`, edit, `defaults import`, then
+`activateSettings -u`) and the binding works.

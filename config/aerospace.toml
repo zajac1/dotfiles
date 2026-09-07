@@ -27,6 +27,14 @@ exec-on-workspace-change = ['/bin/bash', '-c',
   'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE PREV_WORKSPACE=$AEROSPACE_PREV_WORKSPACE'
 ]
 
+# Ghostty's quick terminals (the omni launcher, hey-calendar) must never be
+# tiled: once pulled into a workspace tree Ghostty loses track of the window
+# and opens a fresh one on the next toggle, stranding the old session.
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+if.window-title-regex-substring = 'omni-launcher|hey|calendar'
+run = ['layout floating']
+
 [key-mapping]
 preset = 'qwerty'
 
@@ -68,6 +76,8 @@ alt-shift-3 = ['move-node-to-workspace 3', 'workspace 3']
 alt-shift-4 = ['move-node-to-workspace 4', 'workspace 4']
 alt-shift-5 = ['move-node-to-workspace 5', 'workspace 5']
 alt-tab = 'workspace-back-and-forth'
+ctrl-left  = 'workspace prev --wrap-around'
+ctrl-right = 'workspace next --wrap-around'
 
 alt-shift-semicolon = 'mode service'
 

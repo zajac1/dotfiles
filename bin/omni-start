@@ -16,6 +16,8 @@ mkdir -p "$(dirname "$CONFIG")"
 
 cat > "$CONFIG" <<CONF
 command = $HOME/.local/bin/omni
+# a fixed title so a window manager can recognise the launcher (AeroSpace floats it)
+title = omni-launcher
 initial-command = /usr/bin/true
 abnormal-command-exit-runtime = 0
 macos-hidden = always
