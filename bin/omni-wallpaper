@@ -3,12 +3,13 @@
 #
 # NSWorkspace sets the picture for the CURRENT Space only; every other Space
 # keeps its own override in Apple's wallpaper store and there is no public API
-# for those. What does work, measured on macOS 26: delete the per-Space
-# "Desktop" overrides from the store, restart WallpaperAgent, THEN set - the
-# agent re-seeds every live Space from the new default. The order matters;
-# set-then-strip left the store in a "Linked" state with no wallpaper at all.
-# Idle (screensaver) entries are left alone. A backup of the store is written
-# to ~/.cache/omni before every edit.
+# for those. What works, measured on macOS 26: set (which updates SystemDefault
+# and the current Space), then copy that Desktop entry over every other live
+# Space's override in the store, then restart WallpaperAgent so it rereads.
+# Because every entry already points at the new picture when the agent comes
+# back, there is no moment with no wallpaper - the earlier strip-then-restart
+# order showed the stock macOS picture for the ~2s until the set landed. Idle
+# (screensaver) entries are left alone. The store is backed up before edits.
 set -u
 
 . "$HOME/.config/omni/config.sh"
@@ -47,20 +48,24 @@ all_spaces() {
   [ -f "$STORE" ] || return 0
   cp "$STORE" "$HOME/.cache/omni/Index.plist.bak" 2>/dev/null || true
   /usr/bin/python3 - "$STORE" <<'PY' || return 0
-import plistlib, sys
-p = sys.argv[1]; d = plistlib.load(open(p, "rb")); n = 0
+import copy, plistlib, sys
+p = sys.argv[1]; d = plistlib.load(open(p, "rb"))
+src = d.get("SystemDefault", {}).get("Desktop")
+if not src: sys.exit(0)
+n = 0
 for v in d.get("Spaces", {}).values():
-    n += v.get("Default", {}).pop("Desktop", None) is not None
-    for dv in v.get("Displays", {}).values(): n += dv.pop("Desktop", None) is not None
+    if "Desktop" in v.get("Default", {}): v["Default"]["Desktop"] = copy.deepcopy(src); n += 1
+    for dv in v.get("Displays", {}).values():
+        if "Desktop" in dv: dv["Desktop"] = copy.deepcopy(src); n += 1
 if n: plistlib.dump(d, open(p, "wb"), fmt=plistlib.FMT_BINARY)
 PY
-  killall WallpaperAgent 2>/dev/null && sleep 2
+  killall WallpaperAgent 2>/dev/null
 }
 
 set_wallpaper() {
   [ -f "$1" ] || { echo "no such file: $1" >&2; return 1; }
-  [ "${OMNI_WALLPAPER_ALL_SPACES:-1}" = 1 ] && all_spaces
   osascript -l JavaScript -e "$JS" "$1" || return 1
+  [ "${OMNI_WALLPAPER_ALL_SPACES:-1}" = 1 ] && { sleep 0.5; all_spaces; }
   mkdir -p "${STATE%/*}"
   printf '%s\n' "$1" > "$STATE"
 }
