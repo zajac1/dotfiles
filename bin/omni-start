@@ -44,6 +44,12 @@ window-width = $OMNI_COLS
 window-height = ${OMNI_TERM_ROWS:-$OMNI_ROWS}
 
 quick-terminal-position = center
+# The quick terminal IGNORES window-width/height; without this it is Ghostty's
+# default fraction of the screen, and the launcher box gets fewer rows than
+# OMNI_TERM_ROWS - which showed as lists scrolling their first row away.
+# Measured: for a centred quick terminal the two values are WIDTH,HEIGHT here,
+# whatever the docs say about primary axes - 96%,46% gave 1383x414.
+quick-terminal-size = ${OMNI_TERM_SIZE:-46%,96%}
 quick-terminal-autohide = true
 quick-terminal-animation-duration = $OMNI_ANIMATION
 quick-terminal-space-behavior = move

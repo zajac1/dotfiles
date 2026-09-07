@@ -9,7 +9,7 @@ OMNI_MENU_MAX_ROWS=30
 # input box, padding. It cannot be measured from outside the real terminal, so
 # it is a calibration knob: too low and the last items are cut off, too high
 # and there is dead space under the list.
-OMNI_CHROME=18
+OMNI_CHROME=10
 OMNI_FILL_INSET=15
 
 OMNI_COLS=60
@@ -25,6 +25,9 @@ OMNI_ROW_PAD="30%"
 # Height of the (invisible) Ghostty window the box is centred in. Must exceed
 # OMNI_MENU_MAX_ROWS or tall menus get clipped instead of centred.
 OMNI_TERM_ROWS=30
+# Size of that window as Ghostty quick-terminal-size (width,height - percent of
+# the screen or px). Must give at least OMNI_TERM_ROWS rows at the font size.
+OMNI_TERM_SIZE="46%,96%"
 
 OMNI_FRAME="boxed"
 OMNI_OPACITY=0.95

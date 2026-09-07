@@ -424,3 +424,15 @@ fzf kept the cursor in view and scrolled the first sep row off the top. The
 art itself is wttr's, complete. When a list "loses" its first row, count the
 visible rows against `omni-menu-query <level> | wc -l` before touching the
 content.
+
+## 47. `tput` lies inside the launcher; the quick terminal ignores window-height
+
+TERM is not set in the launcher's surface (`login -q` strips it), so `tput
+lines`/`tput cols` answer 24/80 no matter what the pty is. Every box was being
+centred and sized against 24x80. `stty size </dev/tty` reads the ioctl and is
+right from the first instant. Separately, Ghostty's quick terminal ignores
+window-width/height; without `quick-terminal-size` it was 14 rows tall and
+the launcher's list scrolled its first row away. For a centred quick terminal
+the two values are WIDTH,HEIGHT here (96%,46% gave 1383x414), whatever the
+docs say about primary axes. ~/.cache/omni/term.size records what omni
+computed on its last start; read it before touching OMNI_CHROME.

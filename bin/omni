@@ -68,18 +68,33 @@ EOF
 fi
 
 omni-osc 2>/dev/null
+# The launcher surface is created when Ghostty launches, hidden, with a pty
+# still at the default 24x80; Ghostty sizes it only when the window is first
+# shown. The margin that centres the box is computed ONCE, so computing it now
+# would use 24x80 - which is exactly how the box ended up 14 rows tall and
+# scrolling its first row away. Wait for the real size. (A SIGWINCH trap with
+# `wait` was tried first: bash 3.2 sat through the signal. Polling twice a
+# second while hidden costs nothing measurable.)
+# TRAP: TERM is not set inside this surface (login -q strips it), so `tput`
+# cannot read the terminal and answers 24/80 forever. `stty size` reads the
+# pty ioctl and needs no TERM.
+term_size() { stty size </dev/tty 2>/dev/null || echo "24 80"; }
+while [ "$(term_size)" = "24 80" ]; do sleep 0.5; done
 
 
 margin=0
 bg="-1"
 if [ "$OMNI_FRAME" = "boxed" ]; then
-  cols=$(tput cols 2>/dev/null || echo "$want_cols")
-  rows=$(tput lines 2>/dev/null || echo "$want_rows")
+  read -r rows cols <<EOF
+$(term_size)
+EOF
+  [ -n "$rows" ] || rows=$want_rows; [ -n "$cols" ] || cols=$want_cols
   side=$(( (cols - want_cols) / 2 )); [ "$side" -lt 0 ] && side=0
   top=$(( (rows - want_rows) / 2 ));  [ "$top"  -lt 0 ] && top=0
   margin="$top,$side"
   bg="16"
 fi
+printf 'pid=%s tty=%s rows=%s cols=%s want_rows=%s want_cols=%s top=%s side=%s level=%s\n' "$$" "$(tty 2>/dev/null)" "${rows:-?}" "${cols:-?}" "$want_rows" "$want_cols" "${top:-?}" "${side:-?}" "${level:-search}" >> "$CACHE/term.size" 2>/dev/null
 
 set -- \
   --style=minimal \
