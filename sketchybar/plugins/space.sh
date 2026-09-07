@@ -39,10 +39,13 @@ COL=${PALETTE[$(( (N - 1) % ${#PALETTE[@]} ))]}
 # Only the item whose number is now current moves the cursor; every item
 # recolours its own label.
 CELL=23; SPACES="${OMNI_BAR_SPACES:-5}"; ROW=$(( CELL * SPACES ))
-sketchybar --animate sin 20 --set "$NAME" label.color=$COL
+sketchybar --animate tanh 8 --set "$NAME" label.color=$COL
 if [ "$N" = "$CUR" ]; then
   OFF=$(( CELL * (N - 1) ))
-  sketchybar --animate sin 20 \
-             --set space.cursor padding_left=$(( -(ROW - OFF) )) background.color=$COL label="$N" \
-                                click_script="$HOME/.config/sketchybar/plugins/goto_space.sh $N"
+  # snap across with the digit hidden, then let the digit appear in place
+  sketchybar --set space.cursor label.color=0x00000000 label="$N" \
+                                click_script="$HOME/.config/sketchybar/plugins/goto_space.sh $N" \
+             --animate tanh 8 \
+             --set space.cursor padding_left=$(( -(ROW - OFF) )) background.color=$COL
+  ( sleep 0.12; sketchybar --animate tanh 6 --set space.cursor label.color=$BAR_COLOR ) &
 fi

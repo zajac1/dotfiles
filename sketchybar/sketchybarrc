@@ -75,7 +75,7 @@ ROW=$(( CELL * SPACES ))
 for i in $(seq 1 "$SPACES"); do
   sketchybar --add item space.$i left \
              --set space.$i label="$i" icon.drawing=off \
-                            label.font="$FONT:Bold:12.0" \
+                            label.font="$FONT:Bold:12.0" label.width=7 label.align=center \
                             label.padding_left=8 label.padding_right=8 \
                             background.drawing=off \
                             script="$PLUGINS/space.sh" \
@@ -85,6 +85,7 @@ done
 sketchybar --add item space.cursor left \
            --set space.cursor label="1" icon.drawing=off \
                               label.font="$FONT:Bold:12.0" label.color=$BAR_COLOR \
+                              label.width=7 label.align=center \
                               label.padding_left=8 label.padding_right=8 \
                               padding_left=-$ROW padding_right=0 \
                               background.drawing=on background.color=$BLUE \
