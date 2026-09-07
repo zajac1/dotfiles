@@ -1,14 +1,14 @@
 #!/bin/bash
-# omni top bar, modelled on omarchy's waybar.
+# omni top bar, modelled on the Rift setup from r/unixporn.
 #
-# omarchy's actual layout (config/waybar/config.jsonc):
-#   left   custom/omarchy, workspaces
-#   centre clock, weather, update, indicators
-#   right  tray, bluetooth, network, pulseaudio, cpu, battery
+# The defining trait is that there IS no bar: `color` is fully transparent and
+# the visible chrome is two floating pills (brackets), one per side, with the
+# wallpaper showing through the middle. Anything that sets a bar background
+# undoes the whole look.
 #
-# and its style.css is FLAT - "border: none; border-radius: 0", every module on
-# the bar background, separated by margin only. No pills. That is the main
-# difference from where this started.
+# The second trait is colour. Every module's ICON carries its own palette
+# colour; every LABEL stays neutral. Colours come from the active omni
+# palette's ANSI 16 via omni-bar-theme, so they follow the theme.
 #
 # Everything is event-driven (--subscribe); only the clock polls.
 
@@ -19,22 +19,31 @@ PLUGINS="$HOME/.config/sketchybar/plugins"
 # test here caused once.
 FONT="JetBrainsMono Nerd Font"
 
-sketchybar --bar height=30 position=top sticky=on padding_left=10 padding_right=10 \
-                 color=$BAR_COLOR shadow=off
+# margin insets the whole bar from the screen edges, which is what stops it
+# reading as a full-width strip even before the transparent colour.
+sketchybar --bar height=34 position=top sticky=on \
+                 color=$BAR_BG shadow=off \
+                 margin=12 y_offset=2 \
+                 padding_left=0 padding_right=0 \
+                 border_width=0 corner_radius=0
 
-# flat by default: no backgrounds, margin-only separation, like omarchy
 sketchybar --default updates=when_shown \
                     icon.font="$FONT:Regular:13.0" icon.color=$LABEL \
                     label.font="$FONT:Regular:12.0" label.color=$LABEL \
-                    icon.padding_left=7 icon.padding_right=4 \
-                    label.padding_left=0 label.padding_right=7 \
+                    icon.padding_left=11 icon.padding_right=6 \
+                    label.padding_left=0 label.padding_right=11 \
                     background.drawing=off
 
-# ---------------- left: omni launcher, spaces, focused app ----------------
+# ---------------- left pill: omni launcher, spaces ------------------------
 sketchybar --add item logo left \
-           --set logo icon=󰀵 icon.color=$ACCENT icon.font="$FONT:Regular:14.0" y_offset=1 \
-                      icon.padding_left=4 icon.padding_right=10 label.drawing=off \
+           --set logo icon=󰀵 icon.color=$RED icon.font="$FONT:Regular:14.0" y_offset=1 \
+                      icon.padding_left=12 icon.padding_right=10 label.drawing=off \
                       click_script="$PLUGINS/toggle_omni.sh"
+
+# Rift separates the logo from the workspaces with a hairline. Purely cosmetic.
+sketchybar --add item logo.sep left \
+           --set logo.sep icon="│" icon.color=$DIM icon.font="$FONT:Regular:13.0" \
+                          icon.padding_left=0 icon.padding_right=10 label.drawing=off
 
 # How many Space indicators to draw. macOS exposes no reliable public way to
 # count Desktops, so this is manual - set it to however many you actually have
@@ -44,7 +53,7 @@ for i in $(seq 1 "$SPACES"); do
   sketchybar --add item space.$i left \
              --set space.$i label="$i" icon.drawing=off \
                             label.font="$FONT:Bold:12.0" \
-                            label.padding_left=6 label.padding_right=6 \
+                            label.padding_left=8 label.padding_right=8 \
                             script="$PLUGINS/space.sh" \
                             click_script="$PLUGINS/goto_space.sh $i" \
              --subscribe space.$i space_change
@@ -55,40 +64,53 @@ done
 # - cheaper than giving them an update_freq and polling forever.
 for i in $(seq 1 "$SPACES"); do NAME="space.$i" "$PLUGINS/space.sh"; done
 
-# ---------------- centre: clock (omarchy puts it here, not right) ---------
-sketchybar --add item clock center \
-           --set clock icon.drawing=off label.font="$FONT:Bold:12.0" \
-                       update_freq=10 script="$PLUGINS/clock.sh" \
-                       click_script="open -a Calendar"
+sketchybar --add bracket left.pill logo logo.sep $(seq -f "space.%g" 1 "$SPACES") \
+           --set left.pill background.color=$GROUP_BG background.corner_radius=14 \
+                           background.height=28 background.drawing=on \
+                           background.border_width=1 background.border_color=$GROUP_BORDER
 
-# ---------------- right: icon-led status, like omarchy --------------------
-sketchybar --add item battery right \
-           --set battery script="$PLUGINS/battery.sh" update_freq=120 \
-                         click_script="open 'x-apple.systempreferences:com.apple.Battery-Settings.extension'" \
-           --subscribe battery power_source_change system_woke
-
-sketchybar --add item cpu right \
-           --set cpu icon=󰍛 update_freq=15 script="$PLUGINS/cpu.sh" \
-                     click_script="open -na Ghostty.app --args -e $HOME/.local/bin/omni-btop 'cpu mem net proc'"
-
-sketchybar --add item volume right \
-           --set volume script="$PLUGINS/volume.sh" \
-                        click_script="$PLUGINS/volume_popup.sh" \
-                        popup.background.color=$ITEM_BG popup.background.corner_radius=8 \
-                        popup.background.border_width=1 popup.background.border_color=$DIM \
-                        popup.align=right popup.y_offset=2 \
-           --subscribe volume volume_change mouse.scrolled mouse.exited.global
-
+# ---------------- right pill: status, then the clock (Rift's order) -------
 sketchybar --add item wifi right \
-           --set wifi script="$PLUGINS/wifi.sh" update_freq=60 \
+           --set wifi script="$PLUGINS/wifi.sh" update_freq=60 icon.color=$CYAN \
                       click_script="open 'x-apple.systempreferences:com.apple.wifi-settings-extension'" \
            --subscribe wifi wifi_change
 
-# Rift treatment: the right-hand items sit inside ONE rounded container rather
-# than each carrying its own pill. The left side stays flat, omarchy-style.
-sketchybar --add bracket status battery cpu volume wifi \
-           --set status background.color=$ITEM_BG background.corner_radius=9 \
-                        background.height=24 background.drawing=on \
-                        background.padding_left=6 background.padding_right=6
+sketchybar --add item volume right \
+           --set volume script="$PLUGINS/volume.sh" icon.color=$MAGENTA \
+                        click_script="$PLUGINS/volume_popup.sh" \
+                        popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
+                        popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
+                        popup.align=right popup.y_offset=4 \
+           --subscribe volume volume_change mouse.scrolled mouse.exited.global
+
+sketchybar --add item cpu right \
+           --set cpu icon=󰍛 icon.color=$YELLOW update_freq=15 script="$PLUGINS/cpu.sh" \
+                     click_script="open -na Ghostty.app --args -e $HOME/.local/bin/omni-btop 'cpu mem net proc'"
+
+sketchybar --add item battery right \
+           --set battery script="$PLUGINS/battery.sh" update_freq=120 \
+                         click_script="$PLUGINS/battery_popup.sh" \
+                         popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
+                         popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
+                         popup.align=right popup.y_offset=4 \
+           --subscribe battery power_source_change system_woke mouse.exited.global
+
+# Rift keeps the clock in the right-hand pill, not centred, and spells the date
+# out ("8th of May"). update_freq stays coarse: adding seconds means a fork per
+# second forever, and each sketchybar call costs ~25ms.
+sketchybar --add item clock right \
+           --set clock icon=󰥔 icon.color=$BLUE \
+                       label.font="$FONT:Regular:12.0" \
+                       update_freq=20 script="$PLUGINS/clock.sh" \
+                       click_script="$PLUGINS/calendar_popup.sh" \
+                       popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
+                       popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
+                       popup.align=right popup.y_offset=4 \
+           --subscribe clock mouse.exited.global
+
+sketchybar --add bracket right.pill clock battery cpu volume wifi \
+           --set right.pill background.color=$GROUP_BG background.corner_radius=14 \
+                            background.height=28 background.drawing=on \
+                            background.border_width=1 background.border_color=$GROUP_BORDER
 
 sketchybar --update

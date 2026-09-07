@@ -7,6 +7,10 @@ printf '\033[?25l\033[2J\033[3J\033[H' 2>/dev/null
 
 . "$HOME/.config/omni/config.sh"
 
+# Blank lines rendered between items. fzf counts these in the list height, so
+# every want_rows calculation below has to add (n-1)*gap or the box clips.
+ROW_GAP=${OMNI_ROW_GAP:-1}
+
 CACHE="$HOME/.cache/omni"
 STACK="$CACHE/stack"
 MODE="$CACHE/mode"
@@ -28,6 +32,7 @@ if [ "$mode" = search ]; then
   want_rows=$OMNI_ROWS
   ghost=' Search...'
   gap=""
+  [ "$ROW_GAP" -gt 0 ] && gap="--gap=$ROW_GAP"
   gapline=""
 else
   level=$(tail -1 "$STACK" 2>/dev/null)
@@ -41,8 +46,6 @@ $ITEMS
 EOF
   fi
   want_cols=$OMNI_MENU_COLS
-  want_rows=$(( n + OMNI_CHROME ))
-  [ "$want_rows" -gt "$OMNI_MENU_MAX_ROWS" ] && want_rows=$OMNI_MENU_MAX_ROWS
   case "$level" in
     "")        label="Go" ;;
     confirm:*) label="Confirm" ;;
@@ -50,10 +53,13 @@ EOF
   esac
   ghost="${label}…"
   gap=""
+  [ "$ROW_GAP" -gt 0 ] && gap="--gap=$ROW_GAP"
   gapline=""
   hdr=0
   case "$ITEMS" in sep"$TAB"*) hdr=1 ;; esac
-  want_rows=$(( n + OMNI_CHROME ))
+  gap_rows=0
+  [ "$n" -gt 1 ] && gap_rows=$(( (n - 1) * ROW_GAP ))
+  want_rows=$(( n + gap_rows + OMNI_CHROME ))
   [ "$want_rows" -gt "$OMNI_MENU_MAX_ROWS" ] && want_rows=$OMNI_MENU_MAX_ROWS
 fi
 

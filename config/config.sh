@@ -4,12 +4,18 @@ OMNI_FONT="CaskaydiaMono Nerd Font Mono"
 OMNI_FONT_SIZE=18
 
 OMNI_MENU_COLS=38
-OMNI_MENU_MAX_ROWS=24
+OMNI_MENU_MAX_ROWS=34
 OMNI_CHROME=13
 OMNI_FILL_INSET=15
 
 OMNI_COLS=60
 OMNI_ROWS=24
+
+# Blank lines between menu items. 0 = the old tight list.
+OMNI_ROW_GAP=1
+# Height of the (invisible) Ghostty window the box is centred in. Must exceed
+# OMNI_MENU_MAX_ROWS or tall menus get clipped instead of centred.
+OMNI_TERM_ROWS=36
 
 OMNI_FRAME="boxed"
 OMNI_OPACITY=0.95

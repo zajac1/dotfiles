@@ -1,17 +1,59 @@
 #!/bin/bash
 # Regenerate SketchyBar colours from the active omni palette and reload the bar.
 # Same single source of truth as the launcher and the Ghostty theme.
+#
+# Two sources, on purpose:
+#   themes/<name>.sh    the 10 semantic OMNI_* roles the launcher uses
+#   palettes/<name>.toml the full ANSI 16, which is where the bar's per-module
+#                        accents come from. Without these every module would be
+#                        one accent colour and the bar reads as monochrome.
 set -u
 . "$HOME/.config/omni/config.sh" 2>/dev/null || exit 0
+PAL="$HOME/.config/omni/palettes/$OMNI_THEME.toml"
 OUT="$HOME/.config/sketchybar/colors.sh"
 mkdir -p "$(dirname "$OUT")"
+
 hex() { printf '0xff%s' "$(printf '%s' "$1" | tr -d '#')"; }
-cat > "$OUT" <<EOF
+# alpha-blended variant, for the floating group pills
+hexa() { printf '0x%s%s' "$1" "$(printf '%s' "$2" | tr -d '#')"; }
+
+# Pull one key out of the palette, falling back to a semantic role if the
+# palette is missing or malformed. Hex is validated: this value is written into
+# a file that gets sourced.
+pget() {
+  v=$(sed -n "s/^$1[[:space:]]*=[[:space:]]*\"\(#\{0,1\}[0-9a-fA-F]\{6\}\)\".*/\1/p" "$PAL" 2>/dev/null | head -1)
+  case "$v" in
+    '#'??????|??????) printf '%s' "$v" ;;
+    *) printf '%s' "$2" ;;
+  esac
+}
+
+RED=$(pget color1 "$OMNI_ACCENT")
+GREEN=$(pget color2 "$OMNI_ACCENT")
+YELLOW=$(pget color3 "$OMNI_ACCENT")
+BLUE=$(pget color4 "$OMNI_ACCENT")
+MAGENTA=$(pget color5 "$OMNI_ACCENT")
+CYAN=$(pget color6 "$OMNI_ACCENT")
+
+cat > "$OUT" <<CONF
 export BAR_COLOR=$(hex "$OMNI_BASE")
 export ITEM_BG=$(hex "$OMNI_SECTION_BG")
 export LABEL=$(hex "$OMNI_TEXT")
 export ACCENT=$(hex "$OMNI_ACCENT")
 export DIM=$(hex "$OMNI_DIM")
 export SELECT_BG=$(hex "$OMNI_SELECT_BG")
-EOF
+
+# The bar itself is transparent; the pills carry the background.
+export BAR_BG=0x00000000
+export GROUP_BG=$(hexa e6 "$OMNI_SECTION_BG")
+export GROUP_BORDER=$(hexa 40 "$OMNI_TEXT")
+
+export RED=$(hex "$RED")
+export GREEN=$(hex "$GREEN")
+export YELLOW=$(hex "$YELLOW")
+export BLUE=$(hex "$BLUE")
+export MAGENTA=$(hex "$MAGENTA")
+export CYAN=$(hex "$CYAN")
+CONF
+
 command -v sketchybar >/dev/null 2>&1 && sketchybar --reload >/dev/null 2>&1 || true

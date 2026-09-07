@@ -1,0 +1,62 @@
+#!/bin/bash
+# Spike: set the desktop wallpaper from omni.
+#
+# KNOWN LIMITATION (the whole point of this spike): NSWorkspace sets the
+# picture for the CURRENT Space on each display only. macOS stores a separate
+# wallpaper per Space and exposes no public API to enumerate or write them, so
+# your other Spaces keep whatever they had. Switch Spaces after running this to
+# see how much that bothers you.
+set -u
+
+. "$HOME/.config/omni/config.sh"
+
+DIR="$HOME/.config/omni/backgrounds"
+THEME_DIR="$DIR/$OMNI_THEME"
+STATE="$HOME/.cache/omni/wallpaper"
+
+# The path MUST reach JXA through argv, never string interpolation: a quote in
+# a filename would otherwise be executed as JavaScript.
+JS='ObjC.import("AppKit");
+function run(argv) {
+  var url = $.NSURL.fileURLWithPath($(argv[0]));
+  var ws = $.NSWorkspace.sharedWorkspace;
+  var screens = $.NSScreen.screens;
+  for (var i = 0; i < screens.count; i++) {
+    var scr = screens.objectAtIndex(i);
+    var opts = ws.desktopImageOptionsForScreen(scr);
+    if (!opts || opts.isNil()) opts = $.NSDictionary.dictionary;
+    ws.setDesktopImageURLForScreenOptionsError(url, scr, opts, null);
+  }
+}'
+
+pool() {
+  d="$DIR"
+  [ -d "$THEME_DIR" ] && d="$THEME_DIR"
+  [ -d "$d" ] || return 0
+  find "$d" -maxdepth 1 -type f \
+    \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \
+       -o -iname '*.heic' -o -iname '*.webp' \) | sort
+}
+
+set_wallpaper() {
+  [ -f "$1" ] || { echo "no such file: $1" >&2; return 1; }
+  osascript -l JavaScript -e "$JS" "$1" || return 1
+  mkdir -p "${STATE%/*}"
+  printf '%s\n' "$1" > "$STATE"
+}
+
+case "${1-}" in
+  set)  set_wallpaper "${2-}" ;;
+  list) pool ;;
+  current) cat "$STATE" 2>/dev/null ;;
+  next|"")
+    files=$(pool)
+    [ -n "$files" ] || { echo "no wallpapers in $DIR" >&2; exit 1; }
+    prev=$(cat "$STATE" 2>/dev/null || true)
+    nxt=$(printf '%s\n' "$files" | awk -v p="$prev" '
+      { a[NR]=$0; if ($0==p) hit=NR }
+      END { print a[(hit % NR) + 1] }')
+    set_wallpaper "$nxt" && printf '%s\n' "${nxt##*/}"
+    ;;
+  *) echo "usage: omni-wallpaper [next|set <path>|list|current]" >&2; exit 2 ;;
+esac

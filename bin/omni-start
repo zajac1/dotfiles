@@ -36,7 +36,7 @@ window-padding-x = 2
 window-padding-y = 1
 window-padding-balance = true
 window-width = $OMNI_COLS
-window-height = $OMNI_ROWS
+window-height = ${OMNI_TERM_ROWS:-$OMNI_ROWS}
 
 quick-terminal-position = center
 quick-terminal-autohide = true

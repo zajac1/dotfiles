@@ -6,6 +6,7 @@ set -euo pipefail
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN="$HOME/.local/bin"
 CFG="$HOME/.config/omni"
+BAR="$HOME/.config/sketchybar"
 AGENT="$HOME/Library/LaunchAgents/com.omni.launcher.plist"
 
 echo "==> checking dependencies"
@@ -41,6 +42,18 @@ fi
 [ -f "$CFG/glyphs" ] || cp "$SRC/config/glyphs.example" "$CFG/glyphs"
 [ -f "$CFG/sections" ] || cp "$SRC/config/sections.example" "$CFG/sections"
 cp "$SRC/data/glyphs.tsv" "$CFG/glyphs.tsv"
+
+echo "==> installing top bar to $BAR"
+if command -v sketchybar >/dev/null 2>&1; then
+  mkdir -p "$BAR/plugins"
+  install -m 0755 "$SRC"/sketchybar/sketchybarrc "$BAR/sketchybarrc"
+  install -m 0755 "$SRC"/sketchybar/plugins/*    "$BAR/plugins/"
+  # colors.sh is generated from the active palette, not shipped
+  "$BIN/omni-bar-theme" >/dev/null 2>&1 || true
+  echo "    ok (brew services start sketchybar, if it is not running)"
+else
+  echo "    sketchybar not installed, skipping - brew install FelixKratz/formulae/sketchybar"
+fi
 
 echo "==> Ghostty terminal theme (optional)"
 echo "    add this line to ~/.config/ghostty/config to theme all your terminals:"
