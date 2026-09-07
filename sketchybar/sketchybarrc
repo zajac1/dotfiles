@@ -61,25 +61,22 @@ sketchybar --add event aerospace_workspace_change
 # (Mission Control > hover the top edge > "+" to add more).
 SPACES="${OMNI_BAR_SPACES:-5}"
 # One indicator that slides between the numbers, rather than a pill that pops
-# from one to the next. SketchyBar cannot move an item, but it can animate a
-# background's padding: the cursor is ONE item as wide as the whole row of
-# numbers, drawn first, with a negative right padding so the numbers are laid
-# out on top of it; its background is inset from the left and right to the
-# width of one number, and those insets are what animate. Each number is
-# exactly $CELL points wide (8+glyph+8), so the offset of number N is CELL*(N-1).
+# from one to the next. SketchyBar cannot reposition an item directly, but an
+# item's padding_left animates - so the cursor is ONE item exactly one cell
+# wide, added before the numbers (so it sits under them), and its padding_left
+# is the offset of the current number. The first number is pulled back by
+# (offset + CELL) in the same animation, which keeps the numbers still.
+# TRAP: background.padding_* is the SAME property as the item's padding in
+# SketchyBar, not an inset - it moves the item, it does not shrink the pill.
+# Each number is exactly CELL points wide (8 + glyph + 8).
 CELL=23
-ROW=$(( CELL * SPACES ))
 sketchybar --add item space.cursor left \
-           --set space.cursor icon.drawing=off label.drawing=off width=$ROW \
+           --set space.cursor icon.drawing=off label.drawing=off width=$CELL \
                               padding_left=0 padding_right=0 \
                               background.drawing=on background.color=$BLUE \
-                              background.corner_radius=8 background.height=20 \
-                              background.padding_left=0 background.padding_right=$(( ROW - CELL ))
+                              background.corner_radius=8 background.height=20
 for i in $(seq 1 "$SPACES"); do
-  # the first number is pulled back by the whole row so the numbers sit ON the
-  # cursor item (negative item padding works; negative background padding does
-  # not extend a background past its item)
-  [ "$i" = 1 ] && PULL="padding_left=-$ROW" || PULL=""
+  [ "$i" = 1 ] && PULL="padding_left=-$CELL" || PULL=""
   sketchybar --add item space.$i left \
              --set space.$i label="$i" icon.drawing=off $PULL \
                             label.font="$FONT:Bold:12.0" \

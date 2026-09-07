@@ -33,15 +33,17 @@ N="${NAME#space.}"
 PALETTE=($BLUE $MAGENTA $GREEN $YELLOW $CYAN $RED)
 COL=${PALETTE[$(( (N - 1) % ${#PALETTE[@]} ))]}
 
-# The cursor is one shared item (see sketchybarrc); every space item runs this
-# script on the event, so only the item whose number is now current moves it -
-# the others just recolour their own label. Offsets: CELL points per number.
-CELL=23; SPACES="${OMNI_BAR_SPACES:-5}"; ROW=$(( CELL * SPACES ))
+# The cursor is one shared item one cell wide (see sketchybarrc). Moving it is
+# animating its padding_left to the current number's offset; the first number's
+# padding_left goes to -(offset + CELL) in the SAME call so the row of numbers
+# does not shift. Only the item whose number is now current moves the cursor.
+CELL=23
 if [ "$N" = "$CUR" ]; then
+  OFF=$(( CELL * (N - 1) ))
   sketchybar --animate sin 20 \
-             --set space.cursor background.padding_left=$(( CELL * (N - 1) )) \
-                                background.padding_right=$(( ROW - CELL * N )) \
-                                background.color=$COL \
+             --set space.cursor padding_left=$OFF background.color=$COL \
+             --animate sin 20 \
+             --set space.1 padding_left=$(( -(OFF + CELL) )) \
              --animate sin 20 \
              --set "$NAME" label.color=$BAR_COLOR
 else
