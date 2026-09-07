@@ -331,3 +331,23 @@ and the script has died. `copyfile` for anything under `/System`.
 
 `slot() { set -- $LIST; shift "$1"; }` shifts by the first word of LIST, not by
 the number you passed - `set --` has already replaced `$1`. Save it first.
+
+## 37. `pgrep -x sketchybar` returns nothing inside a script sketchybar spawned
+
+Every plugin, click_script and popup builder runs as a child of sketchybar, and
+from there `pgrep -x sketchybar` prints nothing - while the same command from a
+terminal prints the PID. The popup watcher used that PID to find sketchybar's
+windows; with none, it saw "no popup" and quit, and popups were stranded. Only
+watchers started from an interactive shell ever worked, which is why the test
+harness said "fixed" while the bar said otherwise. Walk the parent chain
+(`ps -o ppid=`) to the process named sketchybar instead.
+
+## 38. A hover-opened popup is at window layer 101, a `--show`-opened one at 0
+
+`CGWindowListCopyWindowInfo` shows SketchyBar's popup rows at layer 101 when
+SketchyBar opened them from its own mouse.entered, and at layer 0 when a script
+opened them with `popup.drawing=on`. Unused popup windows park at x = -9999 on
+layer 101 too. Classify popup windows by position (y > 0, x > -1000), never by
+layer, and request `kCGWindowListOptionAll` - OnScreenOnly omits the open
+popup. Test through the real hover path; a harness that opens popups by
+message exercises a different code path in SketchyBar.
