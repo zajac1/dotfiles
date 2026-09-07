@@ -1,0 +1,55 @@
+#!/bin/bash
+# Derive the launcher's 10 colour roles from a theme's colors.toml.
+#
+#   omni-theme-build NAME | --all
+#
+# Source of truth:  ~/.config/omni/themes/NAME/colors.toml   (omarchy's format)
+# Derived, cached:  ~/.cache/omni/themes/NAME.sh              (sourced by config.sh)
+#
+# colors.toml is the ONLY file a theme needs. It is omarchy's own format, so an
+# omarchy theme drops in unchanged and a theme made here could go back the
+# other way. The .sh is a cache: never edit it, regenerate it.
+#
+# TRAP: NAME indexes a path and the output gets `.`-sourced, so it is validated
+# and every colour is checked to be a 6-digit hex before it is written.
+set -u
+SRC="$HOME/.config/omni/themes"
+OUT="$HOME/.cache/omni/themes"
+mkdir -p "$OUT"
+
+val() { # key file -> #rrggbb or empty
+  v=$(sed -n "s/^$1[[:space:]]*=[[:space:]]*\"\(#[0-9a-fA-F]\{6\}\)\".*/\1/p" "$2" | head -1)
+  printf '%s' "$v"
+}
+
+build() {
+  name="$1"
+  case "$name" in ''|*[!a-zA-Z0-9._-]*) echo "bad theme name: $name" >&2; return 1 ;; esac
+  toml="$SRC/$name/colors.toml"
+  [ -f "$toml" ] || { echo "no such theme: $name ($toml)" >&2; return 1; }
+  bg=$(val background "$toml"); fg=$(val foreground "$toml"); acc=$(val accent "$toml")
+  dim=$(val light_foreground "$toml"); muted=$(val muted "$toml")
+  lighter=$(val lighter_background "$toml"); sel=$(val selection "$toml")
+  mode=$(sed -n 's/^mode[[:space:]]*=[[:space:]]*"\(light\|dark\)".*/\1/p' "$toml" | head -1)
+  for v in "$bg" "$fg" "$acc"; do [ -n "$v" ] || { echo "$name: colors.toml lacks background/foreground/accent" >&2; return 1; }; done
+  tmp="$OUT/$name.sh.tmp"
+  {
+    printf 'OMNI_MODE="%s"\n' "${mode:-dark}"
+    printf 'OMNI_BASE="%s"\n' "$bg"
+    printf 'OMNI_TEXT="%s"\n' "$fg"
+    printf 'OMNI_BORDER="%s"\n' "$fg"
+    printf 'OMNI_ACCENT="%s"\n' "$acc"
+    printf 'OMNI_SELECTED_TEXT="%s"\n' "$acc"
+    printf 'OMNI_DIM="%s"\n' "${dim:-$fg}"
+    printf 'OMNI_CURSOR="%s"\n' "$fg"
+    printf 'OMNI_INPUT_BG="%s"\n' "${muted:-$bg}"
+    printf 'OMNI_SECTION_BG="%s"\n' "${lighter:-$bg}"
+    printf 'OMNI_SELECT_BG="%s"\n' "${sel:-$acc}"
+  } > "$tmp" && mv -f "$tmp" "$OUT/$name.sh"
+}
+
+case "${1-}" in
+  --all) rc=0; for d in "$SRC"/*/; do [ -f "$d/colors.toml" ] || continue; n="${d%/}"; build "${n##*/}" || rc=1; done; exit $rc ;;
+  "")    echo "usage: omni-theme-build NAME | --all" >&2; exit 2 ;;
+  *)     build "$1" ;;
+esac

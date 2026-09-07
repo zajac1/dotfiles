@@ -4,8 +4,8 @@
     omni-theme-propose IMAGE [--name NAME] [--light|--dark] [--write]
 
 Prints the palette (with terminal swatches) and, with --write, creates
-~/.config/omni/palettes/NAME.toml, themes/NAME.sh and backgrounds/NAME/IMAGE so
-`omni-theme NAME` can use it.
+~/.config/omni/themes/NAME/colors.toml (omarchy's format) and
+themes/NAME/backgrounds/IMAGE, then builds it, so `omni-theme NAME` works.
 
 Zero dependencies on purpose: sips (macOS) renders any format it can read to a
 24-bit BMP, and median-cut over 96x96 pixels is a few milliseconds in plain
@@ -224,20 +224,30 @@ def main(argv):
     if not write:
         print("\n(dry run - add --write to create the theme)")
         return
-    os.makedirs(f"{CFG}/palettes", exist_ok=True)
-    os.makedirs(f"{CFG}/themes", exist_ok=True)
-    os.makedirs(f"{CFG}/backgrounds/{name}", exist_ok=True)
-    with open(f"{CFG}/palettes/{name}.toml", "w") as f:
-        f.write(f'accent = "{hexs(roles["OMNI_ACCENT"])}"\ncursor = "{hexs(roles["OMNI_CURSOR"])}"\n'
-                f'foreground = "{hexs(roles["OMNI_TEXT"])}"\nbackground = "{hexs(roles["OMNI_BASE"])}"\n'
-                f'selection_foreground = "{hexs(roles["OMNI_BASE"])}"\nselection_background = "{hexs(roles["OMNI_TEXT"])}"\n\n')
-        for i, c in enumerate(colors):
-            f.write(f'color{i} = "{hexs(c)}"\n')
-    with open(f"{CFG}/themes/{name}.sh", "w") as f:
-        for k, v in roles.items():
-            f.write(f'{k}="{hexs(v)}"\n')
-    shutil.copy2(image, f"{CFG}/backgrounds/{name}/")
-    print(f"\nwritten: palettes/{name}.toml themes/{name}.sh backgrounds/{name}/  ->  omni-theme {name}")
+    d = f"{CFG}/themes/{name}"
+    os.makedirs(f"{d}/backgrounds", exist_ok=True)
+    bg, fg, acc = roles["OMNI_BASE"], roles["OMNI_TEXT"], roles["OMNI_ACCENT"]
+    black = (0.0, 0.0, 0.0)
+    orange = ensure_contrast(rgb(30 / 360, 0.42 if light else 0.68, 0.6), bg, 3.0, -1 if light else 1)
+    toml = {
+        "mode": "light" if light else "dark",
+        "accent": acc, "selection": roles["OMNI_SELECT_BG"], "muted": roles["OMNI_INPUT_BG"],
+        "background": bg, "dark_background": mix(bg, black, 0.2), "darker_background": mix(bg, black, 0.35),
+        "lighter_background": roles["OMNI_SECTION_BG"],
+        "foreground": fg, "dark_foreground": mix(fg, bg, 0.7), "light_foreground": roles["OMNI_DIM"],
+        "bright_foreground": fg,
+        "red": colors[1], "yellow": colors[3], "orange": orange, "green": colors[2], "cyan": colors[6],
+        "blue": colors[4], "magenta": colors[5], "brown": mix(orange, black, 0.45),
+        "bright_red": colors[9], "bright_yellow": colors[11], "bright_green": colors[10],
+        "bright_cyan": colors[14], "bright_blue": colors[12], "bright_magenta": colors[13],
+    }
+    with open(f"{d}/colors.toml", "w") as f:
+        for k, v in toml.items():
+            f.write(f'{k} = "{v if isinstance(v, str) else hexs(v)}"\n')
+    # copyfile, not copy2: copying flags/xattrs off a /System image is refused
+    shutil.copyfile(image, f"{d}/backgrounds/{os.path.basename(image)}")
+    subprocess.run([os.path.expanduser("~/.local/bin/omni-theme-build"), name], check=True)
+    print(f"\nwritten: themes/{name}/colors.toml + backgrounds/  ->  omni-theme {name}")
 
 
 if __name__ == "__main__":

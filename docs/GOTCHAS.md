@@ -309,3 +309,25 @@ and reserves nothing either, so a floating bar draws over the top of every
 window. Only a window manager with a top gap fixes that; shrinking the bar just
 shrinks the overlap. Turning auto-hide off reserves ~25pt but shows the native
 menu bar through the gap between the pills.
+
+## 34. Wallpaper: strip overrides, restart the agent, THEN set
+
+macOS 26 keeps a per-Space `Desktop` override in
+`~/Library/Application Support/com.apple.wallpaper/Store/Index.plist` that
+beats `SystemDefault`, and NSWorkspace only writes the current Space. Deleting
+the overrides, restarting `WallpaperAgent`, then setting makes the agent
+re-seed every live Space from the new default (and it garbage-collects the
+stale Space records while it is at it - 45 went to 5). Doing it in the other
+order - set, strip, restart - left the store in a "Linked" state with no
+wallpaper anywhere. The order is load-bearing.
+
+## 35. `shutil.copy2` off `/System` is refused
+
+Copying a system wallpaper with `copy2` raises `Operation not permitted` on
+the metadata step after the data has already been written, so the file exists
+and the script has died. `copyfile` for anything under `/System`.
+
+## 36. `set --` clobbers the argument you were about to use
+
+`slot() { set -- $LIST; shift "$1"; }` shifts by the first word of LIST, not by
+the number you passed - `set --` has already replaced `$1`. Save it first.

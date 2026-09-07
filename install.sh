@@ -42,9 +42,15 @@ mkdir -p "$BIN"
 install -m 0755 "$SRC"/bin/omni* "$BIN/"
 
 echo "==> installing config to $CFG"
-mkdir -p "$CFG/palettes" "$CFG/themes"
-cp "$SRC"/config/palettes/*.toml "$CFG/palettes/"
-cp "$SRC"/config/themes/*.sh     "$CFG/themes/"
+# One directory per theme holding colors.toml (omarchy's format). An existing
+# colors.toml is never overwritten - it is the user's to edit. Backgrounds are
+# not shipped; `omni-theme-import` fetches them from omarchy on demand.
+mkdir -p "$CFG/themes"
+for d in "$SRC"/config/themes/*/; do
+  n="$(basename "$d")"; mkdir -p "$CFG/themes/$n/backgrounds"
+  [ -f "$CFG/themes/$n/colors.toml" ] || cp "$d/colors.toml" "$CFG/themes/$n/colors.toml"
+done
+"$BIN/omni-theme-build" --all
 if [ -f "$CFG/config.sh" ]; then
   echo "    config.sh exists, left untouched"
 else

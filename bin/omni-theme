@@ -1,4 +1,6 @@
 #!/bin/bash
+# List themes, or switch to one: rebuild the derived colours, retheme Ghostty
+# and the bar, set the theme's wallpaper, restart the launcher.
 set -u
 
 CONF="$HOME/.config/omni/config.sh"
@@ -6,23 +8,28 @@ DIR="$HOME/.config/omni/themes"
 current=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$CONF")
 
 if [ $# -eq 0 ]; then
-  for f in "$DIR"/*.sh; do
-    name="${f##*/}"; name="${name%.sh}"
+  for d in "$DIR"/*/; do
+    [ -f "$d/colors.toml" ] || continue
+    name="${d%/}"; name="${name##*/}"
     [ "$name" = "$current" ] && printf '* %s\n' "$name" || printf '  %s\n' "$name"
   done
   exit 0
 fi
 
 name="$1"
-if [ ! -f "$DIR/$name.sh" ]; then
+case "$name" in *[!a-zA-Z0-9._-]*) echo "bad theme name" >&2; exit 1 ;; esac
+if [ ! -f "$DIR/$name/colors.toml" ]; then
   echo "no such theme: $name" >&2
   echo "available:" >&2
   omni-theme >&2
   exit 1
 fi
 
+omni-theme-build "$name" || exit 1
 sed -i '' "s/^OMNI_THEME=\".*\"/OMNI_THEME=\"$name\"/" "$CONF"
 omni-ghostty-theme "$name" >/dev/null 2>&1
 omni-bar-theme >/dev/null 2>&1
+# omarchy pairs every theme with its backgrounds; do the same when there are any
+[ -n "$(ls -A "$DIR/$name/backgrounds" 2>/dev/null)" ] && omni-wallpaper next >/dev/null 2>&1
 omni-start --restart >/dev/null
 echo "theme: $name"

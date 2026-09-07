@@ -11,7 +11,7 @@
 set -u
 export LC_ALL=en_US.UTF-8
 . "$HOME/.config/omni/config.sh" 2>/dev/null || true
-. "$HOME/.config/omni/themes/${OMNI_THEME:-tokyo-night}.sh" 2>/dev/null || true
+. "$HOME/.cache/omni/themes/${OMNI_THEME:-tokyo-night}.sh" 2>/dev/null || true
 
 loc="${OMNI_WEATHER_LOCATION:-}"
 CACHE="$HOME/.cache/omni/weather.json"

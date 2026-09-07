@@ -52,4 +52,7 @@ OMNI_PASS_CLIPBOARD_TTL=30
 
 OMNI_SEARCH_URL="https://www.google.com/search?q="
 
-. "$HOME/.config/omni/themes/$OMNI_THEME.sh"
+# Colour roles are DERIVED from themes/$OMNI_THEME/colors.toml by
+# omni-theme-build; the .sh is a cache and is rebuilt here if missing.
+[ -f "$HOME/.cache/omni/themes/$OMNI_THEME.sh" ] || omni-theme-build "$OMNI_THEME" >/dev/null 2>&1
+. "$HOME/.cache/omni/themes/$OMNI_THEME.sh"

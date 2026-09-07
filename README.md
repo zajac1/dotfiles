@@ -95,13 +95,37 @@ hotkey, `OMNI_PROJECT_ROOT`, and `OMNI_BAR_SPACES` for the bar. Nothing under
 
 ## Theming
 
-19 palettes lifted from omarchy, converted through omarchy's own colour-role
-mapping (`@border = @foreground`, `@selected-text = @accent`).
+A theme is one directory, in omarchy's own layout:
+
+```
+~/.config/omni/themes/<name>/
+    colors.toml      the only file that matters - omarchy's format, unchanged
+    backgrounds/     wallpapers; the theme switch sets one
+```
+
+Everything else is derived from `colors.toml` by `omni-theme-build` into
+`~/.cache/omni/themes/<name>.sh` (the launcher's 10 colour roles), the bar's
+`colors.sh`, and Ghostty's `omni-theme` file. Edit the toml, run the build -
+or just switch to the theme, which builds it.
 
 ```sh
-omni-theme              # list, active marked
-omni-theme tokyo-night  # switch
+omni-theme                          # list, active marked
+omni-theme tokyo-night              # switch: colours, bar, Ghostty, wallpaper, launcher
+omni-theme-import                   # pull all of omarchy's themes + backgrounds (~60 MB)
+omni-theme-propose photo.jpg        # a palette from a picture; --write makes it a theme
+omni-wallpaper next                 # cycle the active theme's backgrounds
 ```
+
+22 themes ship (colours only); backgrounds come from `omni-theme-import`.
+`omni-theme-propose` derives the roles rather than sampling them - a picture
+supplies a tint, an accent and up to six hues, then lightness and contrast are
+enforced so text stays readable on any picture. Light mode is detected and can
+be forced with `--light` / `--dark`.
+
+Wallpaper reaches **every** Space, not just the current one. macOS keeps a
+per-Space override that beats the default; `omni-wallpaper` clears those,
+restarts `WallpaperAgent` and then sets, which re-seeds all Spaces. Set
+`OMNI_WALLPAPER_ALL_SPACES=0` to get the plain current-Space behaviour.
 
 Style → Theme previews **live** as you arrow through the list, and reverts on
 `Esc`. Preview never writes to disk, so backing out is free.

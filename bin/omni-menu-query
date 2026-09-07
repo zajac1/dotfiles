@@ -131,8 +131,8 @@ case "$lvl" in
     ;;
   theme)
     current=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$HOME/.config/omni/config.sh")
-    for f in "$HOME"/.config/omni/themes/*.sh; do
-      name="${f##*/}"; name="${name%.sh}"
+    for f in "$HOME"/.config/omni/themes/*/colors.toml; do
+      name="${f%/colors.toml}"; name="${name##*/}"
       if [ "$name" = "$current" ]; then
         printf 'theme\t  %s\t%s\n' "$name" "$name"
       else
