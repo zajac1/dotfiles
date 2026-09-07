@@ -46,6 +46,10 @@ OMNI_WALLPAPER_PLACEMENT="fill"
 # Rotate through the active theme's backgrounds every N seconds (0 = never).
 # Applied by `omni-wallpaper rotate on`, which omni-start runs.
 OMNI_WALLPAPER_ROTATE=1800
+# Crossfade wallpaper changes (an overlay of the outgoing picture fades out
+# over the new one). Only when no agent restart is needed: one Space, or AeroSpace.
+OMNI_WALLPAPER_FADE=1
+OMNI_WALLPAPER_FADE_SECONDS=0.7
 
 OMNI_PROJECT_ROOT="$HOME/git"
 # We build this URL ourselves; macOS exposes no way to ask the default

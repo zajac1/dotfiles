@@ -388,3 +388,13 @@ Measure it: longest run of one value in a margin column went from 588px to
 28px. ImageMagick's `-virtual-pixel Edge -distort SRT 0` with a viewport is the
 edge extension; do it on a 3% copy and resize up, which is both the smoothing
 and the difference between 12s and 1s.
+
+## 43. NSWorkspace swaps the wallpaper instantly; only System Settings fades
+
+There is no API for the fade. omni-wallpaper-fade fakes it: a borderless window
+at `kCGDesktopWindowLevel + 1` (above the wallpaper, below Finder's desktop
+icons) shows the outgoing picture drawn the way the desktop placed it, the
+real picture is swapped underneath, then the window's alpha is stepped to 0.
+Window alpha is applied by the window server, so no run loop is needed from
+osascript - a delay loop is enough. Only usable when the agent is not being
+restarted; a restart blanks the desktop regardless.

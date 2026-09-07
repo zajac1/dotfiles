@@ -1,0 +1,59 @@
+#!/bin/bash
+# Crossfade between wallpapers.
+#
+#   omni-wallpaper-fade OLD NEW SCALING CLIP FILL [SECONDS]
+#
+# NSWorkspace swaps the desktop picture instantly; only System Settings gets
+# the fade. So: put a borderless window showing OLD on the desktop layer - one
+# level above the wallpaper, below Finder's icons - swap the picture underneath
+# it, then fade the window out and close it. Window alpha is applied by the
+# window server, so the fade needs no run loop; a plain delay loop is enough.
+# OLD is drawn the way the desktop drew it (crop / fit / centre / stretch on the
+# same fill colour) so the first frame of the fade is identical to what was on
+# screen.
+set -u
+OLD="$1"; NEW="$2"; SCALING="$3"; CLIP="$4"; FILL="$5"; SECS="${6:-0.7}"
+[ -f "$OLD" ] && [ -f "$NEW" ] || exit 1
+osascript -l JavaScript - "$OLD" "$NEW" "$SCALING" "$CLIP" "$FILL" "$SECS" <<'JS' >/dev/null 2>&1
+ObjC.import("AppKit"); ObjC.import("CoreGraphics");
+function run(argv) {
+  var oldPath = argv[0], newPath = argv[1], scaling = parseInt(argv[2], 10), clip = argv[3] === "1";
+  var hex = argv[4], secs = parseFloat(argv[5]);
+  var r = parseInt(hex.substr(1, 2), 16) / 255, g = parseInt(hex.substr(3, 2), 16) / 255, b = parseInt(hex.substr(5, 2), 16) / 255;
+  $.NSApplication.sharedApplication;
+  var scr = $.NSScreen.mainScreen, f = scr.frame, W = f.size.width, H = f.size.height;
+  var img = $.NSImage.alloc.initWithContentsOfFile($(oldPath));
+  if (img.isNil()) return "no image";
+  // draw OLD exactly as the desktop placed it
+  var canvas = $.NSImage.alloc.initWithSize($.NSMakeSize(W, H));
+  canvas.lockFocus;
+  $.NSColor.colorWithCalibratedRedGreenBlueAlpha(r, g, b, 1).set; $.NSBezierPath.fillRect($.NSMakeRect(0, 0, W, H));
+  var s = img.size, iw = s.width, ih = s.height, dw, dh;
+  if (scaling === 1) { dw = W; dh = H; }                                   // stretch
+  else if (scaling === 2) { dw = iw; dh = ih; }                             // centre, 1:1 points
+  else { var k = clip ? Math.max(W / iw, H / ih) : Math.min(W / iw, H / ih); dw = iw * k; dh = ih * k; }  // crop / fit
+  img.drawInRectFromRectOperationFraction($.NSMakeRect((W - dw) / 2, (H - dh) / 2, dw, dh), $.NSMakeRect(0, 0, 0, 0), $.NSCompositingOperationSourceOver, 1.0);
+  canvas.unlockFocus;
+  var win = $.NSWindow.alloc.initWithContentRectStyleMaskBackingDefer(f, $.NSWindowStyleMaskBorderless, $.NSBackingStoreBuffered, false);
+  win.setLevel($.CGWindowLevelForKey($.kCGDesktopWindowLevelKey) + 1);    // above the wallpaper, below desktop icons
+  win.setOpaque(true); win.setIgnoresMouseEvents(true); win.setHasShadow(false);
+  win.setCollectionBehavior($.NSWindowCollectionBehaviorCanJoinAllSpaces | $.NSWindowCollectionBehaviorStationary | $.NSWindowCollectionBehaviorIgnoresCycle);
+  var iv = $.NSImageView.alloc.initWithFrame($.NSMakeRect(0, 0, W, H));
+  iv.setImage(canvas); iv.setImageScaling($.NSImageScaleAxesIndependently);
+  win.setContentView(iv); win.setAlphaValue(1.0); win.orderFrontRegardless; win.display;
+  delay(0.05);
+  // swap the real wallpaper underneath
+  var ws = $.NSWorkspace.sharedWorkspace, url = $.NSURL.fileURLWithPath($(newPath));
+  var opts = $.NSMutableDictionary.alloc.init;
+  opts.setObjectForKey($(scaling), $.NSWorkspaceDesktopImageScalingKey);
+  opts.setObjectForKey($(clip), $.NSWorkspaceDesktopImageAllowClippingKey);
+  opts.setObjectForKey($.NSColor.colorWithCalibratedRedGreenBlueAlpha(r, g, b, 1.0), $.NSWorkspaceDesktopImageFillColorKey);
+  var screens = $.NSScreen.screens;
+  for (var i = 0; i < screens.count; i++) ws.setDesktopImageURLForScreenOptionsError(url, screens.objectAtIndex(i), opts, null);
+  delay(0.25);                                                             // let the new picture land
+  var steps = Math.max(10, Math.round(secs * 40));
+  for (var t = 1; t <= steps; t++) { win.setAlphaValue(1 - t / steps); delay(secs / steps); }
+  win.orderOut(null); win.close;
+  return "ok";
+}
+JS

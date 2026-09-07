@@ -148,8 +148,16 @@ PY
 set_wallpaper() {
   [ -f "$1" ] || { echo "no such file: $1" >&2; return 1; }
   src="$1"; set -- "$(render_if_needed "$1")"
-  [ "${OMNI_WALLPAPER_ALL_SPACES:-1}" = 1 ] && stage_all_spaces "$1"
-  osascript -l JavaScript -e "$JS" "$1" "$SCALING" "$CLIP" "$FILL" || return 1
+  staged=0
+  if [ "${OMNI_WALLPAPER_ALL_SPACES:-1}" = 1 ]; then stage_all_spaces "$1" && staged=$?; fi
+  # No agent restart on this path, so the swap is instant - crossfade it with
+  # an overlay of the outgoing picture (omni-wallpaper-fade). The fade needs the
+  # outgoing file; without one, or if it fails, fall back to the plain set.
+  prev=$(cat "$STATE" 2>/dev/null); prev_set="$prev"
+  case "$prev" in *.png) : ;; *) [ -n "$prev" ] && [ -f "$HOME/.cache/omni/wallpapers/$OMNI_THEME/${prev##*/}.png" ] && prev_set="$HOME/.cache/omni/wallpapers/$OMNI_THEME/${prev##*/}.png" ;; esac
+  if [ "${OMNI_WALLPAPER_FADE:-1}" = 1 ] && [ "$(live_spaces)" -le 1 -o -n "$(pgrep -x AeroSpace 2>/dev/null)" ] && [ -f "$prev_set" ] && [ "$prev_set" != "$1" ] \
+     && omni-wallpaper-fade "$prev_set" "$1" "$SCALING" "$CLIP" "$FILL" "${OMNI_WALLPAPER_FADE_SECONDS:-0.7}"; then :
+  else osascript -l JavaScript -e "$JS" "$1" "$SCALING" "$CLIP" "$FILL" || return 1; fi
   mkdir -p "${STATE%/*}"
   printf '%s\n' "$src" > "$STATE"
 }

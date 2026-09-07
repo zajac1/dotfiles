@@ -343,7 +343,9 @@ on first launch.
 
 Wallpapers rotate through the active theme's backgrounds every
 `OMNI_WALLPAPER_ROTATE` seconds (launchd timer, `omni-wallpaper rotate on|off`;
-0 disables). Style -> Next wallpaper skips ahead.
+0 disables). Style -> Next wallpaper skips ahead. Changes crossfade (`OMNI_WALLPAPER_FADE`,
+`OMNI_WALLPAPER_FADE_SECONDS`) whenever no agent restart is needed - one macOS
+Space, or AeroSpace running.
 
 ## Top bar
 
