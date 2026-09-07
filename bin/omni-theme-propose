@@ -1,0 +1,244 @@
+#!/usr/bin/env python3
+"""Propose an omni theme from a picture, omarchy-style.
+
+    omni-theme-propose IMAGE [--name NAME] [--light|--dark] [--write]
+
+Prints the palette (with terminal swatches) and, with --write, creates
+~/.config/omni/palettes/NAME.toml, themes/NAME.sh and backgrounds/NAME/IMAGE so
+`omni-theme NAME` can use it.
+
+Zero dependencies on purpose: sips (macOS) renders any format it can read to a
+24-bit BMP, and median-cut over 96x96 pixels is a few milliseconds in plain
+Python. PIL/numpy are not installed here and are not worth adding for this.
+
+Colour roles are DERIVED, not sampled. A photo rarely contains a usable
+background or a readable foreground; what it has is a mood - a few dominant
+hues and a brightness. Those choose the tint of the background, the accent and
+the six ANSI hues; luminance and contrast are then enforced arithmetically so
+the launcher and the bar stay legible whatever the picture. Light mode is
+detected from mean luminance and can be forced.
+"""
+import colorsys
+import os
+import shutil
+import struct
+import subprocess
+import sys
+import tempfile
+
+SIZE = 96
+CFG = os.path.expanduser("~/.config/omni")
+
+
+# ----------------------------------------------------------------- pixels --
+def pixels(path):
+    with tempfile.NamedTemporaryFile(suffix=".bmp", delete=False) as t:
+        bmp = t.name
+    try:
+        subprocess.run(["/usr/bin/sips", "-s", "format", "bmp", "-z", str(SIZE), str(SIZE),
+                        path, "--out", bmp], check=True, capture_output=True)
+        b = open(bmp, "rb").read()
+    finally:
+        os.unlink(bmp)
+    off = struct.unpack_from("<I", b, 10)[0]
+    w, h = struct.unpack_from("<ii", b, 18)
+    bpp = struct.unpack_from("<H", b, 28)[0]
+    if bpp not in (24, 32):
+        sys.exit(f"unexpected BMP depth {bpp}")
+    step = bpp // 8
+    row = (w * step + 3) & ~3          # rows are padded to 4 bytes
+    out = []
+    for y in range(abs(h)):
+        base = off + y * row
+        for x in range(w):
+            i = base + x * step
+            bl, g, r = b[i], b[i + 1], b[i + 2]
+            out.append((r / 255, g / 255, bl / 255))
+    return out
+
+
+def median_cut(px, n):
+    boxes = [px]
+    while len(boxes) < n:
+        boxes.sort(key=lambda bx: -spread(bx))
+        bx = boxes.pop(0)
+        if len(bx) < 2:
+            boxes.append(bx)
+            break
+        ch = max(range(3), key=lambda c: max(p[c] for p in bx) - min(p[c] for p in bx))
+        bx.sort(key=lambda p: p[ch])
+        m = len(bx) // 2
+        boxes += [bx[:m], bx[m:]]
+    return [(avg(bx), len(bx)) for bx in boxes if bx]
+
+
+def spread(bx):
+    return max(max(p[c] for p in bx) - min(p[c] for p in bx) for c in range(3)) * len(bx) ** 0.5
+
+
+def avg(bx):
+    return tuple(sum(p[c] for p in bx) / len(bx) for c in range(3))
+
+
+# ------------------------------------------------------------------ colour --
+def lum(c):
+    def ch(v):
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    r, g, b = c
+    return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b)
+
+
+def contrast(a, b):
+    la, lb = sorted((lum(a), lum(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def hls(c):
+    return colorsys.rgb_to_hls(*c)
+
+
+def rgb(h, l, s):
+    return colorsys.hls_to_rgb(h % 1.0, min(max(l, 0), 1), min(max(s, 0), 1))
+
+
+def mix(a, b, t):
+    return tuple(a[i] * (1 - t) + b[i] * t for i in range(3))
+
+
+def hexs(c):
+    return "#%02x%02x%02x" % tuple(round(v * 255) for v in c)
+
+
+def ensure_contrast(c, against, ratio, direction):
+    """Move c's lightness toward direction (+1 lighter, -1 darker) until it
+    clears ratio against the background. Hue and saturation are kept."""
+    h, l, s = hls(c)
+    for _ in range(40):
+        if contrast(rgb(h, l, s), against) >= ratio:
+            break
+        l += 0.02 * direction
+        if not 0 <= l <= 1:
+            break
+    return rgb(h, l, s)
+
+
+def hue_dist(a, b):
+    d = abs(a - b) % 1.0
+    return min(d, 1 - d)
+
+
+# ------------------------------------------------------------------- roles --
+ANSI_HUES = {"red": 0 / 360, "yellow": 50 / 360, "green": 120 / 360,
+             "cyan": 185 / 360, "blue": 225 / 360, "magenta": 300 / 360}
+
+
+def propose(px, light=None):
+    dom = median_cut(list(px), 8)
+    dom.sort(key=lambda d: -d[1])
+    mean_l = sum(lum(p) for p in px) / len(px)
+    if light is None:
+        light = mean_l > 0.5
+    fg_dir, bg_dir = (-1, +1) if light else (+1, -1)
+
+    # background: the image's overall tint, pinned to the extreme of lightness
+    tint = avg([d[0] for d in dom[:3]])
+    th, _, ts = hls(tint)
+    bg = rgb(th, 0.93 if light else 0.11, min(ts, 0.25))
+    fg = rgb(th, 0.15 if light else 0.85, min(ts, 0.15))
+    fg = ensure_contrast(fg, bg, 7.0, fg_dir)
+
+    # accent: the most saturated dominant colour that is not near-grey
+    vivid = sorted(dom, key=lambda d: -hls(d[0])[2] * (d[1] ** 0.25))
+    acc = vivid[0][0] if hls(vivid[0][0])[2] > 0.15 else rgb(th, 0.6, 0.5)
+    ah, al, as_ = hls(acc)
+    acc = rgb(ah, 0.45 if light else 0.65, max(as_, 0.45))
+    acc = ensure_contrast(acc, bg, 3.0, fg_dir)
+
+    roles = {
+        "OMNI_BASE": bg, "OMNI_TEXT": fg, "OMNI_BORDER": mix(fg, bg, 0.35),
+        "OMNI_ACCENT": acc, "OMNI_SELECTED_TEXT": acc,
+        "OMNI_DIM": mix(fg, bg, 0.5), "OMNI_CURSOR": fg,
+        "OMNI_INPUT_BG": mix(bg, fg, 0.10), "OMNI_SECTION_BG": mix(bg, fg, 0.07),
+        "OMNI_SELECT_BG": mix(bg, acc, 0.22),
+    }
+
+    # ANSI hues: nearest dominant colour within 35 degrees, else synthesised
+    # from the accent's saturation. Contrast-enforced against the background.
+    ansi = {}
+    for name, hue in ANSI_HUES.items():
+        near = min(dom, key=lambda d: hue_dist(hls(d[0])[0], hue))
+        nh, nl, ns = hls(near[0])
+        if hue_dist(nh, hue) < 35 / 360 and ns > 0.12:
+            c = rgb(nh, 0.42 if light else 0.68, max(ns, 0.4))
+        else:
+            c = rgb(hue, 0.42 if light else 0.68, max(as_, 0.45))
+        ansi[name] = ensure_contrast(c, bg, 3.0, fg_dir)
+
+    order = ["red", "green", "yellow", "blue", "magenta", "cyan"]
+    colors = [mix(bg, fg, 0.25)] + [ansi[n] for n in order] + [mix(fg, bg, 0.15)]
+    bright = [mix(bg, fg, 0.40)] + [
+        ensure_contrast(rgb(hls(ansi[n])[0], hls(ansi[n])[1] + (-0.08 if light else 0.10), hls(ansi[n])[2]), bg, 3.0, fg_dir)
+        for n in order] + [fg]
+    return light, roles, colors + bright
+
+
+# ------------------------------------------------------------------ output --
+def swatch(c, text=""):
+    r, g, b = (round(v * 255) for v in c)
+    return f"\033[48;2;{r};{g};{b}m  \033[0m {hexs(c)} {text}"
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        sys.exit(__doc__)
+    image, name, light, write = argv[0], None, None, False
+    it = iter(argv[1:])
+    for a in it:
+        if a == "--name":
+            name = next(it)
+        elif a == "--light":
+            light = True
+        elif a == "--dark":
+            light = False
+        elif a == "--write":
+            write = True
+        else:
+            sys.exit(f"unknown option {a}")
+    if not os.path.isfile(image):
+        sys.exit(f"no such file: {image}")
+    name = name or os.path.splitext(os.path.basename(image))[0].lower().replace(" ", "-")
+    if not all(ch.isalnum() or ch in "-_." for ch in name):
+        sys.exit("name may contain only letters, digits, - _ .")
+
+    light, roles, colors = propose(pixels(image), light)
+
+    print(f"{name}  ({'light' if light else 'dark'})")
+    for k, v in roles.items():
+        print("  " + swatch(v, k))
+    print("  ansi:")
+    for i, c in enumerate(colors):
+        print(f"    {i:2d} " + swatch(c))
+    print(f"  contrast text/bg {contrast(roles['OMNI_TEXT'], roles['OMNI_BASE']):.1f}:1"
+          f"  accent/bg {contrast(roles['OMNI_ACCENT'], roles['OMNI_BASE']):.1f}:1")
+
+    if not write:
+        print("\n(dry run - add --write to create the theme)")
+        return
+    os.makedirs(f"{CFG}/palettes", exist_ok=True)
+    os.makedirs(f"{CFG}/themes", exist_ok=True)
+    os.makedirs(f"{CFG}/backgrounds/{name}", exist_ok=True)
+    with open(f"{CFG}/palettes/{name}.toml", "w") as f:
+        f.write(f'accent = "{hexs(roles["OMNI_ACCENT"])}"\ncursor = "{hexs(roles["OMNI_CURSOR"])}"\n'
+                f'foreground = "{hexs(roles["OMNI_TEXT"])}"\nbackground = "{hexs(roles["OMNI_BASE"])}"\n'
+                f'selection_foreground = "{hexs(roles["OMNI_BASE"])}"\nselection_background = "{hexs(roles["OMNI_TEXT"])}"\n\n')
+        for i, c in enumerate(colors):
+            f.write(f'color{i} = "{hexs(c)}"\n')
+    with open(f"{CFG}/themes/{name}.sh", "w") as f:
+        for k, v in roles.items():
+            f.write(f'{k}="{hexs(v)}"\n')
+    shutil.copy2(image, f"{CFG}/backgrounds/{name}/")
+    print(f"\nwritten: palettes/{name}.toml themes/{name}.sh backgrounds/{name}/  ->  omni-theme {name}")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
