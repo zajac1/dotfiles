@@ -122,6 +122,18 @@ supplies a tint, an accent and up to six hues, then lightness and contrast are
 enforced so text stays readable on any picture. Light mode is detected and can
 be forced with `--light` / `--dark`.
 
+A theme can say how its pictures are placed, in `themes/<name>/wallpaper.toml`:
+
+```toml
+placement = "center"     # fill | fit | center | stretch   (default: fill)
+fill = "#ededed"         # colour around the image for fit/center (default: the theme background)
+```
+
+`OMNI_WALLPAPER_PLACEMENT` in `config.sh` sets the default for themes without
+one. `omni-theme-propose` writes a `center` override itself when every picture
+is far from the screen's shape - a square print would otherwise lose half of
+itself to the default crop.
+
 Wallpaper reaches **every** Space, not just the current one. macOS keeps a
 per-Space override that beats the default; `omni-wallpaper` clears those,
 restarts `WallpaperAgent` and then sets, which re-seeds all Spaces. Set

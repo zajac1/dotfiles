@@ -351,3 +351,12 @@ layer 101 too. Classify popup windows by position (y > 0, x > -1000), never by
 layer, and request `kCGWindowListOptionAll` - OnScreenOnly omits the open
 popup. Test through the real hover path; a harness that opens popups by
 message exercises a different code path in SketchyBar.
+
+## 39. Wallpaper placement: the store's ids are not the menu's words
+
+`NSWorkspaceDesktopImageScalingKey` 3 + clipping = `Crop` (what the UI calls
+Fill), 3 without clipping = `SizeToFit`, 2 = `Centered`, 1 = `FillScreen` (what
+the UI calls Stretch). Tile is not reachable through NSWorkspace at all. The
+fill colour lands in `EncodedOptionValues` as 0..1 components in GenericRGB;
+reuse the colour-space blob the agent wrote last rather than building one.
+Discovered by setting each mode through NSWorkspace and reading the store.

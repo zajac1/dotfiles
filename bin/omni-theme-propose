@@ -23,6 +23,7 @@ detected from mean luminance and can be forced.
 """
 import colorsys
 import os
+import re
 import shutil
 import struct
 import subprocess
@@ -267,6 +268,27 @@ def main(argv):
     # copyfile, not copy2: copying flags/xattrs off a /System image is refused
     for image in images:
         shutil.copyfile(image, f"{d}/backgrounds/{os.path.basename(image)}")
+    # A picture whose shape is nowhere near the screen's gets cropped hard by
+    # the default "fill" placement (a square print loses half of itself).
+    # Centre those on the theme background instead; the user can edit
+    # wallpaper.toml afterwards.
+    scr = subprocess.run(["osascript", "-l", "JavaScript", "-e",
+                          'ObjC.import("AppKit"); var f=$.NSScreen.mainScreen.frame.size; f.width/f.height'],
+                         capture_output=True, text=True).stdout.strip()
+    try:
+        screen_ratio = float(scr)
+    except ValueError:
+        screen_ratio = 16 / 10
+    ratios = []
+    for image in images:
+        out = subprocess.run(["/usr/bin/sips", "-g", "pixelWidth", "-g", "pixelHeight", image],
+                             capture_output=True, text=True).stdout
+        w = re.search(r"pixelWidth:\s*(\d+)", out); h = re.search(r"pixelHeight:\s*(\d+)", out)
+        if w and h:
+            ratios.append(int(w.group(1)) / int(h.group(1)))
+    if ratios and all(abs(r - screen_ratio) / screen_ratio > 0.15 for r in ratios):
+        with open(f"{d}/wallpaper.toml", "w") as f:
+            f.write(f'placement = "center"\nfill = "{hexs(bg)}"\n')
     subprocess.run([os.path.expanduser("~/.local/bin/omni-theme-build"), name], check=True)
     print(f"\nwritten: themes/{name}/colors.toml + backgrounds/  ->  omni-theme {name}")
 

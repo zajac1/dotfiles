@@ -40,6 +40,10 @@ OMNI_THEME_TERMINALS=false
 OMNI_HOTKEY="alt+space"
 OMNI_APP_COLORS=true
 
+# How a theme's wallpaper is placed: fill | fit | center | stretch. A theme can
+# override this in themes/<name>/wallpaper.toml, with a fill colour too.
+OMNI_WALLPAPER_PLACEMENT="fill"
+
 OMNI_PROJECT_ROOT="$HOME/git"
 # We build this URL ourselves; macOS exposes no way to ask the default
 # browser for its configured search engine.

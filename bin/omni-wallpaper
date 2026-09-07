@@ -16,6 +16,24 @@ set -u
 
 . "$HOME/.config/omni/config.sh"
 
+# Per-theme override: themes/<name>/wallpaper.toml with
+#   placement = "fill" | "fit" | "center" | "stretch"
+#   fill = "#rrggbb"          colour around the image for fit/center
+# Defaults: OMNI_WALLPAPER_PLACEMENT from config.sh (fill), fill = OMNI_BASE.
+WP_TOML="$HOME/.config/omni/themes/$OMNI_THEME/wallpaper.toml"
+tval() { sed -n "s/^$1[[:space:]]*=[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$WP_TOML" 2>/dev/null | head -1; }
+PLACEMENT=$(tval placement); PLACEMENT="${PLACEMENT:-${OMNI_WALLPAPER_PLACEMENT:-fill}}"
+FILL=$(tval fill); FILL="${FILL:-$OMNI_BASE}"
+case "$FILL" in '#'[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) ;; *) FILL="#000000" ;; esac
+# NSWorkspace scaling / clipping, and the id the store uses - measured, see
+# GOTCHAS: fill=Crop, fit=SizeToFit, center=Centered, stretch=FillScreen.
+case "$PLACEMENT" in
+  fit)     SCALING=3; CLIP=0; PLACE_ID=SizeToFit ;;
+  center)  SCALING=2; CLIP=0; PLACE_ID=Centered ;;
+  stretch) SCALING=1; CLIP=0; PLACE_ID=FillScreen ;;
+  *)       SCALING=3; CLIP=1; PLACE_ID=Crop; PLACEMENT=fill ;;
+esac
+
 DIR="$HOME/.config/omni/backgrounds"
 THEME_DIR="$HOME/.config/omni/themes/$OMNI_THEME/backgrounds"
 STATE="$HOME/.cache/omni/wallpaper"
@@ -27,10 +45,14 @@ function run(argv) {
   var url = $.NSURL.fileURLWithPath($(argv[0]));
   var ws = $.NSWorkspace.sharedWorkspace;
   var screens = $.NSScreen.screens;
+  var scaling = parseInt(argv[1], 10), clip = argv[2] === "1";
+  var r = parseInt(argv[3].substr(1, 2), 16) / 255, g = parseInt(argv[3].substr(3, 2), 16) / 255, b = parseInt(argv[3].substr(5, 2), 16) / 255;
   for (var i = 0; i < screens.count; i++) {
     var scr = screens.objectAtIndex(i);
-    var opts = ws.desktopImageOptionsForScreen(scr);
-    if (!opts || opts.isNil()) opts = $.NSDictionary.dictionary;
+    var opts = $.NSMutableDictionary.alloc.init;
+    opts.setObjectForKey($(scaling), $.NSWorkspaceDesktopImageScalingKey);
+    opts.setObjectForKey($(clip), $.NSWorkspaceDesktopImageAllowClippingKey);
+    opts.setObjectForKey($.NSColor.colorWithCalibratedRedGreenBlueAlpha(r, g, b, 1.0), $.NSWorkspaceDesktopImageFillColorKey);
     ws.setDesktopImageURLForScreenOptionsError(url, scr, opts, null);
   }
 }'
@@ -49,15 +71,28 @@ STORE="$HOME/Library/Application Support/com.apple.wallpaper/Store/Index.plist"
 stage_all_spaces() { # path
   [ -f "$STORE" ] || return 0
   cp "$STORE" "$HOME/.cache/omni/Index.plist.bak" 2>/dev/null || true
-  /usr/bin/python3 - "$STORE" "$1" <<'PY' || return 1
+  /usr/bin/python3 - "$STORE" "$1" "$PLACE_ID" "$FILL" <<'PY' || return 1
 import copy, datetime, plistlib, sys, urllib.parse
-store, path = sys.argv[1], sys.argv[2]
+store, path, place_id, fill = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 d = plistlib.load(open(store, "rb"))
 tmpl = d.get("SystemDefault", {}).get("Desktop")
 if not tmpl: sys.exit(1)
 entry = copy.deepcopy(tmpl)
 now = datetime.datetime.now()
 entry["LastSet"] = entry["LastUse"] = now
+# placement + fill colour, in the agent's own encoding; the colour space blob is
+# reused from whatever the agent wrote last (GenericRGB), components are 0..1
+rgb = [int(fill[i:i + 2], 16) / 255 for i in (1, 3, 5)] + [1.0]
+prev = entry["Content"].get("EncodedOptionValues")
+try:
+    prev = plistlib.loads(prev) if isinstance(prev, bytes) else {}
+    cs = prev["values"]["color"]["color"]["_0"]["color"]["colorSpace"]
+except Exception:
+    cs = None
+values = {"placement": {"picker": {"_0": {"id": place_id}}}}
+if cs is not None:
+    values["color"] = {"color": {"_0": {"color": {"components": rgb, "colorSpace": cs}}}}
+entry["Content"]["EncodedOptionValues"] = plistlib.dumps({"values": values}, fmt=plistlib.FMT_BINARY)
 entry["Content"]["Choices"] = [{
     "Provider": "com.apple.wallpaper.choice.image", "Files": [],
     "Configuration": plistlib.dumps({"type": "imageFile", "url": {"relative": "file://" + urllib.parse.quote(path)}}, fmt=plistlib.FMT_BINARY),
@@ -79,7 +114,7 @@ PY
 set_wallpaper() {
   [ -f "$1" ] || { echo "no such file: $1" >&2; return 1; }
   [ "${OMNI_WALLPAPER_ALL_SPACES:-1}" = 1 ] && stage_all_spaces "$1"
-  osascript -l JavaScript -e "$JS" "$1" || return 1
+  osascript -l JavaScript -e "$JS" "$1" "$SCALING" "$CLIP" "$FILL" || return 1
   mkdir -p "${STATE%/*}"
   printf '%s\n' "$1" > "$STATE"
 }
