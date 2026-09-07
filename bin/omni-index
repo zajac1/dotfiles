@@ -43,8 +43,10 @@ glyph_for() {
     *calendar*|*fantastical*)                              printf '' ;;
     *notes*|*obsidian*|*bear*|*notion*)                    printf '' ;;
     *finder*|*forklift*|*path?finder*)                     printf '' ;;
-    *code*|*cursor*|*sublime*|*zed*|*nova*|*intellij*|*webstorm*|*pycharm*|*android?studio*) printf '' ;;
+    # xcode before the generic editor line: *code* matches it too, and a
+    # case statement takes the first hit.
     *xcode*)                                               printf '' ;;
+    *code*|*cursor*|*sublime*|*zed*|*nova*|*intellij*|*webstorm*|*pycharm*|*android?studio*) printf '' ;;
     *docker*|*orbstack*|*podman*)                          printf '' ;;
     *photos*|*capture*|*lightroom*|*photoshop*)            printf '' ;;
     *preview*|*acrobat*|*pdf*|*skim*)                      printf '' ;;

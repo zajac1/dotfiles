@@ -6,7 +6,7 @@
 # Driven by SketchyBar's media_change event; the update_freq is only a backstop
 # for players that do not emit one. nowplaying-cli costs ~0.1s.
 source "$HOME/.config/sketchybar/colors.sh"
-export PATH="/opt/homebrew/bin:$PATH"
+for p in /opt/homebrew/bin /usr/local/bin; do [ -d "$p" ] && PATH="$p:$PATH"; done; export PATH
 
 command -v nowplaying-cli >/dev/null 2>&1 || {
   sketchybar --set "$NAME" icon="󰎄" icon.color=$DIM label="No player"

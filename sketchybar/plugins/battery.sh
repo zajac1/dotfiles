@@ -6,6 +6,7 @@
 # "U000f0084".
 source "$HOME/.config/sketchybar/colors.sh"
 case "${SENDER:-}" in
+  mouse.entered) exec "$HOME/.config/sketchybar/plugins/battery_popup.sh" --show ;;
   mouse.exited.global|front_app_switched)
     sketchybar --set "$NAME" popup.drawing=off; exit 0 ;;
 esac

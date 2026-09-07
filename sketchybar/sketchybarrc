@@ -19,6 +19,15 @@ PLUGINS="$HOME/.config/sketchybar/plugins"
 # test here caused once.
 FONT="JetBrainsMono Nerd Font"
 
+# brew lives at /opt/homebrew on Apple silicon and /usr/local on Intel, and
+# sketchybar's own environment has neither on PATH. Resolve tools once here
+# rather than hardcoding a prefix into every click_script.
+for p in /opt/homebrew/bin /usr/local/bin; do
+  case ":$PATH:" in *":$p:"*) ;; *) [ -d "$p" ] && PATH="$p:$PATH" ;; esac
+done
+export PATH
+NOWPLAYING=$(command -v nowplaying-cli || true)
+
 # margin insets the whole bar from the screen edges, which is what stops it
 # reading as a full-width strip even before the transparent colour.
 # height is deliberately tight: SketchyBar is an overlay that reserves no
@@ -68,6 +77,9 @@ sketchybar --add bracket left.pill logo $(seq -f "space.%g" 1 "$SPACES") \
                            background.border_width=1 background.border_color=$GROUP_BORDER
 
 # ---------------- right pill: status, then the clock (Rift's order) -------
+# Popups open on hover and close when the pointer leaves the bar. That is the
+# only model SketchyBar supports cleanly: it has no click-outside event, so a
+# click-to-open popup can be left stranded. Click is free for a quick action.
 # Added right-to-left: clock first so it lands furthest right, wifi last so it
 # lands furthest left. Displayed order is wifi | volume | battery | clock.
 # Rift keeps the clock in the right-hand pill, not centred, and spells the date
@@ -80,27 +92,27 @@ sketchybar --add item clock right \
            --set clock icon=󰥔 icon.color=$BLUE \
                        label.font="$FONT:Regular:12.0" \
                        update_freq=20 script="$PLUGINS/clock.sh" \
-                       click_script="$PLUGINS/calendar_popup.sh" \
+                       click_script="$PLUGINS/open_calendar.sh" \
                        popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
                        popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
                        popup.align=right popup.y_offset=4 \
-           --subscribe clock mouse.exited.global front_app_switched
+           --subscribe clock mouse.entered mouse.exited.global front_app_switched
 
 sketchybar --add item battery right \
            --set battery script="$PLUGINS/battery.sh" update_freq=120 \
-                         click_script="$PLUGINS/battery_popup.sh" \
+                         click_script="open 'x-apple.systempreferences:com.apple.Battery-Settings.extension'" \
                          popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
                          popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
                          popup.align=right popup.y_offset=4 \
-           --subscribe battery power_source_change system_woke mouse.exited.global front_app_switched
+           --subscribe battery power_source_change system_woke mouse.entered mouse.exited.global front_app_switched
 
 sketchybar --add item volume right \
            --set volume script="$PLUGINS/volume.sh" icon.color=$YELLOW \
-                        click_script="$PLUGINS/volume_popup.sh" \
+                        click_script="$PLUGINS/toggle_mute.sh" \
                         popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
                         popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
                         popup.align=right popup.y_offset=4 \
-           --subscribe volume volume_change mouse.scrolled mouse.exited.global front_app_switched
+           --subscribe volume volume_change mouse.scrolled mouse.entered mouse.exited.global front_app_switched
 sketchybar --add item wifi right \
            --set wifi script="$PLUGINS/wifi.sh" update_freq=60 icon.color=$CYAN \
                       click_script="open 'x-apple.systempreferences:com.apple.wifi-settings-extension'" \
@@ -108,7 +120,7 @@ sketchybar --add item wifi right \
 sketchybar --add item media right \
            --set media script="$PLUGINS/media.sh" update_freq=30 \
                        label.padding_right=14 \
-                       click_script="/opt/homebrew/bin/nowplaying-cli togglePlayPause" \
+                       click_script="${NOWPLAYING:-true} togglePlayPause" \
            --subscribe media media_change
 "$PLUGINS/media.sh" >/dev/null 2>&1 &
 

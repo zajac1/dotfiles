@@ -272,3 +272,40 @@ cannot render your glyphs; fail loudly instead.
 `position=center` places an item in the space left over between the left and
 right groups. With an uneven right side it will not sit on the screen centre.
 Balance it with a padding item if true centring matters.
+
+## 29. SketchyBar measures a label trimmed, then draws it untrimmed
+
+A popup label of 28 characters that begins with 7 spaces draws 21 and clips the
+rest: the drawing width is computed from the whitespace-trimmed string, the
+text is drawn from the untrimmed one. NBSP does not help - it is trimmed too.
+The calendar lost its year and the last day of week one this way. No label may
+begin with whitespace; centre with `label.align=center` over an explicit
+`label.width`, never with padding characters. Trailing blanks are harmless.
+
+## 30. `/bin/bash` is 3.2 and `printf '‹'` prints the text `‹`
+
+`\u` escapes arrived in bash 4.2. Write glyphs and arrows as literal characters
+(from Python, which does not strip them), never as escapes - and never as an
+unquoted `ICON=\U000f0084`, where the shell eats the backslash first.
+
+## 31. fzf `--gap` draws a dotted rule, whatever the help text implies
+
+`--gap=1` renders `┈┈┈┈` between every item. `--gap-line=` (empty) keeps the
+blank line and drops the rule. A terminal cannot draw half a line, so real
+row padding is Ghostty's `adjust-cell-height` (`OMNI_ROW_PAD`), not `--gap`.
+
+## 32. SketchyBar has no click-outside event
+
+`mouse.exited.global` fires when the pointer leaves the bar; a click that does
+not move the pointer away never fires anything. `front_app_switched` catches a
+click into another app, not one into the app already in front. The model the
+tool supports is hover-open / leave-close, which is what the bar uses. Upstream:
+FelixKratz/SketchyBar#564, #613, #638.
+
+## 33. With the menu bar auto-hidden, macOS reserves nothing at the top
+
+`_HIHideMenuBar = 1` makes `visibleFrame == frame`. SketchyBar is an overlay
+and reserves nothing either, so a floating bar draws over the top of every
+window. Only a window manager with a top gap fixes that; shrinking the bar just
+shrinks the overlap. Turning auto-hide off reserves ~25pt but shows the native
+menu bar through the gap between the pills.

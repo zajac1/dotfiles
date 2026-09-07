@@ -4,6 +4,17 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# --no-bar    launcher only; for a machine where you do not want the top bar
+# --no-start  install but do not start the launcher
+NO_BAR=0; NO_START=0
+for arg in "$@"; do
+  case "$arg" in
+    --no-bar)   NO_BAR=1 ;;
+    --no-start) NO_START=1 ;;
+    *) echo "usage: install.sh [--no-bar] [--no-start]" >&2; exit 2 ;;
+  esac
+done
 BIN="$HOME/.local/bin"
 CFG="$HOME/.config/omni"
 BAR="$HOME/.config/sketchybar"
@@ -16,6 +27,7 @@ command -v qalc >/dev/null || missing+=("libqalculate")
 command -v jq   >/dev/null || missing+=("jq")
 command -v btop >/dev/null || echo "    note: btop not found - Utilities CPU/Memory/Network need it"
 command -v nowplaying-cli >/dev/null || echo "    note: nowplaying-cli not found - the bar's Now Playing item stays blank"
+command -v python3 >/dev/null || missing+=("python3 (xcode-select --install)")
 [ -d /Applications/Ghostty.app ] || missing+=("ghostty (cask)")
 if [ ${#missing[@]} -gt 0 ]; then
   echo "    missing: ${missing[*]}"
@@ -45,7 +57,9 @@ fi
 cp "$SRC/data/glyphs.tsv" "$CFG/glyphs.tsv"
 
 echo "==> installing top bar to $BAR"
-if command -v sketchybar >/dev/null 2>&1; then
+if [ "$NO_BAR" = 1 ]; then
+  echo "    skipped (--no-bar)"
+elif command -v sketchybar >/dev/null 2>&1; then
   mkdir -p "$BAR/plugins"
   install -m 0755 "$SRC"/sketchybar/sketchybarrc "$BAR/sketchybarrc"
   install -m 0755 "$SRC"/sketchybar/plugins/*    "$BAR/plugins/"
@@ -77,7 +91,7 @@ PLIST
 echo "    written (NOT loaded). To start at login:"
 echo "        launchctl load $AGENT"
 
-if [ "${1-}" = "--no-start" ]; then
+if [ "$NO_START" = 1 ]; then
   echo "==> skipping start (--no-start)"
 else
   echo "==> starting"

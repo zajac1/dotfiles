@@ -9,6 +9,7 @@
 # The top-level keys are matched with spaces around "=" on purpose: the nested
 # BatteryData blob repeats CycleCount and DesignCapacity without them.
 source "$HOME/.config/sketchybar/colors.sh"
+DRAW=toggle; [ "${1-}" = "--show" ] && DRAW=on
 
 IO=$(ioreg -rn AppleSmartBattery 2>/dev/null)
 key() { printf '%s' "$IO" | sed -n "s/.*\"$1\" = \([0-9-]*\).*/\1/p" | head -1; }
@@ -62,6 +63,6 @@ ARGS+=(--add item battery.settings popup.battery
              label.font="JetBrainsMono Nerd Font:Regular:12.0"
              icon.padding_left=12 icon.padding_right=8 label.padding_right=14
              click_script="open 'x-apple.systempreferences:com.apple.Battery-Settings.extension'; sketchybar --set battery popup.drawing=off"
-       --set battery popup.drawing=toggle --set clock popup.drawing=off --set volume popup.drawing=off)
+       --set battery popup.drawing="$DRAW" --set clock popup.drawing=off --set volume popup.drawing=off)
 
 sketchybar "${ARGS[@]}"

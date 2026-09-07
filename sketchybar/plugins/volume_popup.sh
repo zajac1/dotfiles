@@ -6,6 +6,7 @@
 # Devices are enumerated fresh because they genuinely come and go; the row COUNT
 # is unbounded, which is the only case where add/remove beats pre-allocation.
 source "$HOME/.config/sketchybar/colors.sh"
+DRAW=toggle; [ "${1-}" = "--show" ] && DRAW=on
 PLUGINS="$HOME/.config/sketchybar/plugins"
 
 command -v SwitchAudioSource >/dev/null 2>&1 || { open -b com.apple.systempreferences; exit 0; }
@@ -32,6 +33,6 @@ ARGS+=(--add item volume.mute popup.volume
        --add item volume.settings popup.volume
        --set volume.settings icon="" label="Sound settings"
              click_script="open 'x-apple.systempreferences:com.apple.Sound-Settings.extension'; sketchybar --set volume popup.drawing=off"
-       --set volume popup.drawing=toggle --set clock popup.drawing=off --set battery popup.drawing=off)
+       --set volume popup.drawing="$DRAW" --set clock popup.drawing=off --set battery popup.drawing=off)
 
 sketchybar "${ARGS[@]}"

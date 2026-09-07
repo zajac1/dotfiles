@@ -12,6 +12,8 @@ source "$HOME/.config/sketchybar/colors.sh"
 PLUGINS="$HOME/.config/sketchybar/plugins"
 SELF="$PLUGINS/calendar_popup.sh"
 
+SHOW=0
+[ "${1-}" = "--show" ] && { SHOW=1; shift; }
 OFF="${1:-0}"
 case "$OFF" in ''|*[!0-9-]*) OFF=0 ;; esac
 
@@ -64,18 +66,14 @@ nav() { # name icon label offset
 
 [ "$OFF" -ne 0 ] && nav today "󰃶" "Back to today" "0"
 
-# hey-calendar already has its own Ghostty instance with a global hotkey; spawning
-# a second terminal for it just gets you an unstyled duplicate. Start the instance
-# if it is not up, then press its hotkey (ctrl+alt+shift+cmd+C, key code 8 = "c").
-# The keystroke needs Accessibility permission for SketchyBar.
 ARGS+=(--add item clock.open popup.clock
        --set clock.open icon="󰃭" icon.color=$BLUE
              label="Open Calendar" label.color=$LABEL
              label.font="$MONO"
              icon.padding_left=12 icon.padding_right=8 label.padding_right=14
-             click_script="$HOME/.local/bin/hey-calendar-start >/dev/null 2>&1; osascript -e 'tell application \"System Events\" to key code 8 using {control down, option down, shift down, command down}' >/dev/null 2>&1; sketchybar --set clock popup.drawing=off")
+             click_script="$PLUGINS/open_calendar.sh")
 
-if [ "$OFF" -eq 0 ] && [ $# -eq 0 ]; then
+if [ "$SHOW" -eq 0 ] && [ "$OFF" -eq 0 ] && [ $# -eq 0 ]; then
   ARGS+=(--set clock popup.drawing=toggle --set battery popup.drawing=off --set volume popup.drawing=off)
 else
   ARGS+=(--set clock popup.drawing=on --set battery popup.drawing=off --set volume popup.drawing=off)

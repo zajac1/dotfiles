@@ -152,10 +152,6 @@ case "$lvl" in
     printf 'run\t  Homebrew\tbrew\n'
     printf 'run\t  macOS\tmacos\n'
     ;;
-  update)
-    printf 'run\t  Homebrew\tbrew\n'
-    printf 'run\t  macOS\tmacos\n'
-    ;;
   utilities)
     printf 'menu\t  Weather\tweather\n'
     printf 'menu\t  CPU\tcpu\n'

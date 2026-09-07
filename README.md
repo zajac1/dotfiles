@@ -64,6 +64,24 @@ brew install --cask ghostty font-caskaydia-mono-nerd-font
 
 `~/.local/bin` must be on your `PATH`.
 
+## Other machines
+
+The launcher does not need the bar, a window manager or custom wallpapers; it
+is meant to run alone on a work machine.
+
+```sh
+git clone <this repo> ~/git/omni
+cd ~/git/omni
+./install.sh --no-bar        # launcher only
+./install.sh                 # launcher + top bar, if sketchybar is installed
+```
+
+`install.sh` never overwrites an existing `config.sh`, `favorites`, `sections`
+or `glyphs`, so re-running it after a `git pull` is the upgrade path. Things
+that differ per machine live in `~/.config/omni/config.sh`: the font, the
+hotkey, `OMNI_PROJECT_ROOT`, and `OMNI_BAR_SPACES` for the bar. Nothing under
+`~/.config/omni/` is tracked here.
+
 ## Keys
 
 | key | action |
