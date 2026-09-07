@@ -27,6 +27,23 @@ while IFS= read -r dev; do
                click_script="SwitchAudioSource -s '$dev'; sketchybar --set volume popup.drawing=off; sketchybar --trigger volume_change")
 done < <(SwitchAudioSource -a -t output 2>/dev/null)
 
+# AirPlay receivers, from the Bonjour cache. They cannot be selected from the
+# command line - CoreAudio only sees an AirPlay device once macOS has connected
+# to it - so a click opens the Sound pane, where they can be. Listing them is
+# still better than a menu that omits the AirPort the native one shows.
+AIRPLAY="$HOME/.cache/omni/airplay.txt"
+j=0
+while IFS= read -r dev; do
+  [ -n "$dev" ] || continue
+  case "$dev" in "$CUR") continue ;; esac
+  j=$((j+1))
+  ARGS+=(--add item volume.air.$j popup.volume
+         --set volume.air.$j icon="󰀟" icon.color=$DIM label="$dev" label.color=$DIM
+               click_script="open 'x-apple.systempreferences:com.apple.Sound-Settings.extension'; sketchybar --set volume popup.drawing=off")
+done < <(cat "$AIRPLAY" 2>/dev/null)
+# refresh for next time, off the hover path
+"$PLUGINS/airplay_scan.sh" >/dev/null 2>&1 &
+
 ARGS+=(--add item volume.mute popup.volume
        --set volume.mute icon="" label="Toggle mute"
              click_script="$PLUGINS/toggle_mute.sh; sketchybar --set volume popup.drawing=off"

@@ -123,6 +123,7 @@ sketchybar --add item media right \
                        click_script="${NOWPLAYING:-true} togglePlayPause" \
            --subscribe media media_change
 "$PLUGINS/media.sh" >/dev/null 2>&1 &
+"$PLUGINS/airplay_scan.sh" >/dev/null 2>&1 &
 
 sketchybar --add bracket right.pill clock battery volume wifi media \
            --set right.pill background.color=$GROUP_BG background.corner_radius=12 \
