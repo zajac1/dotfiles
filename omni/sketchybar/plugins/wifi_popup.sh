@@ -48,7 +48,7 @@ ARGS+=(--add item wifi.settings popup.wifi
        --set wifi.settings icon="󰒓" icon.color=$DIM label="Wi-Fi settings" label.color=$LABEL
              label.font="$MONO" icon.padding_left=12 icon.padding_right=8 label.padding_right=14
              click_script="open 'x-apple.systempreferences:com.apple.wifi-settings-extension'; sketchybar --set wifi popup.drawing=off"
-       --set wifi popup.drawing="$DRAW" --set clock popup.drawing=off --set battery popup.drawing=off --set volume popup.drawing=off)
+       --set wifi popup.drawing="$DRAW" --set date popup.drawing=off --set battery popup.drawing=off --set volume popup.drawing=off)
 
 sketchybar "${ARGS[@]}"
 [ "$(sketchybar --query wifi | jq -r .popup.drawing)" = on ] && "$HOME/.config/sketchybar/plugins/popup_watch.sh" wifi >/dev/null 2>&1 &

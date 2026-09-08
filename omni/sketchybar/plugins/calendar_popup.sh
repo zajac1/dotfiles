@@ -24,7 +24,7 @@ GRID_W=188          # 26 chars of JetBrainsMono at 12pt, in points
 LARROW='‹'
 RARROW='›'
 ARGS=()
-for it in $(sketchybar --query clock 2>/dev/null | jq -r '.popup.items[]?'); do
+for it in $(sketchybar --query date 2>/dev/null | jq -r '.popup.items[]?'); do
   ARGS+=(--remove "$it")
 done
 
@@ -41,24 +41,24 @@ while IFS="$(printf '\t')" read -r kind text; do
     # Centred by SketchyBar, not by padding the string: a padded label would be
     # clipped by exactly its leading blanks. GRID_W is the grid's own width,
     # 26 characters of JetBrainsMono at 12pt, so the header centres over it.
-    ARGS+=(--add item "clock.row$i" popup.clock
-           --set "clock.row$i" icon.drawing=off
+    ARGS+=(--add item "date.row$i" popup.date
+           --set "date.row$i" icon.drawing=off
                  label="$LARROW $text $RARROW" label.color="$col"
                  label.font="$MONO" label.align=center label.width=$GRID_W
                  label.padding_left=12 label.padding_right=12
                  click_script="$SELF $((OFF + 1))"
                  script="$PLUGINS/calendar_scroll.sh $OFF"
-           --subscribe "clock.row$i" mouse.scrolled)
+           --subscribe "date.row$i" mouse.scrolled)
   else
-    ARGS+=(--add item "clock.row$i" popup.clock
-           --set "clock.row$i" icon.drawing=off label="$text" label.color="$col"
+    ARGS+=(--add item "date.row$i" popup.date
+           --set "date.row$i" icon.drawing=off label="$text" label.color="$col"
                  label.font="$MONO" label.padding_left=12 label.padding_right=12)
   fi
 done < <(python3 "$PLUGINS/calendar_grid.py" "$OFF")
 
 nav() { # name icon label offset
-  ARGS+=(--add item "clock.$1" popup.clock
-         --set "clock.$1" icon="$2" icon.color=$ACCENT label="$3" label.color=$LABEL
+  ARGS+=(--add item "date.$1" popup.date
+         --set "date.$1" icon="$2" icon.color=$ACCENT label="$3" label.color=$LABEL
                label.font="$MONO"
                icon.padding_left=12 icon.padding_right=8 label.padding_right=14
                click_script="$SELF $4")
@@ -66,19 +66,19 @@ nav() { # name icon label offset
 
 [ "$OFF" -ne 0 ] && nav today "󰃶" "Back to today" "0"
 
-ARGS+=(--add item clock.open popup.clock
-       --set clock.open icon="󰃭" icon.color=$BLUE
+ARGS+=(--add item date.open popup.date
+       --set date.open icon="󰃭" icon.color=$BLUE
              label="Open Calendar" label.color=$LABEL
              label.font="$MONO"
              icon.padding_left=12 icon.padding_right=8 label.padding_right=14
              click_script="$PLUGINS/open_calendar.sh")
 
 if [ "$SHOW" -eq 0 ] && [ "$OFF" -eq 0 ] && [ $# -eq 0 ]; then
-  ARGS+=(--set clock popup.drawing=toggle --set battery popup.drawing=off --set volume popup.drawing=off)
+  ARGS+=(--set date popup.drawing=toggle --set battery popup.drawing=off --set volume popup.drawing=off)
 else
-  ARGS+=(--set clock popup.drawing=on --set battery popup.drawing=off --set volume popup.drawing=off)
+  ARGS+=(--set date popup.drawing=on --set battery popup.drawing=off --set volume popup.drawing=off)
 fi
 
 sketchybar "${ARGS[@]}"
-[ "$(sketchybar --query clock | jq -r .popup.drawing)" = on ] && "$HOME/.config/sketchybar/plugins/popup_watch.sh" clock 12 >/dev/null 2>&1 &
+[ "$(sketchybar --query date | jq -r .popup.drawing)" = on ] && "$HOME/.config/sketchybar/plugins/popup_watch.sh" date >/dev/null 2>&1 &
 

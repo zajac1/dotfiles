@@ -50,8 +50,8 @@ ARGS+=(--add item volume.mute popup.volume
        --add item volume.settings popup.volume
        --set volume.settings icon="" label="Sound settings"
              click_script="open 'x-apple.systempreferences:com.apple.Sound-Settings.extension'; sketchybar --set volume popup.drawing=off"
-       --set volume popup.drawing="$DRAW" --set clock popup.drawing=off --set battery popup.drawing=off)
+       --set volume popup.drawing="$DRAW" --set date popup.drawing=off --set battery popup.drawing=off)
 
 sketchybar "${ARGS[@]}"
-[ "$(sketchybar --query volume | jq -r .popup.drawing)" = on ] && "$HOME/.config/sketchybar/plugins/popup_watch.sh" volume 8 >/dev/null 2>&1 &
+[ "$(sketchybar --query volume | jq -r .popup.drawing)" = on ] && "$HOME/.config/sketchybar/plugins/popup_watch.sh" volume >/dev/null 2>&1 &
 

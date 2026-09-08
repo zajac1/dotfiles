@@ -63,8 +63,8 @@ ARGS+=(--add item battery.settings popup.battery
              label.font="JetBrainsMono Nerd Font:Regular:12.0"
              icon.padding_left=12 icon.padding_right=8 label.padding_right=14
              click_script="open 'x-apple.systempreferences:com.apple.Battery-Settings.extension'; sketchybar --set battery popup.drawing=off"
-       --set battery popup.drawing="$DRAW" --set clock popup.drawing=off --set volume popup.drawing=off)
+       --set battery popup.drawing="$DRAW" --set date popup.drawing=off --set volume popup.drawing=off)
 
 sketchybar "${ARGS[@]}"
-[ "$(sketchybar --query battery | jq -r .popup.drawing)" = on ] && "$HOME/.config/sketchybar/plugins/popup_watch.sh" battery 6 >/dev/null 2>&1 &
+[ "$(sketchybar --query battery | jq -r .popup.drawing)" = on ] && "$HOME/.config/sketchybar/plugins/popup_watch.sh" battery >/dev/null 2>&1 &
 
