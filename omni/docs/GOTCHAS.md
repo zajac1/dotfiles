@@ -436,3 +436,16 @@ the launcher's list scrolled its first row away. For a centred quick terminal
 the two values are WIDTH,HEIGHT here (96%,46% gave 1383x414), whatever the
 docs say about primary axes. ~/.cache/omni/term.size records what omni
 computed on its last start; read it before touching OMNI_CHROME.
+
+## 48. `quit-after-last-window-closed` defaults to FALSE on macOS
+
+Ghostty follows macOS convention: closing the last window leaves the app
+running. For the launcher and the calendar that is the point - they are quick
+terminals that must survive being dismissed. For anything else it is a leak:
+quit HEY, close btop, finish a `brew upgrade`, and a windowless Ghostty stays
+in the Dock and in cmd-tab forever. Six of them is a normal afternoon. Every
+one-shot window omni opens now passes
+`--quit-after-last-window-closed=true`, and the mail instance sets it in its
+config. `initial-command = /usr/bin/true` belongs only to the quick-terminal
+instances too - it keeps the first surface empty, which is wrong for a window
+meant to show an app.

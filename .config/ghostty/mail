@@ -3,9 +3,14 @@
 # whole configuration - it deliberately inherits none of the main terminal's
 # splits, shaders or transparency.
 command = /Users/adamzajac/.local/bin/hey tui --instance mail
-initial-command = /usr/bin/true
-abnormal-command-exit-runtime = 0
-quit-after-last-window-closed = false
+
+# TRAP: quit-after-last-window-closed defaults to FALSE on macOS. The launcher
+# and calendar want that - they are quick terminals that must survive being
+# dismissed - but a normal window must not: quitting HEY would close the window
+# and leave a windowless Ghostty in the Dock and in cmd-tab forever. Likewise
+# no initial-command here; that is the quick-terminal trick for keeping the
+# first surface empty, and it has no place in a window meant to show the app.
+quit-after-last-window-closed = true
 
 # no title bar, no shadow: the client fills the window
 window-decoration = false

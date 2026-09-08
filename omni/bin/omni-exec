@@ -11,34 +11,40 @@ line=$(cat "$PENDING" 2>/dev/null)
 kind=$(printf '%s' "$line" | cut -f1)
 payload=$(printf '%s' "$line" | cut -f3)
 
-edit() { open -na Ghostty.app --args -e nvim "$1"; }
+# Windows opened for one task must quit with that window. On macOS
+# quit-after-last-window-closed defaults to false, so without this every btop,
+# every brew upgrade, every editor leaves a windowless Ghostty behind - which
+# is how six of them end up in cmd-tab.
+GHOSTTY_ONESHOT="--quit-after-last-window-closed=true"
+
+edit() { open -na Ghostty.app --args $GHOSTTY_ONESHOT -e nvim "$1"; }
 settings() { open "x-apple.systempreferences:$1"; }
 
 case "$kind" in
   app)     open -a "$payload" ;;
-  project) open -na Ghostty.app --args --working-directory="$payload" ;;
+  project) open -na Ghostty.app --args $GHOSTTY_ONESHOT --working-directory="$payload" ;;
   file)    open -R "$payload" ;;
   calc)    printf '%s' "$payload" | pbcopy ;;
   web)     open "${OMNI_SEARCH_URL}$(printf '%s' "$payload" | jq -sRr @uri)" ;;
   pass)    omni-pass-copy "$payload" ;;
   run|act)
     case "$payload" in
-      brew)        open -na Ghostty.app --args -e bash -lc 'brew update && brew upgrade; echo; read -rp "Press enter to close "' ;;
+      brew)        open -na Ghostty.app --args $GHOSTTY_ONESHOT -e bash -lc 'brew update && brew upgrade; echo; read -rp "Press enter to close "' ;;
       # softwareupdate -ia needs sudo; a password prompt out of a launcher is
       # bad UX, so open the pane instead - one click and no elevation here.
-      pass-login)   open -na Ghostty.app --args -e "$HOME/.local/bin/omni-pass" login ;;
-      pass-unlock)  open -na Ghostty.app --args -e "$HOME/.local/bin/omni-pass" unlock ;;
+      pass-login)   open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-pass" login ;;
+      pass-unlock)  open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-pass" unlock ;;
       pass-refresh) rm -f "$HOME/.cache/omni/pass.status"; omni-pass-rows >/dev/null 2>&1 ;;
-      btop-cpu)    open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" cpu ;;
-      btop-mem)    open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" mem ;;
-      btop-net)    open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" net ;;
+      btop-cpu)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" cpu ;;
+      btop-mem)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" mem ;;
+      btop-net)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" net ;;
       cpu-refresh|mem-refresh|net-refresh) : ;;
       caffeinate)  omni-caffeinate toggle ;;
       wallpaper-next) omni-wallpaper next ;;
-      monitor)     open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" "cpu mem net proc" ;;
+      monitor)     open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" "cpu mem net proc" ;;
       calendar)    omni-calendar ;;
       mail)        omni-mail ;;
-      weather-report) open -na Ghostty.app --args -e "$HOME/.local/bin/omni-weather-report" ;;
+      weather-report) open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-weather-report" ;;
       weather-refresh) rm -f "$HOME/.cache/omni/weather.json"; omni-weather >/dev/null 2>&1 ;;
       macos)       settings "com.apple.Software-Update-Settings.extension" ;;
       config)      edit "$HOME/.config/omni/config.sh" ;;
