@@ -269,6 +269,8 @@ otherwise every keystroke at the top level would hit the network.
 |---|---|
 | Weather | compact view; see below |
 | CPU / Memory / Network | live readings, with *Open in btop* one keypress away |
+| Calendar | the calendar provider (see below) |
+| Mail | the mail provider (see below) |
 | System Monitor | full `btop` |
 | Caffeinate | placeholder |
 
@@ -284,6 +286,31 @@ the second visit onward.
 The per-box btop views copy **your** `~/.config/btop/btop.conf` and override only
 `shown_boxes`, so your theme and update rate carry over. btop has no CLI switch
 for that key, and its numbered presets would fight whatever you have configured.
+
+#### Calendar and Mail providers
+
+Both dispatch to an executable named for the provider, the pattern passwords
+already use:
+
+```sh
+OMNI_CALENDAR_PROVIDER="hey"    # runs omni-calendar-hey
+OMNI_MAIL_PROVIDER="hey"        # runs omni-mail-hey
+```
+
+A provider is any `omni-calendar-<name>` or `omni-mail-<name>` on PATH. omni
+ships the HEY pair: Calendar raises the same quick-terminal instance the global
+hotkey toggles — so the launcher, the bar's clock button and the hotkey all land
+on one window rather than spawning rivals — and Mail opens a full Ghostty window
+with no title bar running the HEY TUI, on its own config file so it inherits
+none of the main terminal's splits, shaders or transparency, and refuses to
+start a second instance because `open -na` would fork a rival rather than raise
+the existing window.
+
+A machine that uses something else adds `omni-mail-gmail` or
+`omni-calendar-gcal` and changes the value; nothing else in omni needs to know
+what a provider is. An unknown provider notifies and exits rather than
+launching the wrong thing. The values in `config.sh` are authoritative — the
+dispatcher sources that file, so an environment variable will not override it.
 
 ### Glyphs
 
