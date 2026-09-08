@@ -1,0 +1,29 @@
+#!/bin/bash
+set -u
+
+name="${1-}"
+case "$name" in *[!a-zA-Z0-9._-]*) name="" ;; esac
+THEMES="$HOME/.cache/omni/themes"
+[ -n "$name" ] && [ ! -f "$THEMES/$name.sh" ] && omni-theme-build "$name" >/dev/null 2>&1
+
+if [ -n "$name" ] && [ -f "$THEMES/$name.sh" ]; then
+  . "$THEMES/$name.sh"
+else
+  . "$HOME/.config/omni/config.sh"
+fi
+
+OUT="${OMNI_OSC_TARGET:-/dev/tty}"
+[ -w "$OUT" ] || exit 0
+
+esc=$(printf '\033'); bel=$(printf '\007')
+{
+  printf '%s]4;16;%s%s' "$esc" "$OMNI_BASE"          "$bel"
+  printf '%s]4;17;%s%s' "$esc" "$OMNI_TEXT"          "$bel"
+  printf '%s]4;18;%s%s' "$esc" "$OMNI_BORDER"        "$bel"
+  printf '%s]4;19;%s%s' "$esc" "$OMNI_SELECTED_TEXT" "$bel"
+  printf '%s]4;20;%s%s' "$esc" "$OMNI_DIM"           "$bel"
+  printf '%s]4;21;%s%s' "$esc" "$OMNI_INPUT_BG"      "$bel"
+  printf '%s]4;22;%s%s' "$esc" "$OMNI_SECTION_BG"    "$bel"
+  printf '%s]4;23;%s%s' "$esc" "$OMNI_SELECT_BG"     "$bel"
+  printf '%s]12;%s%s'   "$esc" "$OMNI_ACCENT"        "$bel"
+} > "$OUT"

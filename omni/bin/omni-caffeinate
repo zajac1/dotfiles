@@ -1,0 +1,22 @@
+#!/bin/bash
+# Keep the display and system awake. State lives in the PID file; the assertion
+# is what macOS actually reports, so we check that too rather than trusting a
+# stale pid.
+set -u
+PIDF="$HOME/.cache/omni/caffeinate.pid"
+mkdir -p "$(dirname "$PIDF")"
+
+active() {
+  [ -s "$PIDF" ] && kill -0 "$(cat "$PIDF")" 2>/dev/null
+}
+
+case "${1-}" in
+  status) active && echo on || echo off ;;
+  toggle)
+    if active; then
+      kill "$(cat "$PIDF")" 2>/dev/null; rm -f "$PIDF"
+    else
+      nohup caffeinate -dimsu >/dev/null 2>&1 &
+      echo $! > "$PIDF"
+    fi ;;
+esac

@@ -1,0 +1,7 @@
+#!/bin/bash
+# Dispatches to the provider named by OMNI_PASS_PROVIDER.
+set -u
+. "$HOME/.config/omni/config.sh" 2>/dev/null || true
+p="${OMNI_PASS_PROVIDER:-protonpass}"
+case "$p" in *[!a-z0-9-]*) exit 1 ;; esac
+exec "$HOME/.local/bin/omni-pass-$p" "$@"

@@ -1,0 +1,33 @@
+#!/bin/bash
+set -u
+CACHE="$HOME/.cache/omni"
+STACK="$CACHE/stack"
+PENDING="$CACHE/pending"
+line="${1-}"
+[ -n "$line" ] || { echo "ignore"; exit 0; }
+
+kind=$(printf '%s' "$line" | cut -f1)
+payload=$(printf '%s' "$line" | cut -f3)
+
+case "$kind" in
+  sep)    echo 'ignore' ;;
+  theme)
+    # Everything omni-theme does except the launcher restart - this IS the
+    # launcher, and it re-enters the menu itself via become(). The wallpaper
+    # step restarts WallpaperAgent and takes ~2s, so it runs detached.
+    omni-theme --no-restart "$payload" >/dev/null 2>&1
+    sed -i '' -e '$d' "$STACK" 2>/dev/null
+    echo 'become(omni --menu)' ;;
+  font)
+    sed -i '' "s|^OMNI_FONT=\".*\"|OMNI_FONT=\"$payload\"|" "$HOME/.config/omni/config.sh"
+    nohup bash -c 'sleep 0.3; omni-start --restart' >/dev/null 2>&1 &
+    echo 'abort' ;;
+  act)
+    printf '%s' "$line" > "$PENDING"
+    omni-exec >/dev/null 2>&1
+    echo 'become(omni --menu)' ;;
+  menu)   printf '%s\n' "$payload" >> "$STACK"; echo 'become(omni --menu)' ;;
+  search) echo 'become(omni --search)' ;;
+  back)   sed -i '' -e '$d' "$STACK" 2>/dev/null; echo 'become(omni --menu)' ;;
+  *)      printf '%s' "$line" > "$PENDING"; echo 'become(omni-exec)' ;;
+esac

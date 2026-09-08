@@ -1,0 +1,56 @@
+#!/bin/bash
+set -u
+
+. "$HOME/.config/omni/config.sh"
+
+name="${1:-$OMNI_THEME}"
+TOML="$HOME/.config/omni/themes/$name/colors.toml"
+OUT="$HOME/.config/ghostty/omni-theme"
+
+[ -f "$TOML" ] || { echo "no theme: $name" >&2; exit 1; }
+mkdir -p "$(dirname "$OUT")"
+
+val() {
+  v=$(sed -n "s/^$1 *= *\"\\(.*\\)\"/\\1/p" "$TOML" | head -1)
+  case "$v" in
+    "#"[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) printf '%s' "$v" ;;
+    *) : ;;
+  esac
+}
+
+# colors.toml (omarchy's format) names hues, not slots; map to the ANSI 16 here
+bg=$(val background); fg=$(val foreground); cur=$fg
+selbg=$(val selection); selfg=$fg
+ANSI="muted red green yellow blue magenta cyan foreground light_foreground bright_red bright_green bright_yellow bright_blue bright_magenta bright_cyan bright_foreground"
+slot() { i=$1; set -- $ANSI; shift "$i"; val "$1"; }   # save $1 first: set -- clobbers it
+
+{
+  printf 'background = %s\n' "$bg"
+  printf 'foreground = %s\n' "$fg"
+  [ -n "$cur" ]   && printf 'cursor-color = %s\n' "$cur"
+  [ -n "$selbg" ] && printf 'selection-background = %s\n' "$selbg"
+  [ -n "$selfg" ] && printf 'selection-foreground = %s\n' "$selfg"
+  for i in $(seq 0 15); do
+    c=$(slot "$i")
+    [ -n "$c" ] && printf 'palette = %s=%s\n' "$i" "$c"
+  done
+} > "$OUT"
+
+[ "${OMNI_THEME_TERMINALS:-false}" = "true" ] || exit 0
+
+esc=$(printf '\033')
+bel=$(printf '\007')
+{
+  printf '%s]11;%s%s' "$esc" "$bg" "$bel"
+  printf '%s]10;%s%s' "$esc" "$fg" "$bel"
+  [ -n "$cur" ] && printf '%s]12;%s%s' "$esc" "$cur" "$bel"
+  for i in $(seq 0 15); do
+    c=$(slot "$i")
+    [ -n "$c" ] && printf '%s]4;%s;%s%s' "$esc" "$i" "$c" "$bel"
+  done
+} > "$HOME/.cache/omni/osc.seq"
+
+for tty in /dev/ttys*; do
+  [ -w "$tty" ] || continue
+  cat "$HOME/.cache/omni/osc.seq" > "$tty" 2>/dev/null
+done

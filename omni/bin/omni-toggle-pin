@@ -1,0 +1,24 @@
+#!/bin/bash
+set -u
+
+FAVS="$HOME/.config/omni/favorites"
+touch "$FAVS"
+
+line="${1-}"
+[ -n "$line" ] || exit 0
+
+kind=$(printf '%s' "$line" | cut -f1)
+path=$(printf '%s' "$line" | cut -f3)
+
+case "$kind" in app|project|run|menu|theme|search) ;; *) exit 0 ;; esac
+[ -n "$path" ] || exit 0
+
+entry=$(printf '%s\t%s' "$kind" "$path")
+if grep -qxF "$entry" "$FAVS" || { [ "$kind" = app ] && grep -qxF "$path" "$FAVS"; }; then
+  # grep -v exits 1 when it prints nothing (i.e. removing the last entry),
+  # so it must NOT gate the mv. This silently broke unpinning the last app.
+  grep -vxF "$entry" "$FAVS" | grep -vxF "$path" > "$FAVS.tmp" || true
+  mv "$FAVS.tmp" "$FAVS"
+else
+  printf '%s\n' "$entry" >> "$FAVS"
+fi

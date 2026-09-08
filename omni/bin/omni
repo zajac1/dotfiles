@@ -1,0 +1,159 @@
+#!/bin/bash
+set -u
+
+export RUNEWIDTH_EASTASIAN=0
+
+printf '\033[?25l\033[2J\033[3J\033[H' 2>/dev/null
+
+. "$HOME/.config/omni/config.sh"
+
+# Blank lines rendered between items. fzf counts these in the list height, so
+# every want_rows calculation below has to add (n-1)*gap or the box clips.
+ROW_GAP=${OMNI_ROW_GAP:-1}
+
+CACHE="$HOME/.cache/omni"
+STACK="$CACHE/stack"
+MODE="$CACHE/mode"
+TAB=$'\t'
+[ -d "$CACHE" ] || mkdir -p "$CACHE"
+
+case "${1-}" in
+  --search) mode=search ;;
+  --menu)   mode=menu ;;
+  *)        mode=menu; : > "$STACK"
+            ( omni-index >/dev/null 2>&1 & ) ;;
+esac
+
+printf '%s' "$mode" > "$MODE"
+: > "$CACHE/pending"
+
+if [ "$mode" = search ]; then
+  want_cols=$OMNI_COLS
+  want_rows=$OMNI_ROWS
+  ghost=' Search...'
+  gap=""
+  # fzf 0.74 draws a "..." rule in every gap unless gap-line is set to blank.
+  # --gap on its own is NOT just whitespace, whatever the help text implies.
+  [ "$ROW_GAP" -gt 0 ] && { gap="--gap=$ROW_GAP"; gapline="--gap-line="; }
+  gapline="${gapline:-}"
+else
+  level=$(tail -1 "$STACK" 2>/dev/null)
+  level="${level:-}"
+  export OMNI_ROW_WIDTH=$(( OMNI_MENU_COLS - OMNI_FILL_INSET ))
+  ITEMS=$(omni-menu-query "$level")
+  n=0
+  if [ -n "$ITEMS" ]; then
+    while IFS= read -r _; do n=$((n+1)); done <<EOF
+$ITEMS
+EOF
+  fi
+  want_cols=$OMNI_MENU_COLS
+  case "$level" in
+    "")        label="Go" ;;
+    confirm:*) label="Confirm" ;;
+    *)         label="$(printf '%s' "$level" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')" ;;
+  esac
+  ghost="${label}…"
+  gap=""
+  # fzf 0.74 draws a "..." rule in every gap unless gap-line is set to blank.
+  # --gap on its own is NOT just whitespace, whatever the help text implies.
+  [ "$ROW_GAP" -gt 0 ] && { gap="--gap=$ROW_GAP"; gapline="--gap-line="; }
+  gapline="${gapline:-}"
+  hdr=0
+  case "$ITEMS" in sep"$TAB"*) hdr=1 ;; esac
+  gap_rows=0
+  [ "$n" -gt 1 ] && gap_rows=$(( (n - 1) * ROW_GAP ))
+  want_rows=$(( n + gap_rows + OMNI_CHROME ))
+  [ "$want_rows" -gt "$OMNI_MENU_MAX_ROWS" ] && want_rows=$OMNI_MENU_MAX_ROWS
+fi
+
+omni-osc 2>/dev/null
+# The launcher surface is created when Ghostty launches, hidden, with a pty
+# still at the default 24x80; Ghostty sizes it only when the window is first
+# shown. The margin that centres the box is computed ONCE, so computing it now
+# would use 24x80 - which is exactly how the box ended up 14 rows tall and
+# scrolling its first row away. Wait for the real size. (A SIGWINCH trap with
+# `wait` was tried first: bash 3.2 sat through the signal. Polling twice a
+# second while hidden costs nothing measurable.)
+# TRAP: TERM is not set inside this surface (login -q strips it), so `tput`
+# cannot read the terminal and answers 24/80 forever. `stty size` reads the
+# pty ioctl and needs no TERM.
+term_size() { stty size </dev/tty 2>/dev/null || echo "24 80"; }
+while [ "$(term_size)" = "24 80" ]; do sleep 0.5; done
+
+
+margin=0
+bg="-1"
+if [ "$OMNI_FRAME" = "boxed" ]; then
+  read -r rows cols <<EOF
+$(term_size)
+EOF
+  [ -n "$rows" ] || rows=$want_rows; [ -n "$cols" ] || cols=$want_cols
+  side=$(( (cols - want_cols) / 2 )); [ "$side" -lt 0 ] && side=0
+  top=$(( (rows - want_rows) / 2 ));  [ "$top"  -lt 0 ] && top=0
+  margin="$top,$side"
+  bg="16"
+fi
+printf 'pid=%s tty=%s rows=%s cols=%s want_rows=%s want_cols=%s top=%s side=%s level=%s\n' "$$" "$(tty 2>/dev/null)" "${rows:-?}" "${cols:-?}" "$want_rows" "$want_cols" "${top:-?}" "${side:-?}" "${level:-search}" >> "$CACHE/term.size" 2>/dev/null
+
+set -- \
+  --style=minimal \
+  --ansi \
+  --layout=reverse \
+  --cycle \
+  --border="$OMNI_BORDER_STYLE" \
+  --input-border="${OMNI_INPUT_BORDER:-$OMNI_BORDER_STYLE}" \
+  --padding=0,1 \
+  --margin="$margin" \
+  --prompt='' \
+  --ghost="$ghost" \
+  --pointer='' \
+  --marker='' \
+  --info=hidden \
+  --no-scrollbar \
+  --wrap=word \
+  --wrap-sign='   ' \
+  --highlight-line \
+  ${gap:+$gap} ${gapline:+$gapline} \
+  --ellipsis='' \
+  --delimiter="$TAB" \
+  --with-nth=' {2}' \
+  --bind 'esc:transform(omni-back {q})' \
+  --bind 'down:down+transform(omni-skip {} down)' \
+  --bind 'up:up+transform(omni-skip {} up)' \
+  --bind 'ctrl-j:down+transform(omni-skip {} down)' \
+  --bind 'shift-up:execute-silent(omni-fav-move {} up)+become(omni --menu)' \
+  --bind 'shift-down:execute-silent(omni-fav-move {} down)+become(omni --menu)' \
+  --bind 'ctrl-k:up+transform(omni-skip {} up)' \
+  --bind 'enter:transform(omni-enter {})' \
+  --color="bg:${bg},fg:17,current-bg:23,current-fg:19:regular,hl:17,hl+:19,border:18,input-border:18,input-bg:${bg},list-bg:${bg},header-bg:${bg},selected-bg:${bg},preview-bg:${bg},query:17,ghost:20,gutter:${bg}"
+
+if [ "$mode" = search ]; then
+  fzf --disabled \
+      --highlight-line \
+      --bind "start:reload(omni-query '')" \
+      --bind "change:reload(sleep 0.08; omni-query {q})+first" \
+      --bind "ctrl-p:execute-silent(omni-toggle-pin {})+reload(omni-query {q})" \
+      "$@"
+else
+  at=""
+  extra=()
+  # The Favorites title is a sep row and must not be the initial selection.
+  # `start` fires BEFORE the list is loaded, so both {} and pos() are no-ops
+  # there - the position has to be set on `load`.
+  startacts="transform(omni-skip {} down)"
+  extra+=("--bind=load:transform(omni-skip {} down)")
+  if [ "$level" = theme ]; then
+    if [ -z "$at" ]; then
+      at=$(omni-menu-query theme | awk -F'\t' -v c="$OMNI_THEME" '$3==c{print NR-1; exit}')
+    fi
+    extra+=("--bind=focus:execute-silent(omni-osc {3})")
+  fi
+  case "$at" in ""|*[!0-9]*) : ;; *) startacts="pos($((at+1)))+$startacts" ;; esac
+  extra+=("--bind=start:$startacts")
+  extra+=("--bind=change:reload(sleep 0.08; omni-menu-query '$level' {q})+first")
+  printf '%s\n' "$ITEMS" | \
+    fzf --disabled \
+        --bind 'ctrl-p:execute-silent(omni-toggle-pin {})+become(omni --menu)' \
+        ${extra[@]+"${extra[@]}"} "$@"
+fi

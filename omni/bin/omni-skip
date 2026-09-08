@@ -1,0 +1,12 @@
+#!/bin/bash
+# Emit a move if the focused row is a `sep`, and keep going: consecutive sep
+# rows need more than one hop - the Weather view has a run of EIGHT (five art
+# lines plus three readings). Depth-capped only so a level made entirely of sep
+# rows cannot loop forever; the cap must exceed the longest run.
+set -u
+line="${1-}"
+dir="${2-down}"
+depth="${3-1}"
+[ "$(printf '%s' "$line" | cut -f1)" = "sep" ] || { echo ignore; exit 0; }
+[ "$depth" -ge 40 ] && { echo ignore; exit 0; }
+echo "$dir+transform(omni-skip {} $dir $((depth+1)))"

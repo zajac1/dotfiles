@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# omni-glyphs - search the Nerd Font glyph index by name.
+#
+#   omni-glyphs umbrella      -> every umbrella glyph, rendered
+#   omni-glyphs tshirt        -> pick one and paste the codepoint into config.sh
+#
+# Exists because guessing codepoints from memory shipped a bulldozer, a
+# car-off sign and an Xbox controller battery icon into the weather view.
+# Nerd Font codepoints are stable across NF fonts, so this index is portable.
+set -u
+IDX="$HOME/.config/omni/glyphs.tsv"
+[ -s "$IDX" ] || { echo "glyph index missing: $IDX" >&2; exit 1; }
+[ $# -eq 0 ] && { echo "usage: omni-glyphs <substring>   e.g. omni-glyphs umbrella" >&2; exit 1; }
+grep -i -- "$1" "$IDX" | awk -F'\t' '{printf "  %s   %s  %s\n", $1, $2, $3}'

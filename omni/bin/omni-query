@@ -1,0 +1,51 @@
+#!/bin/bash
+set -u
+
+. "$HOME/.config/omni/config.sh"
+. "$HOME/.local/bin/omni-lib"
+
+TAB=$(printf '\t')
+INDEX="$HOME/.cache/omni/index.tsv"
+FAVS="$HOME/.config/omni/favorites"
+q="${1-}"
+
+[ -f "$INDEX" ] || omni-index
+
+emit_files() {
+  local term="$1"
+  [ -n "$term" ] || return 0
+  {
+    mdfind -onlyin "$HOME" -name "$term" 2>/dev/null
+    find "$HOME" -maxdepth 3 \
+         \( -path "$HOME/Library" -o -path "$HOME/.Trash" -o -name node_modules \
+            -o -path "$HOME/.vim/undodir" \) -prune \
+         -o -iname "*${term}*" -print 2>/dev/null
+  } | grep -v "^$HOME/Library" | awk '!seen[$0]++' | head -30 |
+  while IFS= read -r f; do
+    printf 'file\t  %s\t%s\n' "${f#$HOME/}" "$f"
+  done
+}
+
+emit_favorites() {
+  [ -s "$FAVS" ] || return 0
+  while IFS= read -r fav; do
+    [ -n "$fav" ] || continue
+    grep -F "$TAB$fav" "$INDEX" 2>/dev/null | head -1
+  done < "$FAVS"
+}
+
+
+if [ -z "$q" ]; then
+  grep "^app$TAB" "$INDEX"
+  exit 0
+fi
+
+case "$q" in
+  '='*) emit_calc "${q#=}"; exit 0 ;;
+  '@'*) emit_web  "${q#@}"; exit 0 ;;
+  '.'*) emit_files "${q#.}"; exit 0 ;;
+esac
+
+looks_like_math "$q" && emit_calc "$q"
+fzf --ansi -i --filter="$q" --delimiter="$TAB" --nth=2 < "$INDEX" 2>/dev/null | head -40
+emit_web "$q"

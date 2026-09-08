@@ -1,0 +1,169 @@
+#!/bin/bash
+# omni top bar, modelled on the Rift setup from r/unixporn.
+#
+# The defining trait is that there IS no bar: `color` is fully transparent and
+# the visible chrome is two floating pills (brackets), one per side, with the
+# wallpaper showing through the middle. Anything that sets a bar background
+# undoes the whole look.
+#
+# The second trait is colour. Every module's ICON carries its own palette
+# colour; every LABEL stays neutral. Colours come from the active omni
+# palette's ANSI 16 via omni-bar-theme, so they follow the theme.
+#
+# Everything is event-driven (--subscribe); only the clock polls.
+
+source "$HOME/.config/sketchybar/colors.sh"
+PLUGINS="$HOME/.config/sketchybar/plugins"
+# MUST be the Nerd Font variant. Plain "JetBrains Mono" has none of these
+# glyphs and every icon renders as nothing - which is exactly what a fallback
+# test here caused once.
+FONT="JetBrainsMono Nerd Font"
+
+# brew lives at /opt/homebrew on Apple silicon and /usr/local on Intel, and
+# sketchybar's own environment has neither on PATH. Resolve tools once here
+# rather than hardcoding a prefix into every click_script.
+for p in /opt/homebrew/bin /usr/local/bin; do
+  case ":$PATH:" in *":$p:"*) ;; *) [ -d "$p" ] && PATH="$p:$PATH" ;; esac
+done
+export PATH
+NOWPLAYING=$(command -v nowplaying-cli || true)
+
+# margin insets the whole bar from the screen edges, which is what stops it
+# reading as a full-width strip even before the transparent colour.
+# height is deliberately tight: SketchyBar is an overlay that reserves no
+# screen space, so with the menu bar auto-hidden every pixel here is a pixel
+# taken off the top of the window underneath.
+sketchybar --bar height=30 position=top sticky=on \
+                 color=$BAR_BG shadow=off \
+                 margin=12 y_offset=0 \
+                 padding_left=0 padding_right=0 \
+                 border_width=0 corner_radius=0
+
+sketchybar --default updates=when_shown \
+                    icon.font="$FONT:Regular:13.0" icon.color=$LABEL \
+                    label.font="$FONT:Regular:12.0" label.color=$LABEL \
+                    icon.padding_left=11 icon.padding_right=6 \
+                    label.padding_left=0 label.padding_right=11 \
+                    background.drawing=off
+
+# ---------------- left pill: omni launcher, spaces ------------------------
+sketchybar --add item logo left \
+           --set logo icon=󰀵 icon.color=$RED icon.font="$FONT:Regular:14.0" y_offset=1 \
+                      icon.padding_left=12 icon.padding_right=10 label.drawing=off \
+                      click_script="$PLUGINS/toggle_omni.sh"
+
+# AeroSpace reports workspace changes through this event (exec-on-workspace-
+# change in ~/.aerospace.toml). Declared unconditionally; harmless without it.
+sketchybar --add event aerospace_workspace_change
+
+# How many Space indicators to draw. macOS exposes no reliable public way to
+# count Desktops, so this is manual - set it to however many you actually have
+# (Mission Control > hover the top edge > "+" to add more).
+SPACES="${OMNI_BAR_SPACES:-5}"
+# One indicator that slides between the numbers, rather than a pill that pops
+# from one to the next. SketchyBar cannot reposition an item directly, but an
+# item's padding animates. The cursor is added AFTER the numbers - so it is
+# laid out last and nothing has to compensate for its movement - and reaches
+# back over the row with a negative padding_left: -(ROW - offset of the current
+# number). Being last it is also drawn on top, so it carries the digit itself.
+# TRAP: background.padding_* is the SAME property as item padding, not an
+# inset. TRAP: a negative padding on the item AFTER the cursor is clamped, so
+# "cursor first, pull the numbers back" cannot work. Each number is exactly
+# CELL points wide (8 + glyph + 8); the cursor uses the same paddings.
+CELL=23
+ROW=$(( CELL * SPACES ))
+# The pill's left inner gap is the logo's icon.padding_left (12); its right one
+# is the last number's label.padding_right (8). A spacer of the difference
+# squares them. It sits BEFORE the cursor so the cursor's pull-back is the only
+# thing that has to know about it - an item after the cursor would inherit the
+# cursor's shifted layout position and move with the workspace.
+EDGE_PAD=$(( 12 - 8 ))
+for i in $(seq 1 "$SPACES"); do
+  sketchybar --add item space.$i left \
+             --set space.$i label="$i" icon.drawing=off \
+                            label.font="$FONT:Bold:12.0" width=$CELL label.align=center \
+                            label.padding_left=8 label.padding_right=8 \
+                            background.drawing=off \
+                            script="$PLUGINS/space.sh" \
+                            click_script="$PLUGINS/goto_space.sh $i" \
+             --subscribe space.$i space_change aerospace_workspace_change
+done
+sketchybar --add item space.pad left \
+           --set space.pad icon.drawing=off label.drawing=off width=$EDGE_PAD \
+                           padding_left=0 padding_right=0 background.drawing=off
+
+sketchybar --add item space.cursor left \
+           --set space.cursor label="1" icon.drawing=off \
+                              label.font="$FONT:Bold:12.0" label.color=$BAR_COLOR \
+                              width=$CELL label.align=center \
+                              label.padding_left=8 label.padding_right=8 \
+                              padding_left=-$(( ROW + EDGE_PAD )) padding_right=0 \
+                              background.drawing=on background.color=$BLUE \
+                              background.corner_radius=8 background.height=20 \
+                              click_script="$PLUGINS/goto_space.sh 1"
+
+# SketchyBar only runs an item's script on its events, so nothing paints the
+# markers at startup. Invoke the plugin once per space to set the initial state
+# - cheaper than giving them an update_freq and polling forever.
+for i in $(seq 1 "$SPACES"); do NAME="space.$i" "$PLUGINS/space.sh"; done
+
+sketchybar --add bracket left.pill logo space.pad space.cursor $(seq -f "space.%g" 1 "$SPACES") \
+           --set left.pill background.color=$GROUP_BG background.corner_radius=12 \
+                           background.height=24 background.drawing=on \
+                           background.border_width=1 background.border_color=$GROUP_BORDER
+
+# ---------------- right pill: status, then the clock (Rift's order) -------
+# Popups open on hover and close when the pointer leaves the bar. That is the
+# only model SketchyBar supports cleanly: it has no click-outside event, so a
+# click-to-open popup can be left stranded. Click is free for a quick action.
+# Added right-to-left: clock first so it lands furthest right, wifi last so it
+# lands furthest left. Displayed order is wifi | volume | battery | clock.
+# Rift keeps the clock in the right-hand pill, not centred, and spells the date
+# out ("8th September"). update_freq stays coarse: adding seconds means a fork
+# per second forever, and each sketchybar call costs ~25ms.
+#
+# It is added FIRST on purpose: SketchyBar stacks right-side items right to
+# left in the order they are added, so the first one added sits furthest right.
+sketchybar --add item clock right \
+           --set clock icon=󰥔 icon.color=$BLUE \
+                       label.font="$FONT:Regular:12.0" \
+                       update_freq=20 script="$PLUGINS/clock.sh" \
+                       click_script="$PLUGINS/open_calendar.sh" \
+                       popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
+                       popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
+                       popup.align=right popup.y_offset=4 \
+           --subscribe clock mouse.entered mouse.exited.global front_app_switched
+
+sketchybar --add item battery right \
+           --set battery script="$PLUGINS/battery.sh" update_freq=120 \
+                         click_script="open 'x-apple.systempreferences:com.apple.Battery-Settings.extension'" \
+                         popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
+                         popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
+                         popup.align=right popup.y_offset=4 \
+           --subscribe battery power_source_change system_woke mouse.entered mouse.exited.global front_app_switched
+
+sketchybar --add item volume right \
+           --set volume script="$PLUGINS/volume.sh" icon.color=$YELLOW \
+                        click_script="$PLUGINS/toggle_mute.sh" \
+                        popup.background.color=$GROUP_BG popup.background.corner_radius=10 \
+                        popup.background.border_width=1 popup.background.border_color=$GROUP_BORDER \
+                        popup.align=right popup.y_offset=4 \
+           --subscribe volume volume_change mouse.scrolled mouse.entered mouse.exited.global front_app_switched
+sketchybar --add item wifi right \
+           --set wifi script="$PLUGINS/wifi.sh" update_freq=60 icon.color=$CYAN \
+                      click_script="open 'x-apple.systempreferences:com.apple.wifi-settings-extension'" \
+           --subscribe wifi wifi_change
+sketchybar --add item media right \
+           --set media script="$PLUGINS/media.sh" update_freq=30 \
+                       label.padding_right=14 \
+                       click_script="${NOWPLAYING:-true} togglePlayPause" \
+           --subscribe media media_change
+"$PLUGINS/media.sh" >/dev/null 2>&1 &
+"$PLUGINS/airplay_scan.sh" >/dev/null 2>&1 &
+
+sketchybar --add bracket right.pill clock battery volume wifi media \
+           --set right.pill background.color=$GROUP_BG background.corner_radius=12 \
+                            background.height=24 background.drawing=on \
+                            background.border_width=1 background.border_color=$GROUP_BORDER
+
+sketchybar --update

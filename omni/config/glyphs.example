@@ -1,0 +1,12 @@
+# omni glyph overrides.  pattern = glyph
+#
+# pattern is a case-insensitive shell glob matched against the app name.
+# First match wins; anything unmatched falls through to the built-in map in
+# bin/omni-index. Touching this file makes the index rebuild on next launch.
+#
+# Find glyphs at https://www.nerdfonts.com/cheat-sheet - only ones present in
+# your configured font will render, so verify before committing to one.
+#
+# *slack*    = 
+# *figma*    = 
+# *ghostty*  = 

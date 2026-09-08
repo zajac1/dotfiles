@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# omni-weather-report - the FULL view. The Weather submenu is the compact one
+# (art + temperature + rain + wind); everything else lives here.
+#
+# TRAPS:
+#  - wttr.in serves HTML unless the UA looks like a terminal client (-A curl/8).
+#  - strip ANSI BEFORE `cut`, or it counts escape bytes as columns.
+#  - LC_ALL must be UTF-8 or `cut -c` counts bytes.
+
+set -u
+export LC_ALL=en_US.UTF-8
+. "$HOME/.config/omni/config.sh" 2>/dev/null || true
+. "$HOME/.cache/omni/themes/${OMNI_THEME:-tokyo-night}.sh" 2>/dev/null || true
+
+loc="${OMNI_WEATHER_LOCATION:-}"
+CACHE="$HOME/.cache/omni/weather.json"
+ART="$HOME/.cache/omni/weather.art"
+A=$(printf '\033[38;2;%d;%d;%dm' "$((16#${OMNI_ACCENT:1:2}))" "$((16#${OMNI_ACCENT:3:2}))" "$((16#${OMNI_ACCENT:5:2}))")
+D=$(printf '\033[38;2;%d;%d;%dm' "$((16#${OMNI_DIM:1:2}))"    "$((16#${OMNI_DIM:3:2}))"    "$((16#${OMNI_DIM:5:2}))")
+R=$(printf '\033[0m')
+
+[ -s "$CACHE" ] || curl -sS --max-time 12 -A "curl/8" "https://wttr.in/${loc}?format=j1" -o "$CACHE" 2>/dev/null
+
+echo
+if [ -s "$ART" ]; then
+  aw=0
+  while IFS= read -r l; do
+    n=$(printf '%s' "$l" | LC_ALL=en_US.UTF-8 wc -m | tr -d ' ')
+    [ "$n" -gt "$aw" ] && aw=$n
+  done <<EOF
+$(cat "$ART" | sed 's/ *$//')
+EOF
+  pad=$(( (56 - aw) / 2 )); [ "$pad" -lt 0 ] && pad=0
+  sed 's/ *$//' "$ART" | while IFS= read -r l; do printf '%*s%s%s%s\n' "$pad" "" "$A" "$l" "$R"; done
+fi
+echo
+
+if [ -s "$CACHE" ]; then
+  jq -r --arg hh "$(date +%H)" --arg a "$A" --arg d "$D" --arg r "$R" '
+    def lbl($t): "   " + $d + ($t + "               "|.[0:13]) + $r;
+    .current_condition[0] as $c
+    | .nearest_area[0] as $n
+    | .weather[0] as $t0
+    | .weather[1] as $t1
+    | [ $t0.hourly[] | select((.time|tonumber/100|floor) >= ($hh|tonumber)) ] as $rest
+    | lbl("now")        + "\($c.temp_C)°C · feels \($c.FeelsLikeC)°C · \($c.weatherDesc[0].value|gsub("^ +| +$";""))",
+      lbl("today")      + "\($t0.mintempC)°C to \($t0.maxtempC)°C",
+      lbl("rain")       + ( if ($rest|length)==0 then "—" else ($rest|map("\((.time|tonumber/100|floor|tostring))h \(.chanceofrain)%")|join("  ")) end ),
+      lbl("precip")     + "\($c.precipMM) mm/h now · \([$t0.hourly[].precipMM|tonumber]|add*10|round/10) mm expected today",
+      lbl("wind")       + "\($c.windspeedKmph) km/h \($c.winddir16Point) · gusts to \([$t0.hourly[].WindGustKmph|tonumber]|max) km/h",
+      lbl("cloud")      + "\($c.cloudcover)%   " + $d + "humidity" + $r + " \($c.humidity)%",
+      lbl("uv index")   + "\($c.uvIndex)   " + $d + "visibility" + $r + " \($c.visibility) km   " + $d + "pressure" + $r + " \($c.pressure) mb",
+      lbl("sun")        + "\($t0.astronomy[0].sunrise) → \($t0.astronomy[0].sunset)",
+      "",
+      lbl("tomorrow")   + "\($t1.mintempC)°C to \($t1.maxtempC)°C · rain up to \([$t1.hourly[].chanceofrain|tonumber]|max)%",
+      "",
+      "   " + $d + "\($n.areaName[0].value), \($n.country[0].value) · \($n.latitude),\($n.longitude) · observed \($c.observation_time)" + $r
+  ' "$CACHE"
+else
+  printf '   weather unavailable\n'
+fi
+
+echo
+printf '   %sPress enter to close%s ' "$D" "$R"
+read -r

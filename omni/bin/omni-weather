@@ -1,0 +1,113 @@
+#!/bin/bash
+#
+# omni-weather - rows for the Weather submenu, from wttr.in's j1 JSON.
+#
+# Cached for OMNI_WEATHER_TTL seconds. A stale cache is served immediately and
+# refreshed in the background, so opening the menu never blocks on the network;
+# only a completely cold cache fetches synchronously.
+#
+# Location defaults to wttr.in's IP geolocation. Set OMNI_WEATHER_LOCATION in
+# config.sh to pin it (e.g. "Warsaw" or "50.06,19.94").
+#
+# Rows are emitted as `sep` so they are informational and unselectable-ish:
+# omni-enter ignores sep, and omni-skip steps over them.
+
+set -u
+. "$HOME/.config/omni/config.sh"
+
+W_COLD="${OMNI_ICON_COLD:-󰜗}"     # md-snowflake
+W_COOL="${OMNI_ICON_COOL:-}"     # fa-mitten
+W_WARM="${OMNI_ICON_WARM:-󰩻}"     # md-tshirt_crew
+W_HOT="${OMNI_ICON_HOT:-󰓠}"       # md-sunglasses
+W_RAIN="${OMNI_ICON_RAIN:-󰕊}"     # md-umbrella
+W_WIND="${OMNI_ICON_WIND:-󰖝}"     # md-weather_windy
+W_LOC="${OMNI_ICON_LOC:-}"
+
+CACHE="$HOME/.cache/omni/weather.json"
+ART="$HOME/.cache/omni/weather.art"
+LOC="${OMNI_WEATHER_LOCATION:-}"
+TTL="${OMNI_WEATHER_TTL:-900}"
+URL="https://wttr.in/${LOC}?format=j1"
+
+fetch() {
+  curl -sS --max-time 12 -A "curl/8" "$URL" -o "$CACHE.new" 2>/dev/null &&
+    jq -e .current_condition "$CACHE.new" >/dev/null 2>&1 &&
+    mv "$CACHE.new" "$CACHE" || rm -f "$CACHE.new"
+  # ASCII art is a second endpoint. Strip ANSI BEFORE cutting: `cut` counts
+  # escape bytes as columns otherwise and slices the picture apart.
+  LC_ALL=en_US.UTF-8 curl -sS --max-time 12 -A "curl/8" "https://wttr.in/${LOC}?0" 2>/dev/null |
+    sed 's/\x1b\[[0-9;]*m//g' | tail -n +3 | cut -c1-15 | sed '/^ *$/d' > "$ART.new" 2>/dev/null
+  [ -s "$ART.new" ] && mv "$ART.new" "$ART" || rm -f "$ART.new"
+}
+
+if [ ! -s "$CACHE" ]; then
+  fetch
+else
+  age=$(( $(date +%s) - $(stat -f %m "$CACHE") ))
+  [ "$age" -gt "$TTL" ] && ( fetch >/dev/null 2>&1 & )
+fi
+
+if [ -s "$ART" ]; then
+  aw=0
+  while IFS= read -r l; do
+    n=$(printf '%s' "$l" | LC_ALL=en_US.UTF-8 wc -m | tr -d ' ')
+    [ "$n" -gt "$aw" ] && aw=$n
+  done <<EOF
+$(head -5 "$ART" | sed 's/ *$//')
+EOF
+  pad=$(( ( ${OMNI_ROW_WIDTH:-26} - aw ) / 2 )); [ "$pad" -lt 0 ] && pad=0
+  # wttr's art arrives monochrome (colours are stripped so it can be cut by
+  # column), so it is recoloured here by character class and condition code:
+  # sun strokes yellow, rain blue, snow bright, lightning yellow, cloud dim.
+  # ANSI 3/4/7 are the theme's own hues - the launcher's Ghostty loads the
+  # omni-theme palette - and 38;5;20 is the dim slot omni-osc fills.
+  code=$(jq -r '.current_condition[0].weatherCode // "0"' "$CACHE" 2>/dev/null)
+  head -5 "$ART" | sed 's/ *$//' | python3 -c '
+import sys
+code = int(sys.argv[1] or 0); pad = int(sys.argv[2])
+SUNNY = code == 113; PARTLY = code == 116
+THUNDER = code in (200, 386, 389, 392, 395)
+Y, B, W, D, R = "\033[33m", "\033[34m", "\033[37m", "\033[38;5;20m", "\033[0m"
+for i, line in enumerate(sys.stdin.read().split("\n")):
+    if not line: continue
+    out = []
+    for ch in line:
+        if ch == " ": out.append(ch); continue
+        if ch in ",\x27": c = B                                   # rain
+        elif ch == "*": c = W                                       # snow
+        elif SUNNY: c = Y
+        elif PARTLY and i < 2 and ch in "\\/\".-": c = Y          # the sun peeking out
+        elif THUNDER and ch in "/_" and i >= 2: c = Y               # lightning
+        else: c = D                                                 # cloud, fog
+        out.append(c + ch + R)
+    print("sep\t" + " " * pad + "".join(out) + "\t")' "$code" "$pad"
+fi
+
+if [ -s "$CACHE" ]; then
+  jq -r --arg hh "$(date +%H)" \
+     --arg cold "$W_COLD" --arg cool "$W_COOL" --arg warm "$W_WARM" --arg hot "$W_HOT" \
+     --arg rain "$W_RAIN" --arg wind "$W_WIND" --arg loc "$W_LOC" '
+    def row($g; $t): "sep\t" + $g + "  " + $t + "\t";
+    .current_condition[0] as $c
+    | .nearest_area[0] as $a
+    | ($c.FeelsLikeC|tonumber) as $f
+    | ( if $f < 2 then $cold elif $f < 14 then $cool elif $f < 22 then $warm else $hot end ) as $wear
+    | [ .weather[0].hourly[] | select((.time|tonumber/100|floor) >= ($hh|tonumber)) ] as $rest
+    | [ row($wear; "\($c.temp_C)°C · feels \($c.FeelsLikeC)°C"),
+        ( if ($rest|length) == 0 then empty
+          else row($rain; ($rest[0:3] | map("\((.time|tonumber/100|floor|tostring))h \(.chanceofrain)%") | join("  ")))
+          end ),
+        row($wind; "\($c.windspeedKmph) km/h \($c.winddir16Point)"
+                   + ( [ $rest[] | select((.WindGustKmph|tonumber) >= 40) ]
+                       | if length > 0 then " · gusts \(map(.WindGustKmph|tonumber)|max)" else "" end )),
+        empty
+      ] | .[]
+  ' "$CACHE" 2>/dev/null
+else
+  printf 'sep\t  Weather unavailable\t\n'
+fi
+
+printf 'run\t  Full report\tweather-report\n'
+printf 'act\t  Refresh\tweather-refresh\n'
+printf 'back\t  Back\t\n'
+

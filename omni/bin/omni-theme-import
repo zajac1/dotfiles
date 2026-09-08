@@ -1,0 +1,42 @@
+#!/bin/bash
+# Import omarchy themes: colors.toml and backgrounds, one directory per theme.
+#
+#   omni-theme-import [SRC] [--force]
+#
+# SRC is a directory of theme directories; it defaults to a shallow clone of
+# basecamp/omarchy in ~/.cache/omni/omarchy (made on first run). Third-party
+# themes cloned side by side into one directory import the same way. A theme's colors.toml is copied only if it is not already
+# present, so local edits survive re-imports; --force overwrites. Backgrounds
+# are copied file by file and never overwritten.
+set -u
+SRC=""; FORCE=0
+for a in "$@"; do case "$a" in --force) FORCE=1 ;; *) SRC="$a" ;; esac; done
+DST="$HOME/.config/omni/themes"
+if [ -z "$SRC" ]; then
+  CLONE="$HOME/.cache/omni/omarchy"
+  if [ -d "$CLONE/.git" ]; then git -C "$CLONE" pull -q --depth 1 2>/dev/null || true
+  else git clone -q --depth 1 https://github.com/basecamp/omarchy "$CLONE" || { echo "clone failed" >&2; exit 1; }; fi
+  SRC="$CLONE/themes"
+fi
+[ -d "$SRC" ] || { echo "no such directory: $SRC" >&2; exit 1; }
+
+n=0; imgs=0
+for d in "$SRC"/*/; do
+  name="${d%/}"; name="${name##*/}"
+  [ -f "$d/colors.toml" ] || continue
+  case "$name" in *[!a-zA-Z0-9._-]*) echo "skip $name: bad name" >&2; continue ;; esac
+  mkdir -p "$DST/$name/backgrounds"
+  if [ ! -f "$DST/$name/colors.toml" ] || [ "$FORCE" = 1 ]; then
+    # third-party themes on GitHub mostly still use the old key set
+    # (color0-15, no mode); convert those rather than copying them verbatim
+    if grep -qE '^red[[:space:]]*=' "$d/colors.toml"; then cp "$d/colors.toml" "$DST/$name/colors.toml"
+    else omni-theme-convert "$d/colors.toml" "$DST/$name/colors.toml" >/dev/null || { echo "skip $name: cannot convert" >&2; continue; }; fi
+  fi
+  for img in "$d"/backgrounds/*; do
+    [ -f "$img" ] || continue
+    [ -f "$DST/$name/backgrounds/${img##*/}" ] || { cp "$img" "$DST/$name/backgrounds/"; imgs=$((imgs+1)); }
+  done
+  n=$((n+1))
+done
+omni-theme-build --all
+echo "imported $n themes, $imgs new backgrounds -> $DST ($(du -sh "$DST" | cut -f1))"

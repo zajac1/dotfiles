@@ -1,0 +1,46 @@
+#!/bin/bash
+# List themes, or switch to one: rebuild the derived colours, retheme Ghostty
+# and the bar, set the theme's wallpaper, restart the launcher.
+set -u
+
+CONF="$HOME/.config/omni/config.sh"
+. "$CONF" 2>/dev/null || true
+DIR="$HOME/.config/omni/themes"
+current=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$CONF")
+
+if [ $# -eq 0 ]; then
+  for d in "$DIR"/*/; do
+    [ -f "$d/colors.toml" ] || continue
+    name="${d%/}"; name="${name##*/}"
+    [ "$name" = "$current" ] && printf '* %s\n' "$name" || printf '  %s\n' "$name"
+  done
+  exit 0
+fi
+
+RESTART=1
+[ "$1" = --no-restart ] && { RESTART=0; shift; }
+name="${1-}"
+case "$name" in ''|*[!a-zA-Z0-9._-]*) echo "bad theme name" >&2; exit 1 ;; esac
+if [ ! -f "$DIR/$name/colors.toml" ]; then
+  echo "no such theme: $name" >&2
+  echo "available:" >&2
+  omni-theme >&2
+  exit 1
+fi
+
+omni-theme-build "$name" || exit 1
+sed -i '' "s/^OMNI_THEME=\".*\"/OMNI_THEME=\"$name\"/" "$CONF"
+# Every consumer is optional and silent when its half is not installed, so the
+# same switch works on a machine that has only the launcher and an editor.
+omni-ghostty-theme "$name" >/dev/null 2>&1 || true          # terminal
+command -v omni-nvim-theme >/dev/null 2>&1 && omni-nvim-theme "$name" >/dev/null 2>&1   # editor
+command -v sketchybar     >/dev/null 2>&1 && omni-bar-theme >/dev/null 2>&1              # bar
+# omarchy pairs every theme with its backgrounds; do the same when there are any.
+# Detached: it can restart WallpaperAgent (~2s), which must not block the
+# launcher when this is called from a menu selection.
+if [ "${OMNI_WALLPAPER:-1}" = 1 ] && command -v omni-wallpaper >/dev/null 2>&1 \
+   && [ -n "$(ls -A "$DIR/$name/backgrounds" 2>/dev/null)" ]; then
+  nohup omni-wallpaper next >/dev/null 2>&1 &
+fi
+[ "$RESTART" = 1 ] && omni-start --restart >/dev/null
+echo "theme: $name"
