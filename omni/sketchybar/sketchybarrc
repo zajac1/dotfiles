@@ -150,7 +150,7 @@ sketchybar --add item volume right \
                         popup.align=right popup.y_offset=4 \
            --subscribe volume volume_change mouse.scrolled mouse.entered mouse.exited.global front_app_switched
 sketchybar --add item wifi right \
-           --set wifi script="$PLUGINS/wifi.sh" update_freq=60 icon.color=$CYAN \
+           --set wifi script="$PLUGINS/wifi.sh" update_freq=30 icon.color=$CYAN \
                       click_script="open 'x-apple.systempreferences:com.apple.wifi-settings-extension'" \
            --subscribe wifi wifi_change
 sketchybar --add item media right \

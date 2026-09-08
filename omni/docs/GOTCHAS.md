@@ -449,3 +449,13 @@ one-shot window omni opens now passes
 config. `initial-command = /usr/bin/true` belongs only to the quick-terminal
 instances too - it keeps the first surface empty, which is wrong for a window
 meant to show an app.
+
+## 49. Wi-Fi RSSI: CoreWLAN, not the command-line tools
+
+Every obvious route is a dead end and it is easy to conclude it cannot be
+done: `airport -I` was removed in macOS 14, `wdutil info` needs sudo,
+`ipconfig` has no RSSI, and `system_profiler SPAirPortDataType` has it but
+takes 3.1 SECONDS. `CWWiFiClient.sharedWiFiClient.interface.rssiValue` through
+JXA answers in ~65ms with no privileges. Separately: macOS 14+ gates the SSID
+behind Location Services (that is the "<redacted>" ipconfig returns) but does
+NOT gate RSSI, so signal strength works even when the network name does not.
