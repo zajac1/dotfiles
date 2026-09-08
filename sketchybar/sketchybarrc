@@ -72,6 +72,12 @@ SPACES="${OMNI_BAR_SPACES:-5}"
 # CELL points wide (8 + glyph + 8); the cursor uses the same paddings.
 CELL=23
 ROW=$(( CELL * SPACES ))
+# The pill's left inner gap is the logo's icon.padding_left (12); its right one
+# is the last number's label.padding_right (8). A spacer of the difference
+# squares them. It sits BEFORE the cursor so the cursor's pull-back is the only
+# thing that has to know about it - an item after the cursor would inherit the
+# cursor's shifted layout position and move with the workspace.
+EDGE_PAD=$(( 12 - 8 ))
 for i in $(seq 1 "$SPACES"); do
   sketchybar --add item space.$i left \
              --set space.$i label="$i" icon.drawing=off \
@@ -82,12 +88,16 @@ for i in $(seq 1 "$SPACES"); do
                             click_script="$PLUGINS/goto_space.sh $i" \
              --subscribe space.$i space_change aerospace_workspace_change
 done
+sketchybar --add item space.pad left \
+           --set space.pad icon.drawing=off label.drawing=off width=$EDGE_PAD \
+                           padding_left=0 padding_right=0 background.drawing=off
+
 sketchybar --add item space.cursor left \
            --set space.cursor label="1" icon.drawing=off \
                               label.font="$FONT:Bold:12.0" label.color=$BAR_COLOR \
                               width=$CELL label.align=center \
                               label.padding_left=8 label.padding_right=8 \
-                              padding_left=-$ROW padding_right=0 \
+                              padding_left=-$(( ROW + EDGE_PAD )) padding_right=0 \
                               background.drawing=on background.color=$BLUE \
                               background.corner_radius=8 background.height=20 \
                               click_script="$PLUGINS/goto_space.sh 1"
@@ -97,7 +107,7 @@ sketchybar --add item space.cursor left \
 # - cheaper than giving them an update_freq and polling forever.
 for i in $(seq 1 "$SPACES"); do NAME="space.$i" "$PLUGINS/space.sh"; done
 
-sketchybar --add bracket left.pill logo space.cursor $(seq -f "space.%g" 1 "$SPACES") \
+sketchybar --add bracket left.pill logo space.pad space.cursor $(seq -f "space.%g" 1 "$SPACES") \
            --set left.pill background.color=$GROUP_BG background.corner_radius=12 \
                            background.height=24 background.drawing=on \
                            background.border_width=1 background.border_color=$GROUP_BORDER
