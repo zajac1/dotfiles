@@ -1,0 +1,24 @@
+# HEY mail: a full window with no title bar, nothing but the client.
+# Launched by omni-mail-hey with --config-default-files=false, so this is the
+# whole configuration - it deliberately inherits none of the main terminal's
+# splits, shaders or transparency.
+command = /Users/adamzajac/.local/bin/hey tui --instance mail
+initial-command = /usr/bin/true
+abnormal-command-exit-runtime = 0
+quit-after-last-window-closed = false
+
+# no title bar, no shadow: the client fills the window
+window-decoration = false
+macos-titlebar-style = hidden
+maximize = true
+window-padding-x = 14
+window-padding-y = 10
+window-padding-balance = true
+
+# the active omni palette, so it matches the launcher and the terminal
+config-file = ?omni-theme
+
+shell-integration = none
+confirm-close-surface = false
+resize-overlay = never
+mouse-hide-while-typing = true

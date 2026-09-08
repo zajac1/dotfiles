@@ -1,0 +1,16 @@
+#!/bin/bash
+# HEY mail in its own Ghostty instance: full window, no title bar, nothing but
+# the client. Its own --config-file so it cannot inherit the main terminal's
+# splits, shaders or opacity; --config-default-files=false so it ignores the
+# user config entirely.
+#
+# One instance only: a second `open -na` would start a rival process rather
+# than raise the existing window, so an already-running instance is activated.
+set -u
+CONFIG="$HOME/.config/ghostty/mail"
+[ -f "$CONFIG" ] || { echo "missing $CONFIG" >&2; exit 1; }
+if /bin/ps -ax -o command= | grep -q -- "[g]hostty .*--config-file=$CONFIG"; then
+  osascript -e 'tell application "Ghostty" to activate' >/dev/null 2>&1
+  exit 0
+fi
+open -na Ghostty.app --args --config-default-files=false --config-file="$CONFIG"

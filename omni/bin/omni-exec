@@ -36,6 +36,8 @@ case "$kind" in
       caffeinate)  omni-caffeinate toggle ;;
       wallpaper-next) omni-wallpaper next ;;
       monitor)     open -na Ghostty.app --args -e "$HOME/.local/bin/omni-btop" "cpu mem net proc" ;;
+      calendar)    omni-calendar ;;
+      mail)        omni-mail ;;
       weather-report) open -na Ghostty.app --args -e "$HOME/.local/bin/omni-weather-report" ;;
       weather-refresh) rm -f "$HOME/.cache/omni/weather.json"; omni-weather >/dev/null 2>&1 ;;
       macos)       settings "com.apple.Software-Update-Settings.extension" ;;

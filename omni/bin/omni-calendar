@@ -1,0 +1,18 @@
+#!/bin/bash
+# Dispatches to the provider named by OMNI_CALENDAR_PROVIDER.
+#
+# A provider is any executable `omni-calendar-<name>` on PATH. omni ships `hey`;
+# a machine that uses something else drops in its own - `omni-calendar-gmail`,
+# say - and sets OMNI_CALENDAR_PROVIDER in ~/.config/omni/config.sh. Nothing
+# else in omni needs to know which one it is.
+set -u
+. "$HOME/.config/omni/config.sh" 2>/dev/null || true
+p="${OMNI_CALENDAR_PROVIDER:-hey}"
+case "$p" in *[!a-z0-9-]*) exit 1 ;; esac
+prov="$HOME/.local/bin/omni-calendar-$p"
+[ -x "$prov" ] || prov="$(command -v omni-calendar-$p 2>/dev/null)"
+[ -n "$prov" ] && [ -x "$prov" ] || {
+  osascript -e 'display notification "No calendar provider: '"$p"'" with title "omni"' 2>/dev/null
+  exit 1
+}
+exec "$prov" "$@"

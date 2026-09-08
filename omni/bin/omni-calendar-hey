@@ -1,0 +1,10 @@
+#!/bin/bash
+# HEY calendar: the same quick-terminal instance the global hotkey toggles, so
+# the launcher and the bar and the hotkey all land on one window rather than
+# spawning rivals. Start it if it is not up, then press its hotkey
+# (ctrl+alt+shift+cmd+C, key code 8 = "c"), which needs Accessibility
+# permission for whatever is calling this.
+set -u
+[ -x "$HOME/.local/bin/hey-calendar-start" ] || { echo "hey-calendar-start not installed" >&2; exit 1; }
+"$HOME/.local/bin/hey-calendar-start" >/dev/null 2>&1
+osascript -e 'tell application "System Events" to key code 8 using {control down, option down, shift down, command down}' >/dev/null 2>&1

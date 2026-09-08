@@ -63,6 +63,13 @@ OMNI_PROJECT_ROOT="$HOME/git"
 OMNI_WEATHER_LOCATION=""   # empty = wttr.in IP geolocation
 OMNI_WEATHER_TTL=900
 
+# Utilities > Calendar and Mail dispatch to omni-calendar-<provider> and
+# omni-mail-<provider>. omni ships "hey"; point these at your own executable
+# on another machine (omni-mail-gmail, omni-calendar-gcal, ...) and nothing
+# else has to change.
+OMNI_CALENDAR_PROVIDER="hey"
+OMNI_MAIL_PROVIDER="hey"
+
 OMNI_PASS_PROVIDER="protonpass"
 OMNI_PASS_CACHE_TTL=900      # item TITLES only are cached, never secrets
 OMNI_PASS_CLIPBOARD_TTL=30
