@@ -1,0 +1,23 @@
+command = /Users/adamzajac/.local/bin/hey-calendar
+initial-command = /usr/bin/true
+abnormal-command-exit-runtime = 0
+macos-hidden = always
+quit-after-last-window-closed = false
+
+background-opacity = 0.85
+background-blur = 20
+window-padding-x = 14
+window-padding-y = 10
+window-padding-balance = true
+
+quick-terminal-position = top
+quick-terminal-autohide = true
+quick-terminal-animation-duration = 0.15
+quick-terminal-space-behavior = move
+
+shell-integration = none
+confirm-close-surface = false
+resize-overlay = never
+mouse-hide-while-typing = true
+
+keybind = global:ctrl+alt+shift+super+c=toggle_quick_terminal

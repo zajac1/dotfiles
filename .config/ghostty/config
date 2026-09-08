@@ -1,6 +1,13 @@
 # Theme is managed by tinty (see ~/.config/tinted-theming/).
 # Run `tinty apply <scheme>` to switch; restart Ghostty to apply.
 theme = /Users/adamzajac/dotfiles/.config/ghostty/themes/tinted
+
+# omni writes its palette to omni-theme on every `omni-theme <name>` switch
+# (and the tinty hook drives that too, so the two agree). config-file contents
+# are applied AFTER the file that declares them, so this wins over the tinty
+# theme above wherever both exist. `?` = no error on a machine without omni.
+# Generated per machine, so it is gitignored.
+config-file = ?omni-theme
 font-family = GohuFont 14 Nerd Font
 font-size = 20
 background-opacity = 0.75

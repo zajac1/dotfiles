@@ -6,3 +6,5 @@ backups/
 
 # Machine-local secrets — only .env.example is tracked
 .env
+# generated per machine by omni-ghostty-theme on every theme switch
+.config/ghostty/omni-theme
