@@ -459,3 +459,18 @@ takes 3.1 SECONDS. `CWWiFiClient.sharedWiFiClient.interface.rssiValue` through
 JXA answers in ~65ms with no privileges. Separately: macOS 14+ gates the SSID
 behind Location Services (that is the "<redacted>" ipconfig returns) but does
 NOT gate RSSI, so signal strength works even when the network name does not.
+
+## 50. SketchyBar can never appear in Location Services
+
+Location is authorised per application bundle. SketchyBar is a plain CLI binary
+run by launchd with no bundle, and it never calls CLLocationManager, so macOS
+has nothing to list - the permission cannot be granted, not merely "not granted
+yet". This gates exactly two CoreWLAN fields, `ssid` and `bssid`; RSSI, noise,
+transmit rate, channel and band are all available. `networksetup
+-getairportnetwork` reports "You are not associated with an AirPort network"
+under the same gate, which reads as a bug and is not one.
+
+## 51. An ObjC enum through JXA does not `===` a JS number
+
+`c.channelBand === 2` is false while `"" + c.channelBand` is `"2"`. Compare
+`String(value)`, or every band reads as unknown.

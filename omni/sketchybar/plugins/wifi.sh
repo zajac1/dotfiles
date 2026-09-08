@@ -11,6 +11,13 @@
 # macOS 14+ gates the network name behind it (that is the "<redacted>" you get
 # from ipconfig). RSSI is NOT gated, so the strength works regardless.
 source "$HOME/.config/sketchybar/colors.sh"
+case "${SENDER:-}" in
+  mouse.entered)
+    [ "$(sketchybar --query "$NAME" | jq -r '.popup.drawing')" = on ] && exit 0
+    exec "$HOME/.config/sketchybar/plugins/wifi_popup.sh" --show ;;
+  mouse.exited.global|front_app_switched)
+    sketchybar --set "$NAME" popup.drawing=off; exit 0 ;;
+esac
 
 read -r RSSI POWER <<< "$(osascript -l JavaScript -e '
 ObjC.import("CoreWLAN");
