@@ -11,7 +11,13 @@ ttl="${OMNI_PASS_CLIPBOARD_TTL:-30}"
 id="${1-}"
 [ -n "$id" ] || exit 1
 
-secret=$(omni-pass get "$id" 2>/dev/null) || exit 1
+# A failed read almost always means the vault locked itself since the status
+# was cached. Say so, and drop the cached status so the menu re-probes.
+secret=$(omni-pass get "$id" 2>/dev/null) || {
+  rm -f "$HOME/.cache/omni/pass.status"
+  osascript -e 'display notification "Vault is locked - open Passwords to unlock" with title "omni"' 2>/dev/null
+  exit 1
+}
 [ -n "$secret" ] || { osascript -e 'display notification "No password on that item" with title "omni"' 2>/dev/null; exit 1; }
 printf '%s' "$secret" | pbcopy
 
