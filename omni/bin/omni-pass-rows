@@ -22,6 +22,14 @@ TTL="${OMNI_PASS_CACHE_TTL:-900}"
 # whatever is already cached.
 LOCK="$HOME/.cache/omni/pass.lock"
 
+# `( refresh & )` only detaches from the parent, not from the process group,
+# and the group is what gets killed when the row list is rebuilt - which left a
+# 0-byte status file and a lock nobody would release. A new session survives.
+spawn_refresh() {
+  python3 -c 'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' \
+    "$HOME/.local/bin/omni-pass-rows" --refresh >/dev/null 2>&1 &
+}
+
 refresh() {
   # A trap EXIT inside a backgrounded subshell did not fire reliably, leaving a
   # stale lock that would block every future refresh. Release explicitly, and
@@ -41,15 +49,16 @@ refresh() {
   rmdir "$LOCK" 2>/dev/null
 }
 
+[ "${1-}" = --refresh ] && { refresh; exit 0; }
+
 if [ ! -s "$STAT" ]; then
-  ( refresh >/dev/null 2>&1 & )
-  printf 'sep\t  Loading vault…\t\n'
-  printf 'sep\t   reopen Passwords in a moment\t\n'
-  printf 'act\t  Refresh\tpass-refresh\n'
+  spawn_refresh
+  printf 'sep\t  Loading vault… reopen soon\t\n'
+  printf 'back\t  Back\t\n'
   exit 0
 else
   age=$(( $(date +%s) - $(stat -f %m "$STAT") ))
-  [ "$age" -gt "$TTL" ] && ( refresh >/dev/null 2>&1 & )
+  [ "$age" -gt "$TTL" ] && spawn_refresh
 fi
 
 case "$(cat "$STAT" 2>/dev/null)" in
