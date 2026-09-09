@@ -44,6 +44,7 @@ refresh() {
 if [ ! -s "$STAT" ]; then
   ( refresh >/dev/null 2>&1 & )
   printf 'sep\t  Loading vault…\t\n'
+  printf 'sep\t   reopen Passwords in a moment\t\n'
   printf 'act\t  Refresh\tpass-refresh\n'
   exit 0
 else
