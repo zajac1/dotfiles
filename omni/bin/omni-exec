@@ -15,7 +15,9 @@ payload=$(printf '%s' "$line" | cut -f3)
 # quit-after-last-window-closed defaults to false, so without this every btop,
 # every brew upgrade, every editor leaves a windowless Ghostty behind - which
 # is how six of them end up in cmd-tab.
-GHOSTTY_ONESHOT="--quit-after-last-window-closed=true"
+# Same app bundle as the user's Ghostty, so without the second flag macOS
+# restores their saved windows into the one-shot window as extra tabs.
+GHOSTTY_ONESHOT="--quit-after-last-window-closed=true --window-save-state=never"
 
 edit() { open -na Ghostty.app --args $GHOSTTY_ONESHOT -e nvim "$1"; }
 settings() { open "x-apple.systempreferences:$1"; }
@@ -32,8 +34,10 @@ case "$kind" in
       brew)        open -na Ghostty.app --args $GHOSTTY_ONESHOT -e bash -lc 'brew update && brew upgrade; echo; read -rp "Press enter to close "' ;;
       # softwareupdate -ia needs sudo; a password prompt out of a launcher is
       # bad UX, so open the pane instead - one click and no elevation here.
-      pass-login)   open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-pass" login ;;
-      pass-unlock)  open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-pass" unlock ;;
+      # The vault status is cached for OMNI_PASS_CACHE_TTL; drop it once the
+      # command finishes so the next render re-probes instead of still saying locked.
+      pass-login)   open -na Ghostty.app --args $GHOSTTY_ONESHOT -e bash -c "'$HOME/.local/bin/omni-pass' login; rm -f '$HOME/.cache/omni/pass.status'" ;;
+      pass-unlock)  open -na Ghostty.app --args $GHOSTTY_ONESHOT -e bash -c "'$HOME/.local/bin/omni-pass' unlock; rm -f '$HOME/.cache/omni/pass.status'" ;;
       pass-refresh) rm -f "$HOME/.cache/omni/pass.status"; omni-pass-rows >/dev/null 2>&1 ;;
       btop-cpu)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" cpu ;;
       btop-mem)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" mem ;;
