@@ -52,8 +52,8 @@ else
 fi
 
 case "$(cat "$STAT" 2>/dev/null)" in
-  unavailable) printf 'sep\t  pass-cli not installed\t\n'
-               printf 'sep\t󰖩  brew install proton-pass-cli\t\n'; exit 0 ;;
+  unavailable) printf 'sep\t  %s CLI not installed\t\n' "${OMNI_PASS_PROVIDER:-protonpass}"
+               printf 'back\t  Back\t\n'; exit 0 ;;
   logged-out)  printf 'sep\t  Not logged in\t\n'
                printf 'run\t  Log in\tpass-login\n'
                printf 'back\t  Back\t\n'; exit 0 ;;

@@ -1,0 +1,44 @@
+#!/bin/bash
+#
+# NordPass adapter, over `np` (the NordPass CLI). Contract, the same for every
+# provider:
+#   status        -> "unlocked" | "locked" | "logged-out" | "unavailable"
+#   list          -> id<TAB>label   (id is the item's UUID)
+#   get <id>      -> the password on stdout, nothing else
+#
+# SECURITY: `item list` returns id, title, type, url and username - no secrets.
+# A password is fetched one item at a time with `--field password`.
+#
+# np prints its errors on STDOUT, styled, and exits 1, so its output is only
+# trusted on exit 0. An expired session still says authenticated:true on
+# whoami while every vault command fails asking for `np signin` - hence a
+# failing whoami is reported as logged-out, not locked.
+set -u
+
+command -v np >/dev/null 2>&1 || { echo unavailable; exit 0; }
+
+case "${1-}" in
+  status)
+    if info=$(np whoami --format json 2>/dev/null); then
+      printf '%s' "$info" | jq -r '
+        if .authenticated != true then "logged-out"
+        elif .vaultUnlocked == true then "unlocked"
+        else "locked" end' 2>/dev/null || echo logged-out
+    else
+      echo logged-out
+    fi
+    ;;
+  list)
+    np item list --type password --format json 2>/dev/null |
+      jq -r '.[]? | "\(.id)\t\(.title | gsub("[\t\n]"; " "))"' 2>/dev/null
+    ;;
+  get)
+    id="${2-}"
+    # np also resolves titles, so only a UUID may reach the command line.
+    case "$id" in *[!0-9a-fA-F-]*|"") exit 1 ;; esac
+    secret=$(np item get "$id" --field password --format text 2>/dev/null) || exit 1
+    printf '%s\n' "$secret"
+    ;;
+  login)  exec np signin ;;
+  unlock) exec np unlock ;;
+esac
