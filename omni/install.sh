@@ -154,5 +154,6 @@ else
   "$BIN/omni-start" --restart >/dev/null
 fi
 echo
-echo "Done. Press Alt+Space."
+. "$CFG/config.sh"
+echo "Done. Press ${OMNI_HOTKEY}."
 echo "PATH note: $BIN must be on your PATH for the scripts to find each other."

@@ -22,6 +22,10 @@ initial-command = /usr/bin/true
 abnormal-command-exit-runtime = 0
 macos-hidden = always
 quit-after-last-window-closed = false
+# Same bundle as the user's Ghostty, so macOS would hand this instance the
+# main terminal's saved windows - every restored split then runs omni, and
+# the menu needs one Esc per split to close.
+window-save-state = never
 
 font-family = $OMNI_FONT
 font-size = $OMNI_FONT_SIZE
