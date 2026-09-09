@@ -13,14 +13,13 @@ export LC_ALL=en_US.UTF-8
 . "$HOME/.config/omni/config.sh" 2>/dev/null || true
 . "$HOME/.cache/omni/themes/${OMNI_THEME:-tokyo-night}.sh" 2>/dev/null || true
 
-loc="${OMNI_WEATHER_LOCATION:-}"
 CACHE="$HOME/.cache/omni/weather.json"
 ART="$HOME/.cache/omni/weather.art"
 A=$(printf '\033[38;2;%d;%d;%dm' "$((16#${OMNI_ACCENT:1:2}))" "$((16#${OMNI_ACCENT:3:2}))" "$((16#${OMNI_ACCENT:5:2}))")
 D=$(printf '\033[38;2;%d;%d;%dm' "$((16#${OMNI_DIM:1:2}))"    "$((16#${OMNI_DIM:3:2}))"    "$((16#${OMNI_DIM:5:2}))")
 R=$(printf '\033[0m')
 
-[ -s "$CACHE" ] || curl -sS --max-time 12 -A "curl/8" "https://wttr.in/${loc}?format=j1" -o "$CACHE" 2>/dev/null
+[ -s "$CACHE" ] || "$HOME/.local/bin/omni-weather" >/dev/null 2>&1
 
 echo
 if [ -s "$ART" ]; then

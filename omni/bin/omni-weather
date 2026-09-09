@@ -30,13 +30,19 @@ TTL="${OMNI_WEATHER_TTL:-900}"
 URL="https://wttr.in/${LOC}?format=j1"
 
 fetch() {
+  # The server's strings are printed to the terminal raw by the full report,
+  # so control characters - and with them any escape sequence - are dropped
+  # here, once, before anything reads the cache.
   curl -sS --max-time 12 -A "curl/8" "$URL" -o "$CACHE.new" 2>/dev/null &&
-    jq -e .current_condition "$CACHE.new" >/dev/null 2>&1 &&
-    mv "$CACHE.new" "$CACHE" || rm -f "$CACHE.new"
+    jq -e 'walk(if type=="string" then gsub("[[:cntrl:]]";"") else . end) | select(.current_condition)' \
+      "$CACHE.new" > "$CACHE.clean" 2>/dev/null &&
+    mv "$CACHE.clean" "$CACHE" || rm -f "$CACHE.clean"
+  rm -f "$CACHE.new"
   # ASCII art is a second endpoint. Strip ANSI BEFORE cutting: `cut` counts
   # escape bytes as columns otherwise and slices the picture apart.
   LC_ALL=en_US.UTF-8 curl -sS --max-time 12 -A "curl/8" "https://wttr.in/${LOC}?0" 2>/dev/null |
-    sed 's/\x1b\[[0-9;]*m//g' | tail -n +3 | cut -c1-15 | sed '/^ *$/d' > "$ART.new" 2>/dev/null
+    sed 's/\x1b\[[0-9;]*m//g' | LC_ALL=C tr -d '\000-\010\013-\037\177' |
+    tail -n +3 | cut -c1-15 | sed '/^ *$/d' > "$ART.new" 2>/dev/null
   [ -s "$ART.new" ] && mv "$ART.new" "$ART" || rm -f "$ART.new"
 }
 
