@@ -3,6 +3,7 @@ set -u
 
 . "$HOME/.config/omni/config.sh"
 PENDING="$HOME/.cache/omni/pending"
+USES="$HOME/.cache/omni/uses"
 
 line=$(cat "$PENDING" 2>/dev/null)
 : > "$PENDING"
@@ -22,8 +23,17 @@ GHOSTTY_ONESHOT="--quit-after-last-window-closed=true --window-save-state=never"
 edit() { open -na Ghostty.app --args $GHOSTTY_ONESHOT -e nvim "$1"; }
 settings() { open "x-apple.systempreferences:$1"; }
 
+# One count per app path, so the empty Apps list can lead with what you actually
+# open. Counts only, never a timestamp: a bounded file that never needs pruning.
+count_use() {
+  ( umask 077; touch "$USES"
+    awk -F'\t' -v OFS='\t' -v p="$1" '
+      $1 == p { $2++; seen = 1 } { print } END { if (!seen) print p, 1 }
+    ' "$USES" > "$USES.new" && mv "$USES.new" "$USES" )
+}
+
 case "$kind" in
-  app)     open -a "$payload" ;;
+  app)     open -a "$payload"; count_use "$payload" ;;
   project) open -na Ghostty.app --args $GHOSTTY_ONESHOT --working-directory="$payload" ;;
   file)    open -R "$payload" ;;
   calc)    printf '%s' "$payload" | pbcopy ;;

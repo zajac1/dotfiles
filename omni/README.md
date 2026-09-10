@@ -44,6 +44,10 @@ finds *Sleep*, `wifi` finds *Wifi*, `nord` finds the theme — so you rarely hav
 to drill. Apps are excluded from that (use *Apps*), and so are the confirmation
 screens, since their rows restart or shut down immediately.
 
+The untyped Apps list leads with the apps you open most; counts live in
+`~/.cache/omni/uses`, one line per app, and deleting the file resets the order.
+Typed queries are ranked by fzf alone.
+
 Numbers with an operator trigger the calculator without a prefix, so `2+2` just
 works — **and the menu prompt accepts the same input**, so `Alt+Space` then
 `2+2` answers immediately without going through Apps.

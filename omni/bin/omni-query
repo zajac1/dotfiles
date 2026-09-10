@@ -7,6 +7,7 @@ set -u
 TAB=$(printf '\t')
 INDEX="$HOME/.cache/omni/index.tsv"
 FAVS="$HOME/.config/omni/favorites"
+USES="$HOME/.cache/omni/uses"
 q="${1-}"
 
 [ -f "$INDEX" ] || omni-index
@@ -36,7 +37,14 @@ emit_favorites() {
 
 
 if [ -z "$q" ]; then
-  grep "^app$TAB" "$INDEX"
+  if [ -s "$USES" ]; then
+    awk -F'\t' -v OFS='\t' '
+      NR == FNR { n[$1] = $2; next }
+      $1 == "app" { c = ($3 in n) ? n[$3] : 0; print c, $0 }
+    ' "$USES" "$INDEX" | sort -t "$TAB" -k1,1nr -s | cut -f2-
+  else
+    grep "^app$TAB" "$INDEX"
+  fi
   exit 0
 fi
 

@@ -16,6 +16,7 @@ emit_web() { printf 'web\t  Search “%s”\t%s\n' "$1" "$1"; }
 
 looks_like_math() {
   printf '%s' "$1" | grep -qE '[0-9]' || return 1
+  printf '%s' "$1" | grep -qiE '^[a-z][a-z0-9]*-[0-9]+$' && return 1
   printf '%s' "$1" | grep -qiE '[+*/^%=()]|[0-9] *-|- *[0-9]| (to|in|as) |sqrt|log|sin|cos|tan|!'
 }
 

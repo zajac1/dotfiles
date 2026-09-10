@@ -56,7 +56,11 @@ OMNI_WALLPAPER_ROTATE=1800
 # over the new one). Only when no agent restart is needed: one Space, or AeroSpace.
 OMNI_WALLPAPER_FADE=1
 OMNI_WALLPAPER_FADE_SECONDS=0.7
+# Switch macOS light/dark appearance to match the theme's `mode` (1 to enable).
+OMNI_SYSTEM_APPEARANCE=0
 
+# Directory whose immediate subdirectories are project rows in Apps search.
+# Per machine: ~/git on one, ~/projects on another.
 OMNI_PROJECT_ROOT="$HOME/git"
 # We build this URL ourselves; macOS exposes no way to ask the default
 # browser for its configured search engine.

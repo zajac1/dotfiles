@@ -30,7 +30,7 @@ build() {
   bg=$(val background "$toml"); fg=$(val foreground "$toml"); acc=$(val accent "$toml")
   dim=$(val light_foreground "$toml"); muted=$(val muted "$toml")
   lighter=$(val lighter_background "$toml"); sel=$(val selection "$toml")
-  mode=$(sed -n 's/^mode[[:space:]]*=[[:space:]]*"\(light\|dark\)".*/\1/p' "$toml" | head -1)
+  mode=$(sed -nE 's/^mode[[:space:]]*=[[:space:]]*"(light|dark)".*/\1/p' "$toml" | head -1)
   for v in "$bg" "$fg" "$acc"; do [ -n "$v" ] || { echo "$name: colors.toml lacks background/foreground/accent" >&2; return 1; }; done
   tmp="$OUT/$name.sh.tmp"
   {

@@ -35,6 +35,14 @@ sed -i '' "s/^OMNI_THEME=\".*\"/OMNI_THEME=\"$name\"/" "$CONF"
 omni-ghostty-theme "$name" >/dev/null 2>&1 || true          # terminal
 command -v omni-nvim-theme >/dev/null 2>&1 && omni-nvim-theme "$name" >/dev/null 2>&1   # editor
 command -v sketchybar     >/dev/null 2>&1 && omni-bar-theme >/dev/null 2>&1              # bar
+# The theme's mode drives macOS light/dark appearance too. Detached: System
+# Events takes ~4s to start cold. Uses the same Automation permission Sleep and
+# Logout already hold.
+if [ "${OMNI_SYSTEM_APPEARANCE:-0}" = 1 ]; then
+  mode=$(sed -n 's/^OMNI_MODE="\(.*\)"/\1/p' "$HOME/.cache/omni/themes/$name.sh")
+  dark=true; [ "$mode" = light ] && dark=false
+  nohup osascript -e "tell application \"System Events\" to tell appearance preferences to set dark mode to $dark" >/dev/null 2>&1 &
+fi
 # omarchy pairs every theme with its backgrounds; do the same when there are any.
 # Detached: it can restart WallpaperAgent (~2s), which must not block the
 # launcher when this is called from a menu selection.

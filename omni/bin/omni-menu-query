@@ -161,7 +161,7 @@ case "$lvl" in
     printf 'run\t󰸗  Calendar\tcalendar\n'
     printf 'run\t󰇮  Mail\tmail\n'
     printf 'run\t  System Monitor\tmonitor\n'
-    if [ "$(omni-caffeinate status)" = on ]; then
+    if [ -s "$HOME/.cache/omni/caffeinate.pid" ] && kill -0 "$(cat "$HOME/.cache/omni/caffeinate.pid")" 2>/dev/null; then
       printf 'act\t  Caffeinate  \tcaffeinate\n'
     else
       printf 'act\t  Caffeinate\tcaffeinate\n'
