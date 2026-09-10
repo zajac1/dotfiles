@@ -1,0 +1,4 @@
+#!/bin/bash
+# Gmail in the default browser. The session lives in the browser already, so
+# there is nothing to authenticate here.
+exec open "https://mail.google.com/"

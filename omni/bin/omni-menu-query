@@ -30,6 +30,30 @@ resolve_fav() {
   esac
 }
 
+# A meeting shows at the top of the root menu from OMNI_CALENDAR_LEAD seconds
+# before it starts until it ends. Rendered from the provider-agnostic cache
+# (start end meet_url hh:mm title) with one awk pass, so any calendar provider
+# that writes ~/.cache/omni/calendar.tsv gets it; HEY writes nothing and pays
+# nothing. The refresh is fired here too, or the row would only ever be as
+# fresh as the last visit to Utilities > Calendar.
+emit_now() {
+  [ "${OMNI_CALENDAR_VIEW:-app}" = list ] || return 0
+  [ "${NO_FAVS:-0}" = 1 ] && return 0
+  tsv="$HOME/.cache/omni/calendar.tsv"; st="$HOME/.cache/omni/calendar.status"
+  now=$(date +%s)
+  age=$(( now - $(stat -f %m "$st" 2>/dev/null || echo 0) ))
+  if [ "$age" -gt "${OMNI_CALENDAR_TTL:-300}" ]; then
+    ( omni-calendar refresh ) >/dev/null 2>&1 </dev/null &
+  fi
+  [ -f "$tsv" ] || return 0
+  awk -F'\t' -v now="$now" -v lead="${OMNI_CALENDAR_LEAD:-300}" -v g="󰃰" '
+    NF >= 5 && $1 - lead <= now && now < $2 && ++n <= 2 {
+      if ($3 != "") printf "url\t%s  %s %s\t%s\n", g, $4, $5, $3
+      else          printf "run\t%s  %s %s\tcalendar-open\n", g, $4, $5
+      shown = 1 }
+    END { if (shown) printf "sep\t\t\n" }' "$tsv"
+}
+
 emit_favorites() {
   [ "${NO_FAVS:-0}" = 1 ] && return 0
   case " $ids " in *" favorites "*) ;; *) return 0 ;; esac
@@ -91,6 +115,7 @@ rows() {
 lvl="${1-$level}"
 case "$lvl" in
   "")
+    emit_now
     emit_favorites
     # Root entries are listed in ~/.config/omni/sections, one id per line.
     # Comment a line out to hide that section; reorder lines to reorder the menu.
@@ -159,7 +184,11 @@ case "$lvl" in
     printf 'menu\t  CPU\tcpu\n'
     printf 'menu\t  Memory\tmemory\n'
     printf 'menu\t  Network\tnetwork\n'
-    printf 'run\t󰸗  Calendar\tcalendar\n'
+    if [ "${OMNI_CALENDAR_VIEW:-app}" = list ]; then
+      printf 'menu\t󰸗  Calendar\tcalendar\n'
+    else
+      printf 'run\t󰸗  Calendar\tcalendar\n'
+    fi
     printf 'run\t󰇮  Mail\tmail\n'
     printf 'run\t  System Monitor\tmonitor\n'
     if [ -s "$HOME/.cache/omni/caffeinate.pid" ] && kill -0 "$(cat "$HOME/.cache/omni/caffeinate.pid")" 2>/dev/null; then

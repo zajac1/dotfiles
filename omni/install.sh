@@ -75,6 +75,21 @@ for f in "$SRC"/bin/omni*; do
 done
 [ "$WANT_WALLPAPER" = 1 ] || rm -f "$BIN"/omni-wallpaper*
 
+# The EventKit reader is compiled, not copied: reading Calendar needs a
+# completion block, which osascript cannot express. Only rebuilt when the
+# source is newer; machines without the Command Line Tools keep the HEY view.
+EK="$SRC/src/omni-ek.swift"
+if [ -f "$EK" ]; then
+  if xcrun -f swiftc >/dev/null 2>&1; then
+    if [ ! -x "$BIN/omni-ek" ] || [ "$EK" -nt "$BIN/omni-ek" ]; then
+      echo "==> compiling omni-ek (Calendar reader)"
+      xcrun swiftc -O -o "$BIN/omni-ek" "$EK" || echo "    swiftc failed: Calendar list view unavailable"
+    fi
+  else
+    echo "    no Swift toolchain (xcode-select --install): Calendar list view unavailable"
+  fi
+fi
+
 echo "==> installing config to $CFG"
 # One directory per theme holding colors.toml (omarchy's format). An existing
 # colors.toml is never overwritten - it is the user's to edit. Backgrounds are

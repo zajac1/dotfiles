@@ -314,9 +314,23 @@ none of the main terminal's splits, shaders or transparency, and refuses to
 start a second instance because `open -na` would fork a rival rather than raise
 the existing window.
 
-A machine that uses something else adds `omni-mail-gmail` or
-`omni-calendar-gcal` and changes the value; nothing else in omni needs to know
-what a provider is. An unknown provider notifies and exits rather than
+A machine that uses something else changes the value; nothing else in omni
+needs to know what a provider is. Two more ship:
+
+```sh
+OMNI_CALENDAR_PROVIDER="google"   # macOS Calendar via EventKit - add the Google
+OMNI_CALENDAR_VIEW="list"         # account in System Settings > Internet Accounts
+OMNI_MAIL_PROVIDER="gmail"        # opens Gmail in the browser
+```
+
+With `list`, Calendar is a level: the next 8 timed events in 24 hours, Enter
+opens the Meet link. And from `OMNI_CALENDAR_LEAD` seconds (300) before a
+meeting until it ends, the meeting sits at the very top of the root menu, so
+`Alt+Space`, `Enter` joins the call. The reader is a 60-line Swift program that
+`install.sh` compiles with the Command Line Tools (EventKit needs a completion
+block, which osascript cannot express); macOS asks for Calendar access once,
+under Ghostty. Holiday and birthday calendars and all-day events are skipped.
+With `app` (the default) the row raises the provider directly, as HEY wants. An unknown provider notifies and exits rather than
 launching the wrong thing. The values in `config.sh` are authoritative — the
 dispatcher sources that file, so an environment variable will not override it.
 

@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# Google Calendar provider for the Calendar level. Contract: status | refresh |
+# rows | open. Events come from omni-ek, a compiled EventKit reader: requesting
+# Calendar access needs a completion block, and the permission belongs to the
+# terminal that runs it. No network and no secrets - EventKit is local.
+set -u
+. "$HOME/.config/omni/config.sh" 2>/dev/null || true
+. "$HOME/.local/bin/omni-work-lib"
+WORK_TTL="${OMNI_CALENDAR_TTL:-300}"
+
+TSV="$WORK_CACHE/calendar.tsv"
+STAT="$WORK_CACHE/calendar.status"
+# Not calendar.lock: that name belongs to work_refresh_detached, which holds it
+# while it runs `omni-calendar refresh` - sharing it would make every detached
+# refresh a no-op.
+LOCK="$WORK_CACHE/calendar.refresh.lock"
+G_CAL=$'\xf3\xb0\xb8\x97' # U+F0E17 md-calendar_month, as the Calendar row uses
+
+status() {
+  command -v omni-ek >/dev/null 2>&1 || { echo no-reader; return; }
+  s=$(cat "$STAT" 2>/dev/null); printf '%s\n' "${s:-ok}"
+}
+
+# The root render and the calendar-refresh payload both call this directly and
+# in the background, outside the lib's lock, so it serialises itself. Released
+# explicitly and reaped after 120 s, like work_refresh_detached.
+refresh() {
+  local age
+  if [ -d "$LOCK" ]; then
+    age=$(( $(date +%s) - $(stat -f %m "$LOCK" 2>/dev/null || echo 0) ))
+    [ "$age" -gt 120 ] && rmdir "$LOCK" 2>/dev/null
+  fi
+  mkdir "$LOCK" 2>/dev/null || return 0
+  umask 077
+  if command -v omni-ek >/dev/null 2>&1; then
+    omni-ek 36 > "$TSV.new" 2>/dev/null
+    case $? in
+      0) mv "$TSV.new" "$TSV" && printf 'ok' > "$STAT" || printf 'error' > "$STAT" ;;
+      1) printf 'denied' > "$STAT" ;;
+      *) printf 'error' > "$STAT" ;;
+    esac
+  else
+    printf 'no-reader' > "$STAT"
+  fi
+  rm -f "$TSV.new"
+  rmdir "$LOCK" 2>/dev/null
+}
+
+rows() {
+  # Like omni-gitlab, the render path re-implements status() inline: `command -v`
+  # and `read` are builtins, where $(status) cost three forks - and a missing
+  # reader is true now, not as of the last refresh.
+  command -v omni-ek >/dev/null 2>&1 || {
+    printf 'sep\t%s  omni-ek missing: install.sh\t\n' "$G_WARN"; work_row_refresh calendar; return
+  }
+  st=''; [ -f "$STAT" ] && read -r st < "$STAT"
+  if [ "$st" = denied ]; then
+    printf 'sep\t%s  Calendar access denied\t\n' "$G_WARN"
+    printf 'sep\t   Settings › Privacy › Calendars\t\n'
+    work_row_refresh calendar; return
+  fi
+  # A day with no meetings is a legitimate result, so an EMPTY tsv still means
+  # "refreshed": only a missing one means Loading, and the TTL is measured on the
+  # status file, which every refresh attempt writes.
+  if [ ! -f "$TSV" ]; then
+    work_refresh_detached calendar
+    if [ "$st" = error ]; then printf 'sep\t%s  Could not read Calendar\t\n' "$G_WARN"
+    else printf 'sep\t%s  Loading…\t\n' "$G_CAL"; fi
+    work_row_refresh calendar; return
+  fi
+  work_fresh "$STAT" || work_refresh_detached calendar
+  # omni-ek already cleaned and cut the titles to 24 characters, so HH:MM + title
+  # is 30 cells by construction and awk never has to measure width (GOTCHAS 24).
+  out=$(awk -F'\t' -v now="$(date +%s)" -v g="$G_CAL" '
+    NF >= 5 && $2 > now && $1 < now + 86400 && ++n <= 8 {
+      if ($3 != "") printf "url\t%s  %s %s\t%s\n", g, $4, $5, $3
+      else          printf "run\t%s  %s %s\tcalendar-open\n", g, $4, $5 }' "$TSV")
+  if [ -n "$out" ]; then printf '%s\n' "$out"
+  else printf 'sep\t%s  Nothing in the next 24 h\t\n' "$G_CAL"; fi
+  work_row_refresh calendar
+}
+
+case "${1-}" in
+  status)  status ;;
+  refresh) refresh ;;
+  rows)    rows ;;
+  open)    open "https://calendar.google.com/calendar/u/0/r/day" ;;
+esac

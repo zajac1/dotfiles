@@ -70,6 +70,8 @@ case "$kind" in
       wallpaper-next) omni-wallpaper next ;;
       monitor)     open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" "cpu mem net proc" ;;
       calendar)    omni-calendar ;;
+      calendar-open)    omni-calendar open ;;
+      calendar-refresh) rm -f "$HOME/.cache/omni/calendar.tsv"; ( omni-calendar refresh ) >/dev/null 2>&1 </dev/null & ;;
       mail)        omni-mail ;;
       weather-report) open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-weather-report" ;;
       weather-refresh) rm -f "$HOME/.cache/omni/weather.json"; omni-weather >/dev/null 2>&1 ;;
