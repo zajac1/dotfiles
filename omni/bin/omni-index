@@ -55,7 +55,9 @@ glyph_for() {
     *books*|*kindle*|*reader*)                             printf '' ;;
     *1password*|*bitwarden*|*keychain*|*vault*)            printf '' ;;
     *steam*|*epic*|*battle*|*gog*)                         printf '' ;;
-    *figma*|*sketch*|*affinity*)                           printf '' ;;
+    *figma*)                                               printf '' ;;
+    *sketch*)                                              printf '' ;;
+    *affinity*)                                            printf '' ;;
     *github*|*fork*|*tower*|*sourcetree*)                  printf '' ;;
     *parallels*|*vmware*|*utm*|*virtualbox*)               printf '' ;;
     *tunnelblick*|*vpn*|*little?snitch*|*malwarebytes*)    printf '' ;;
