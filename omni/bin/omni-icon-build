@@ -2,9 +2,11 @@
 #
 # omni-icon-build - the app icon, and the notifier that wears it.
 #
-# Renders assets/icon.svg to ~/.local/share/omni/icon.png (Ghostty's
-# macos-custom-icon takes a PNG) and builds ~/.local/share/omni/omni.app, a
-# one-line AppleScript applet whose only job is `display notification`.
+# Renders assets/icon.svg to ~/.local/share/omni/icon.png and builds
+# ~/.local/share/omni/omni.app, a one-line AppleScript applet whose only job
+# is `display notification`. The PNG is NOT handed to Ghostty's macos-icon:
+# the Dock keeps one tile per bundle, so the launcher's icon replaced the
+# user's own Ghostty icon.
 # Notifications carry the icon of the app that posts them; osascript's is
 # Script Editor's, this applet's is ours. Everything used here ships with macOS.
 #
