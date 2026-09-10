@@ -9,5 +9,5 @@ for a in com.omni.launcher com.omni.wallpaper; do
 done
 pkill -f "ghostty .*--config-file=$HOME/.cache/omni/ghostty.conf" 2>/dev/null
 rm -f "$HOME"/.local/bin/omni "$HOME"/.local/bin/omni-*
-rm -rf "$HOME/.cache/omni"
+rm -rf "$HOME/.cache/omni" "$HOME/.local/share/omni"
 echo "removed. Kept: ~/.config/omni, ~/.config/sketchybar, ~/.aerospace.toml, ~/.config/ghostty/omni-theme."

@@ -90,6 +90,9 @@ if [ -f "$EK" ]; then
   fi
 fi
 
+echo "==> icon and notifier"
+"$BIN/omni-icon-build" "$SRC/assets/icon.svg" | sed 's/^/    /'
+
 echo "==> installing config to $CFG"
 # One directory per theme holding colors.toml (omarchy's format). An existing
 # colors.toml is never overwritten - it is the user's to edit. Backgrounds are

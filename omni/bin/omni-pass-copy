@@ -15,13 +15,13 @@ id="${1-}"
 # was cached. Say so, and drop the cached status so the menu re-probes.
 secret=$(omni-pass get "$id" 2>/dev/null) || {
   rm -f "$HOME/.cache/omni/pass.status"
-  osascript -e 'display notification "Vault is locked - open Passwords to unlock" with title "omni"' 2>/dev/null
+  omni-notify omni "Vault is locked - open Passwords to unlock"
   exit 1
 }
-[ -n "$secret" ] || { osascript -e 'display notification "No password on that item" with title "omni"' 2>/dev/null; exit 1; }
+[ -n "$secret" ] || { omni-notify omni "No password on that item"; exit 1; }
 printf '%s' "$secret" | pbcopy
 
-osascript -e "display notification \"Password copied · clears in ${ttl}s\" with title \"omni\"" 2>/dev/null
+omni-notify omni "Password copied · clears in ${ttl}s"
 
 nohup bash -c '
   sleep "$1"

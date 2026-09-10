@@ -12,7 +12,7 @@ case "$p" in *[!a-z0-9-]*) exit 1 ;; esac
 prov="$HOME/.local/bin/omni-mail-$p"
 [ -x "$prov" ] || prov="$(command -v omni-mail-$p 2>/dev/null)"
 [ -n "$prov" ] && [ -x "$prov" ] || {
-  osascript -e 'display notification "No mail provider: '"$p"'" with title "omni"' 2>/dev/null
+  omni-notify omni "No mail provider: $p"
   exit 1
 }
 exec "$prov" "$@"

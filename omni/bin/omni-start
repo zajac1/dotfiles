@@ -70,6 +70,10 @@ macos-window-shadow = false
 window-decoration = false
 
 keybind = global:$OMNI_HOTKEY=toggle_quick_terminal
+
+# omni's own icon wherever this instance shows one (built by omni-icon-build)
+macos-icon = custom
+macos-custom-icon = $HOME/.local/share/omni/icon.png
 CONF
 
 if [ "${1-}" = "--restart" ]; then

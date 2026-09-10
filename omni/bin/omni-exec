@@ -18,7 +18,7 @@ payload=$(printf '%s' "$line" | cut -f3)
 # is how six of them end up in cmd-tab.
 # Same app bundle as the user's Ghostty, so without the second flag macOS
 # restores their saved windows into the one-shot window as extra tabs.
-GHOSTTY_ONESHOT="--quit-after-last-window-closed=true --window-save-state=never"
+GHOSTTY_ONESHOT="--quit-after-last-window-closed=true --window-save-state=never --macos-icon=custom --macos-custom-icon=$HOME/.local/share/omni/icon.png"
 
 edit() { open -na Ghostty.app --args $GHOSTTY_ONESHOT -e nvim "$1"; }
 settings() { open "x-apple.systempreferences:$1"; }
