@@ -1,11 +1,11 @@
 #!/bin/bash
-# omni-notify <title> <message> - a notification with omni's icon, when the
-# notifier app from omni-icon-build exists; plain osascript otherwise.
+# omni-notify <title> <message>
+#
+# Plain osascript, so the notification wears Script Editor's icon. An applet
+# carrying omni's own icon was tried: unsigned, it posts with the generic icon;
+# ad-hoc signed, macOS 26 never registers it with Notification Center and
+# drops every notification without a prompt or a log line. A real icon needs
+# a real signing identity. The logo itself lives in assets/icon.svg.
 set -u
-APP="$HOME/.local/share/omni/omni.app"
 title="${1:-omni}"; msg="${2-}"
-if [ -d "$APP" ]; then
-  open -a "$APP" --args "$title" "$msg"
-else
-  osascript -e "display notification \"${msg//\"/\\\"}\" with title \"${title//\"/\\\"}\"" 2>/dev/null
-fi
+osascript -e "display notification \"${msg//\"/\\\"}\" with title \"${title//\"/\\\"}\"" 2>/dev/null
