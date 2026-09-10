@@ -1,0 +1,81 @@
+#!/bin/bash
+#
+# GitLab provider for the Work section. Contract: status | refresh | rows.
+# Auth is glab's (OS keyring); omni never sees the token. One GraphQL call
+# returns MRs, approvers and note authors together, so a refresh is one round
+# trip regardless of how many MRs are open.
+set -u
+. "$HOME/.config/omni/config.sh" 2>/dev/null || true
+. "$HOME/.local/bin/omni-work-lib"
+
+HOST="${OMNI_GITLAB_HOST:-}"
+BOTS="${OMNI_GITLAB_BOTS:-}"
+TSV="$WORK_CACHE/gitlab.tsv"
+STAT="$WORK_CACHE/gitlab.status"
+QUERY='{ currentUser { username authoredMergeRequests(state: opened, first: 50, sort: UPDATED_DESC) {
+  nodes { iid title webUrl approvedBy { nodes { username } } notes(first: 100) { nodes { system author { username } } } } } } }'
+
+status() {
+  work_host_ok "$HOST" || { echo no-host; return; }
+  command -v glab >/dev/null 2>&1 || { echo no-cli; return; }
+  s=$(cat "$STAT" 2>/dev/null); printf '%s\n' "${s:-ok}"
+}
+
+refresh() {
+  work_host_ok "$HOST" || return 0
+  command -v glab >/dev/null 2>&1 || return 0
+  umask 077
+  if GITLAB_HOST="$HOST" glab api graphql -f query="$QUERY" > "$TSV.json" 2>/dev/null &&
+     jq -e '.data.currentUser.username' "$TSV.json" >/dev/null 2>&1; then
+    jq -r --arg bots "$BOTS" '
+      (.data.currentUser.username) as $me | ($bots | split(" ") | map(select(length > 0))) as $b |
+      .data.currentUser.authoredMergeRequests.nodes[] |
+      [ .iid, (.approvedBy.nodes | length),
+        ([.notes.nodes[] | select(.system == false) | .author.username | select(. != $me and (IN($b[]) | not))] | length),
+        .webUrl, (.title | gsub("[[:cntrl:]\t]"; " ")) ] | @tsv' "$TSV.json" > "$TSV.new" 2>/dev/null &&
+      mv "$TSV.new" "$TSV" && printf 'ok' > "$STAT" || printf 'error' > "$STAT"
+  else
+    if GITLAB_HOST="$HOST" glab auth status --hostname "$HOST" >/dev/null 2>&1; then printf 'error' > "$STAT"; else printf 'no-auth' > "$STAT"; fi
+  fi
+  rm -f "$TSV.json" "$TSV.new"
+}
+
+rows() {
+  # The render path re-runs on every visit, so it re-implements status() inline:
+  # `command -v` and `read` are builtins, where $(status) cost three forks.
+  work_host_ok "$HOST" || { printf 'sep\t%s  OMNI_GITLAB_HOST not set\t\n' "$G_WARN"; return; }
+  command -v glab >/dev/null 2>&1 || { printf 'sep\t%s  glab not installed\t\n' "$G_WARN"; return; }
+  st=''; [ -f "$STAT" ] && read -r st < "$STAT"
+  if [ "$st" = no-auth ]; then
+    printf 'sep\t%s  glab not logged in\t\n' "$G_WARN"; work_row_refresh gitlab; return
+  fi
+  # No open MRs is a legitimate result, so an EMPTY tsv still means "refreshed":
+  # only a missing one means Loading (which is what gitlab-refresh rm -f's), and
+  # the TTL is measured on the status file, which a refresh always writes.
+  if [ ! -f "$TSV" ]; then
+    work_refresh_detached gitlab
+    if [ "$st" = error ]; then printf 'sep\t%s  Could not reach GitLab\t\n' "$G_WARN"
+    else printf 'sep\t%s  Loading…\t\n' "$G_GITLAB"; fi
+    work_row_refresh gitlab; return
+  fi
+  work_fresh "$STAT" || work_refresh_detached gitlab
+  # jq reads the file and caps the row count itself: `head |` cost a fork and a
+  # subshell on the render path for the same 25 rows.
+  out=$(jq -Rr --arg gmr "$G_MR" --arg gok "$G_OK" --arg gn "$G_NOTE" --argjson w "$WORK_TEXT_CELLS" '
+    select(input_line_number <= 25) | split("\t") | select(length >= 5) |
+    (.[1] | tonumber) as $a | (.[2] | tonumber) as $n |
+    ((if $a > 3 then " " + $gok + "×" + ($a|tostring) elif $a > 0 then " " + ($gok * $a) else "" end)
+     + (if $n > 0 then " " + $gn + ($n|tostring) else "" end)) as $suffix |
+    ("!" + .[0] + " ") as $lead |
+    ($w - ($lead | length) - ($suffix | length)) as $room |
+    (.[4] | if length > $room then .[:($room-1)] + "…" else . end) as $title |
+    "url\t\($gmr)  \($lead)\($title)\($suffix)\t\(.[3])"' "$TSV")
+  if [ -n "$out" ]; then printf '%s\n' "$out"; else printf 'sep\t%s  No open merge requests\t\n' "$G_GITLAB"; fi
+  work_row_refresh gitlab
+}
+
+case "${1-}" in
+  status)  status ;;
+  refresh) refresh ;;
+  rows)    rows ;;
+esac

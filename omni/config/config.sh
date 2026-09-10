@@ -78,6 +78,13 @@ OMNI_PASS_PROVIDER="protonpass"
 OMNI_PASS_CACHE_TTL=900      # item TITLES only are cached, never secrets
 OMNI_PASS_CLIPBOARD_TTL=30
 
+# Work: Jira and GitLab. Only hosts live here. The Jira token is in Keychain
+# (service omni-jira, account = your Atlassian email); GitLab goes through glab.
+OMNI_JIRA_HOST=""
+OMNI_GITLAB_HOST=""
+OMNI_GITLAB_BOTS=""          # space-separated usernames whose MR comments are ignored
+OMNI_WORK_TTL=300
+
 OMNI_SEARCH_URL="https://www.google.com/search?q="
 
 # Colour roles are DERIVED from themes/$OMNI_THEME/colors.toml by

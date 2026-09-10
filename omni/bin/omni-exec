@@ -38,6 +38,16 @@ case "$kind" in
   file)    open -R "$payload" ;;
   calc)    printf '%s' "$payload" | pbcopy ;;
   web)     open "${OMNI_SEARCH_URL}$(printf '%s' "$payload" | jq -sRr @uri)" ;;
+  url)
+    # Only https links whose authority IS a configured host: userinfo tricks
+    # (host@evil) and lookalikes (host.evil) fail the equality, not a prefix test.
+    case "$payload" in https://*) ;; *) exit 0 ;; esac
+    host="${payload#https://}"; host="${host%%/*}"
+    case "$host" in
+      "") ;;
+      "${OMNI_JIRA_HOST:-}"|"${OMNI_GITLAB_HOST:-}") open "$payload" ;;
+      *) for h in ${OMNI_URL_HOSTS:-}; do [ "$host" = "$h" ] && { open "$payload"; break; }; done ;;
+    esac ;;
   pass)    omni-pass-copy "$payload" ;;
   run|act)
     case "$payload" in
@@ -49,6 +59,9 @@ case "$kind" in
       pass-login)   open -na Ghostty.app --args $GHOSTTY_ONESHOT -e bash -c "'$HOME/.local/bin/omni-pass' login; rm -f '$HOME/.cache/omni/pass.status'" ;;
       pass-unlock)  open -na Ghostty.app --args $GHOSTTY_ONESHOT -e bash -c "'$HOME/.local/bin/omni-pass' unlock; rm -f '$HOME/.cache/omni/pass.status'" ;;
       pass-refresh) rm -f "$HOME/.cache/omni/pass.status"; omni-pass-rows >/dev/null 2>&1 ;;
+      jira-view)     omni-jira toggle ;;
+      jira-refresh)  rm -f "$HOME/.cache/omni/jira.tsv"; ( omni-jira refresh >/dev/null 2>&1 & ) ;;
+      gitlab-refresh) rm -f "$HOME/.cache/omni/gitlab.tsv"; ( omni-gitlab refresh >/dev/null 2>&1 & ) ;;
       btop-cpu)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" cpu ;;
       btop-mem)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" mem ;;
       btop-net)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" net ;;

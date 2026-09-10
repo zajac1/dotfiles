@@ -1,0 +1,54 @@
+#!/bin/bash
+#
+# omni-work-lib - shared by omni-jira and omni-gitlab, SOURCED (not executed).
+# Cache + detached refresh + view state, the omni-pass-rows pattern: the render
+# path only ever reads what is already cached; the network is touched only by a
+# detached `refresh`, serialised behind a lock.
+WORK_CACHE="$HOME/.cache/omni"
+WORK_TTL="${OMNI_WORK_TTL:-300}"
+WORK_TEXT_CELLS=30
+mkdir -p "$WORK_CACHE"
+
+# $'..' quoting, not $(printf ..): ten forks cost 16 ms on every render.
+G_JIRA=$'\xee\x9d\x9c'         # U+E75C  dev-jira
+G_GITLAB=$'\xee\x9f\xab'       # U+E7EB  dev-gitlab
+G_MR=$'\xf3\xb0\x98\xad'       # U+F062D md-source_merge
+G_OK=$'\xef\x80\x8c'           # U+F00C  fa-check
+G_NOTE=$'\xf3\xb0\x86\x89'     # U+F0189 md-comment_text_outline
+G_SWAP=$'\xf3\xb0\x93\xa1'     # U+F04E1 md-swap_horizontal
+G_REFRESH=$'\xef\x80\xa1'      # U+F021  fa-refresh
+G_WARN=$'\xf3\xb0\x80\xa8'     # U+F0028 md-alert_circle
+G_PROGRESS=$'\xf3\xb0\xa6\x96' # U+F0996 md-progress_clock
+G_KEY=$'\xf3\xb0\x8c\x86'      # U+F0306 md-key
+
+work_host_ok() { case "${1-}" in ''|*[!A-Za-z0-9.-]*) return 1 ;; *) return 0 ;; esac; }
+
+# -f, not -s: an empty cache is a real answer (no tickets, no open MRs), not a
+# missing one - with -s it would re-fetch on every render.
+work_fresh() {
+  local age
+  [ -f "$1" ] || return 1
+  age=$(( $(date +%s) - $(stat -f %m "$1" 2>/dev/null || echo 0) ))
+  [ "$age" -le "$WORK_TTL" ]
+}
+
+# A trap EXIT inside a backgrounded subshell did not fire reliably for
+# omni-pass-rows, so the lock is released explicitly and reaped after 120s.
+work_refresh_detached() {
+  local lock age
+  lock="$WORK_CACHE/$1.lock"
+  if [ -d "$lock" ]; then
+    age=$(( $(date +%s) - $(stat -f %m "$lock" 2>/dev/null || echo 0) ))
+    [ "$age" -gt 120 ] && rmdir "$lock" 2>/dev/null
+  fi
+  mkdir "$lock" 2>/dev/null || return 0
+  # The whole subshell is redirected, not just the command inside it: a child
+  # that inherits the render's stdout keeps fzf's reload pipe open until the
+  # fetch ends, and the menu waits the full network round-trip for nothing.
+  ( "omni-$1" refresh; rmdir "$lock" ) >/dev/null 2>&1 </dev/null &
+}
+
+work_view_get() { local v; v=$(cat "$WORK_CACHE/$1.view" 2>/dev/null); printf '%s' "${v:-$2}"; }
+work_view_set() { ( umask 077; printf '%s' "$2" > "$WORK_CACHE/$1.view.new" && mv "$WORK_CACHE/$1.view.new" "$WORK_CACHE/$1.view" ); }
+
+work_row_refresh() { printf 'act\t%s  Refresh\t%s-refresh\n' "$G_REFRESH" "$1"; }

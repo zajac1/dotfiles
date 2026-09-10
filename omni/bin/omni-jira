@@ -1,0 +1,113 @@
+#!/bin/bash
+#
+# Jira provider for the Work section. Contract: status | refresh | rows | toggle.
+#
+# SECURITY: the API token lives in Keychain (service omni-jira, account = the
+# Atlassian email) and is read only inside `refresh`, then handed to curl on
+# STDIN via -K - so it is never in argv (ps) nor on disk. Scoped Atlassian
+# tokens are honoured only through api.atlassian.com/ex/jira/<cloudId>; the
+# site URL silently answers as anonymous, so the gateway is not optional.
+set -u
+. "$HOME/.config/omni/config.sh" 2>/dev/null || true
+. "$HOME/.local/bin/omni-work-lib"
+
+HOST="${OMNI_JIRA_HOST:-}"
+TSV="$WORK_CACHE/jira.tsv"
+STAT="$WORK_CACHE/jira.status"
+CID="$WORK_CACHE/jira.cloudid"
+VIEW="$WORK_CACHE/jira.view"
+JQL='assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC'
+
+status() {
+  work_host_ok "$HOST" || { echo no-host; return; }
+  security find-generic-password -s omni-jira >/dev/null 2>&1 || { echo no-token; return; }
+  s=$(cat "$STAT" 2>/dev/null); printf '%s\n' "${s:-ok}"
+}
+
+cloud_id_ok() { printf '%s' "$1" | grep -qE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; }
+
+cloud_id() {
+  c=$(cat "$CID" 2>/dev/null)
+  if cloud_id_ok "$c"; then printf '%s' "$c"; return 0; fi
+  c=$(curl -sS --max-time 10 "https://$HOST/_edge/tenant_info" | jq -r '.cloudId // empty' 2>/dev/null)
+  cloud_id_ok "$c" || return 1
+  ( umask 077; printf '%s' "$c" > "$CID.new" && mv "$CID.new" "$CID" )
+  printf '%s' "$c"
+}
+
+refresh() {
+  umask 077
+  work_host_ok "$HOST" || return 0
+  acct=$(security find-generic-password -s omni-jira 2>/dev/null | sed -n 's/.*"acct"<blob>="\(.*\)"/\1/p')
+  # Recorded, not just returned on: it is what lets the render path tell "no
+  # token" from "never refreshed" without a Keychain round trip of its own.
+  [ -n "$acct" ] || { printf 'no-token' > "$STAT"; return 0; }
+  cid=$(cloud_id) || { printf 'error' > "$STAT"; return 0; }
+  code=$( { printf 'user = "%s:%s"\n' "$acct" "$(security find-generic-password -s omni-jira -w 2>/dev/null)"; } |
+    curl -sS -K - --max-time 20 -G \
+      --data-urlencode "jql=$JQL" --data-urlencode 'fields=key,summary,status,updated' \
+      --data-urlencode 'maxResults=50' \
+      -o "$TSV.json" -w '%{http_code}' \
+      "https://api.atlassian.com/ex/jira/$cid/rest/api/3/search/jql" 2>/dev/null )
+  case "$code" in
+    200)
+      jq -r '.issues[] | [.fields.status.statusCategory.key, .key, .fields.status.name,
+             (.fields.summary | gsub("[[:cntrl:]\t]"; " "))] | @tsv' "$TSV.json" > "$TSV.new" 2>/dev/null &&
+        mv "$TSV.new" "$TSV" && printf 'ok' > "$STAT" || printf 'error' > "$STAT" ;;
+    401|403) printf 'rejected' > "$STAT" ;;
+    *)       printf 'error' > "$STAT" ;;
+  esac
+  rm -f "$TSV.json" "$TSV.new"
+}
+
+toggle() {
+  [ "$(work_view_get jira progress)" = progress ] && work_view_set jira todo || work_view_set jira progress
+}
+
+# Renders from cache only and never calls `security`: state comes off disk with
+# `read` rather than `$(cat ...)` because at ~5 ms a fork the 50 ms budget does
+# not survive the spare ones. The awk|jq pipeline is the one that stays - jq
+# because truncation cannot be done in awk (GOTCHAS 24).
+rows() {
+  work_host_ok "$HOST" || { printf 'sep\t%s  OMNI_JIRA_HOST not set\t\n' "$G_WARN"; return; }
+  st=ok
+  [ -s "$STAT" ] && read -r st < "$STAT"
+  [ -n "$st" ] || st=ok
+  case "$st" in
+    no-token) printf 'sep\t%s  Jira token missing\t\n' "$G_KEY"
+              printf 'sep\t   See README, Work\t\n'
+              # This branch offers no Refresh row, and only `refresh` clears
+              # the state, so a token added later would never be noticed.
+              work_fresh "$STAT" || work_refresh_detached jira
+              return ;;
+    rejected) printf 'sep\t%s  Jira rejected the token\t\n' "$G_WARN"; work_row_refresh jira; return ;;
+  esac
+  if [ ! -f "$TSV" ]; then
+    work_refresh_detached jira
+    printf 'sep\t%s  Loading…\t\n' "$G_JIRA"; work_row_refresh jira; return
+  fi
+  work_fresh "$STAT" || work_refresh_detached jira
+  view=progress
+  [ -s "$VIEW" ] && read -r view < "$VIEW"
+  [ -n "$view" ] || view=progress
+  if [ "$view" = progress ]; then
+    printf 'act\t%s  Showing: In progress\tjira-view\n' "$G_SWAP"; cat=indeterminate; empty="Nothing in progress"
+  else
+    printf 'act\t%s  Showing: To do\tjira-view\n' "$G_SWAP"; cat=new; empty="Nothing to do"
+  fi
+  out=$(awk -F'\t' -v c="$cat" '$1==c && ++n <= 25' "$TSV" |
+    jq -Rr --arg host "$HOST" --arg gj "$G_JIRA" --arg gp "$G_PROGRESS" --arg gw "$G_WARN" --argjson w "$WORK_TEXT_CELLS" '
+      split("\t") | select(length >= 4) |
+      (if .[2] == "Blocked" then $gw elif .[0] == "indeterminate" then $gp else $gj end) as $g |
+      ((.[1] + " " + .[3]) | if length > $w then .[:($w-1)] + "…" else . end) as $t |
+      "url\t\($g)  \($t)\thttps://\($host)/browse/\(.[1])"')
+  if [ -n "$out" ]; then printf '%s\n' "$out"; else printf 'sep\t%s  %s\t\n' "$G_JIRA" "$empty"; fi
+  work_row_refresh jira
+}
+
+case "${1-}" in
+  status)  status ;;
+  refresh) refresh ;;
+  toggle)  toggle ;;
+  rows)    rows ;;
+esac

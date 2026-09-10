@@ -51,6 +51,7 @@ EOF
   case "$level" in
     "")        label="Go" ;;
     confirm:*) label="Confirm" ;;
+    gitlab)    label="GitLab" ;;
     *)         label="$(printf '%s' "$level" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')" ;;
   esac
   ghost="${label}…"

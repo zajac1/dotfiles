@@ -203,6 +203,10 @@ Everything lives in `~/.config/omni/config.sh`. The values worth knowing:
 | `OMNI_SEARCH_URL` | search engine prefix (Google by default) |
 | `OMNI_PROJECT_ROOT` | directory scanned for project entries |
 | `OMNI_APP_COLORS` | tint each app glyph with its icon's dominant colour |
+| `OMNI_SYSTEM_APPEARANCE` | `1` switches macOS light/dark appearance to match the theme's `mode` |
+| `OMNI_JIRA_HOST` / `OMNI_GITLAB_HOST` | hosts for the Work section; tokens live in Keychain, see Work |
+| `OMNI_GITLAB_BOTS` | comment authors ignored in the MR comment count |
+| `OMNI_WORK_TTL` | Work cache seconds, default 300 |
 
 ### Favourites
 
@@ -315,6 +319,48 @@ A machine that uses something else adds `omni-mail-gmail` or
 what a provider is. An unknown provider notifies and exits rather than
 launching the wrong thing. The values in `config.sh` are authoritative — the
 dispatcher sources that file, so an environment variable will not override it.
+
+### Work
+
+A root section for the two places work actually lives, off by default (`work` in
+`~/.config/omni/sections` turns it on):
+
+| entry | what it shows |
+|---|---|
+| Jira | tickets assigned to you that are not Done. The top row switches between *In progress* (In Progress, Blocked) and *To do* (To Do, Backlog); Enter opens the ticket. |
+| GitLab | your open merge requests. Each row carries one `` per approval and `󰆉N` for comments by humans other than you; Enter opens the MR. |
+
+Typing a ticket key at either prompt — `ENG-123`, Enter — opens it in Jira. Like
+Weather, these rows are live data and stay out of the flat menu search.
+
+Both levels render from a 0600 cache and refresh detached every `OMNI_WORK_TTL`
+seconds (300), so opening the menu never waits on the network; a cold cache shows
+*Loading…* and fills in on the next visit.
+
+Setup, once. Only hosts go in `config.sh`; nothing secret does:
+
+```sh
+OMNI_JIRA_HOST="yourcompany.atlassian.net"
+OMNI_GITLAB_HOST="gitlab.example.com"
+OMNI_GITLAB_BOTS="ci_security_tooling_commenter"   # comment authors to ignore
+```
+
+Jira wants an API token with the `read:jira-work` scope. Copy it, then store it
+in Keychain from the clipboard — the interactive `-w` prompt silently truncates
+at 128 characters, and scoped tokens are longer:
+
+```sh
+security add-generic-password -U -s omni-jira -a you@example.com -w "$(pbpaste)"
+pbcopy < /dev/null
+```
+
+Your email is read back from the item's account, so it is not in any config
+either. Scoped Atlassian tokens are honoured only through
+`api.atlassian.com/ex/jira/<cloudId>/…`; the site URL answers as anonymous. omni
+resolves the cloudId from the site's public tenant endpoint and caches it.
+
+GitLab goes through `glab`; omni never touches that token. `glab auth login
+--hostname <host>` stores it in the OS keyring.
 
 ### Glyphs
 

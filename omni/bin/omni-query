@@ -54,6 +54,7 @@ case "$q" in
   '.'*) emit_files "${q#.}"; exit 0 ;;
 esac
 
+emit_ticket "$q"
 looks_like_math "$q" && emit_calc "$q"
 fzf --ansi -i --filter="$q" --delimiter="$TAB" --nth=2 < "$INDEX" 2>/dev/null | head -40
 emit_web "$q"

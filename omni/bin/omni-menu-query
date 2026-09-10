@@ -15,7 +15,7 @@ q="${2-}"
 # "kind<TAB>payload" per line; a line with no tab is a legacy bare app path.
 # The display text is resolved at render time so it follows theme and glyph
 # changes instead of going stale.
-FAV_LEVELS="style theme setup capture update system utilities"
+FAV_LEVELS="style theme setup capture update system utilities work"
 BOXTOP=$(printf "\xe2\x95\xad"); BOXBOT=$(printf "\xe2\x95\xb0")
 BOXTR=$(printf "\xe2\x95\xae");  BOXBR=$(printf "\xe2\x95\xaf")
 VERT=$(printf "\xe2\x94\x82");   HR=$(printf "\xe2\x94\x80")
@@ -104,6 +104,7 @@ case "$lvl" in
         utilities) printf 'menu\t%s  Utilities\tutilities\n' "" ;;
         passwords) printf 'menu\t%s  Passwords\tpasswords\n' "" ;;
         system)  printf 'menu\t%s  System\tsystem\n' "" ;;
+        work)    printf 'menu\t%s  Work\twork\n' "$(printf '\xef\x82\xb1')" ;;
       esac
     done
     ;;
@@ -192,6 +193,13 @@ case "$lvl" in
     printf 'menu\t  Restart\tconfirm:restart\n'
     printf 'menu\t  Shutdown\tconfirm:shutdown\n'
     ;;
+  work)
+    printf 'menu\t%s  Jira\tjira\n'     "$(printf '\xee\x9d\x9c')"
+    printf 'menu\t%s  GitLab\tgitlab\n' "$(printf '\xee\x9f\xab')"
+    ;;
+  calendar) omni-calendar rows ;;
+  jira)   omni-jira rows ;;
+  gitlab) omni-gitlab rows ;;
   confirm:*)
     what="${level#confirm:}"
     printf 'run\t  Yes, %s\t%s\n' "$what" "$what"
@@ -213,6 +221,7 @@ case "$q" in
   '@'*) emit_web  "${q#@}"; exit 0 ;;
 esac
 
+emit_ticket "$q"
 looks_like_math "$q" && emit_calc "$q"
 
 if [ -z "$level" ]; then
@@ -231,6 +240,7 @@ if [ -z "$level" ]; then
       update)  rows update ;;
       utilities) rows utilities ;;
       system)  rows system ;;
+      work)    rows work ;;
     esac
   done
 else
