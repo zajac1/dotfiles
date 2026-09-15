@@ -1,6 +1,9 @@
+# The active look, set by Style > Look. A look is a complete set of
+# values; a theme is colours only. Empty means no look has been applied.
+OMNI_LOOK=""
 OMNI_THEME="everforest"
 
-OMNI_FONT="CaskaydiaMono Nerd Font Mono"
+OMNI_FONT="CaskaydiaCove Nerd Font Mono"
 OMNI_FONT_SIZE=18
 
 OMNI_MENU_COLS=38
@@ -10,7 +13,7 @@ OMNI_MENU_MAX_ROWS=30
 # it is a calibration knob: too low and the last items are cut off, too high
 # and there is dead space under the list.
 OMNI_CHROME=10
-OMNI_FILL_INSET=15
+OMNI_FILL_INSET=11
 
 OMNI_COLS=60
 OMNI_ROWS=24

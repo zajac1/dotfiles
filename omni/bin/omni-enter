@@ -22,6 +22,9 @@ case "$kind" in
     sed -i '' "s|^OMNI_FONT=\".*\"|OMNI_FONT=\"$payload\"|" "$HOME/.config/omni/config.sh"
     launchctl kickstart -k "gui/$(id -u)/com.omni.launcher" >/dev/null 2>&1
     echo 'abort' ;;
+  look)
+    omni-look "$payload" >/dev/null 2>&1
+    echo 'abort' ;;
   shader)
     # A backgrounded child does not survive fzf aborting inside the launcher
     # surface, so the restart is handed to launchd, which is outside this

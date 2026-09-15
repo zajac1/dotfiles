@@ -137,6 +137,7 @@ case "$lvl" in
     printf 'menu\t%s  Theme\ttheme\n' "$(printf '\xef\x87\x9e')"
     printf 'menu\t%s  Font\tfont\n'  "$(printf '\xef\x80\xb1')"
     printf 'menu\t%s  Shader\tshader\n' "$(printf '\xef\x83\x90')"
+    printf 'menu\t%s  Look\tlook\n'   "$(printf '\xef\x87\xbc')"
     printf 'act\t󰸉  Next wallpaper\twallpaper-next\n'
     ;;
   font)
@@ -156,6 +157,19 @@ case "$lvl" in
         printf 'font\t   %s\t%s\n' "$fam" "$fam"
       fi
     done < "$FONTS"
+    ;;
+  look)
+    # A look is colours plus type, density, frame and shader. Like Font and
+    # Shader it cannot preview live, so Enter writes config.sh and restarts.
+    cur="${OMNI_LOOK:-}"
+    omni-look list | while IFS= read -r n; do
+      [ -n "$n" ] || continue
+      if [ "$n" = "$cur" ]; then
+        printf 'look\t%s  %s\t%s\n' "$(printf '\xef\x80\x8c')" "$n" "$n"
+      else
+        printf 'look\t   %s\t%s\n' "$n" "$n"
+      fi
+    done
     ;;
   shader)
     # Ghostty cannot reload a shader live (GOTCHAS 17), so Enter writes the

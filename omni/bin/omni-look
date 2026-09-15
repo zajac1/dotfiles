@@ -1,0 +1,61 @@
+#!/bin/bash
+#
+# omni-look - apply a complete look: colours, type, density, frame, shader.
+#
+# A theme is colours only. A look is everything, including which theme to use.
+# looks/<name>.sh holds OMNI_* lines; every key it names is copied into
+# config.sh and every key it omits is left alone. The look file is PARSED, not
+# sourced, so a look can never execute anything.
+set -u
+
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"; export PATH
+
+CONF="$HOME/.config/omni/config.sh"
+DIR="$HOME/.config/omni/looks"
+
+case "${1-}" in
+  list)
+    for f in "$DIR"/*.sh; do
+      [ -f "$f" ] || continue
+      n=$(basename "$f" .sh)
+      printf '%s\n' "$n"
+    done
+    ;;
+  ''|-*)
+    echo "usage: omni-look list | omni-look <name>" >&2; exit 1 ;;
+  *)
+    name="$1"
+    case "$name" in *[!a-z0-9-]*) exit 1 ;; esac
+    f="$DIR/$name.sh"
+    [ -f "$f" ] || { omni-notify omni "No such look: $name" 2>/dev/null; exit 1; }
+
+    # awk, not sed: a value can hold %, comma or slash, and awk needs no
+    # escaping. Only keys the look names are touched.
+    tmp="$CONF.new"
+    awk -v lf="$f" '
+      BEGIN {
+        while ((getline line < lf) > 0)
+          if (line ~ /^OMNI_[A-Z_]+=/) {
+            eq = index(line, "="); v[substr(line, 1, eq-1)] = substr(line, eq+1)
+          }
+      }
+      {
+        if ($0 ~ /^OMNI_[A-Z_]+=/) {
+          eq = index($0, "="); k = substr($0, 1, eq-1)
+          if (k in v) { print k "=" v[k]; next }
+        }
+        print
+      }
+    ' "$CONF" > "$tmp" || { rm -f "$tmp"; exit 1; }
+    mv "$tmp" "$CONF"
+
+    sed -i '' "s|^OMNI_LOOK=\".*\"|OMNI_LOOK=\"$name\"|" "$CONF"
+
+    theme=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$CONF")
+    [ -f "$HOME/.cache/omni/themes/$theme.sh" ] || omni-theme-build "$theme" >/dev/null 2>&1
+
+    # launchd owns the restart: a backgrounded child does not survive fzf
+    # aborting inside the launcher surface.
+    launchctl kickstart -k "gui/$(id -u)/com.omni.launcher" >/dev/null 2>&1
+    ;;
+esac

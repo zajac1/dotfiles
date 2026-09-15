@@ -107,6 +107,13 @@ else
   [ "$WANT_WALLPAPER" = 1 ] || sed -i '' 's/^OMNI_WALLPAPER=1/OMNI_WALLPAPER=0/; s/^OMNI_WALLPAPER_ROTATE=.*/OMNI_WALLPAPER_ROTATE=0/' "$CFG/config.sh"
   echo "    config.sh created"
 fi
+# Looks: a complete set of values, unlike a theme which is colours only.
+# An existing look is never overwritten - it is the user's to edit.
+mkdir -p "$CFG/looks"
+for f in "$SRC"/config/looks/*.sh; do
+  [ -f "$f" ] || continue
+  [ -f "$CFG/looks/$(basename "$f")" ] || cp "$f" "$CFG/looks/"
+done
 [ -f "$CFG/favorites" ] || : > "$CFG/favorites"
 [ -f "$CFG/glyphs" ] || cp "$SRC/config/glyphs.example" "$CFG/glyphs"
 [ -f "$CFG/sections" ] || cp "$SRC/config/sections.example" "$CFG/sections"

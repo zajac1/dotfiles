@@ -1,0 +1,39 @@
+# Halftone (dark) - NordPass theme proposal for omni (atmosphere round).
+# Brand tokens read from nordpass.com CSS custom properties on 2026-09-15:
+#   beige 100/200/300/500/600 #faf9f8 #f7f6f4 #f5f4f1 #eae6df #dedad3
+#   green 200/700/900         #ccd9d5 #346955 #01432b
+#   teal 100/300/500/600/700/800 and lime-400 #dbf153
+#   neutral 0..1000           #ffffff .. #191a1c
+# Values that are not tokens are a mix of two tokens; only light_foreground
+# and lighter_background are ever mixed here.
+mode = "dark"
+
+accent = "#01432b"
+selection = "#dbf153"
+muted = "#191a1c"
+
+background = "#191a1c"
+dark_background = "#191a1c"
+darker_background = "#191a1c"
+lighter_background = "#303133"
+
+foreground = "#dedad3"
+dark_foreground = "#8c8c8d"
+light_foreground = "#8c8c8d"
+bright_foreground = "#01432b"
+
+red = "#ed474a"
+yellow = "#fdcb6c"
+orange = "#ff7e23"
+green = "#00ad99"
+cyan = "#8effea"
+blue = "#3080ff"
+magenta = "#f06a6c"
+brown = "#58514f"
+
+bright_red = "#f06a6c"
+bright_yellow = "#dbf153"
+bright_green = "#19e8cc"
+bright_cyan = "#eefffb"
+bright_blue = "#4687ff"
+bright_magenta = "#ccd9d5"
