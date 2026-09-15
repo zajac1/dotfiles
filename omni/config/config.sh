@@ -77,7 +77,7 @@ OMNI_MAIL_PROVIDER="hey"
 # of upcoming events from the provider, and a meeting shows at the top of the
 # root menu from OMNI_CALENDAR_LEAD seconds before it starts until it ends.
 OMNI_CALENDAR_VIEW="app"
-OMNI_CALENDAR_TTL=300
+OMNI_CALENDAR_TTL=60
 OMNI_CALENDAR_LEAD=300
 # Extra hosts that `url` rows may open, besides the Jira and GitLab hosts.
 OMNI_URL_HOSTS="meet.google.com calendar.google.com"
