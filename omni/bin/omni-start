@@ -18,7 +18,7 @@ cat > "$CONFIG" <<CONF
 command = $HOME/.local/bin/omni
 # a fixed title so a window manager can recognise the launcher (AeroSpace floats it)
 title = omni-launcher
-initial-command = /usr/bin/true
+initial-window = false
 abnormal-command-exit-runtime = 0
 macos-hidden = always
 quit-after-last-window-closed = false
