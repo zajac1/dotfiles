@@ -446,9 +446,9 @@ quit HEY, close btop, finish a `brew upgrade`, and a windowless Ghostty stays
 in the Dock and in cmd-tab forever. Six of them is a normal afternoon. Every
 one-shot window omni opens now passes
 `--quit-after-last-window-closed=true`, and the mail instance sets it in its
-config. `initial-command = /usr/bin/true` belongs only to the quick-terminal
-instances too - it keeps the first surface empty, which is wrong for a window
-meant to show an app.
+config. `initial-window = false` belongs only to the quick-terminal
+instances too. A one-shot window IS the initial window, so suppressing it would
+open nothing.
 
 ## 49. Wi-Fi RSSI: CoreWLAN, not the command-line tools
 
