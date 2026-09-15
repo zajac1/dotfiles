@@ -136,6 +136,7 @@ case "$lvl" in
   style)
     printf 'menu\t%s  Theme\ttheme\n' "$(printf '\xef\x87\x9e')"
     printf 'menu\t%s  Font\tfont\n'  "$(printf '\xef\x80\xb1')"
+    printf 'menu\t%s  Shader\tshader\n' "$(printf '\xef\x83\x90')"
     printf 'act\t󰸉  Next wallpaper\twallpaper-next\n'
     ;;
   font)
@@ -155,6 +156,26 @@ case "$lvl" in
         printf 'font\t   %s\t%s\n' "$fam" "$fam"
       fi
     done < "$FONTS"
+    ;;
+  shader)
+    # Ghostty cannot reload a shader live (GOTCHAS 17), so Enter writes the
+    # config and restarts the instance, exactly like Font.
+    cur="${OMNI_SHADER:-}"
+    printf '%s\n' \
+      "None	" \
+      "Lava	cineShader-Lava.glsl" \
+      "Bloom	bloom.glsl" \
+      "Dither	dither.glsl" \
+      "Glow RGB Split	glow-rgbsplit-twitchy.glsl" \
+      "Mnoise	mnoise.glsl" \
+      "Retro Terminal	retro-terminal.glsl" |
+    while IFS="	" read -r label file; do
+      if [ "$file" = "$cur" ]; then
+        printf 'shader\t%s  %s\t%s\n' "$(printf '\xef\x80\x8c')" "$label" "$file"
+      else
+        printf 'shader\t   %s\t%s\n' "$label" "$file"
+      fi
+    done
     ;;
   theme)
     current=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$HOME/.config/omni/config.sh")

@@ -153,7 +153,7 @@ cat > "$AGENT" <<PLIST
 <plist version="1.0">
 <dict>
   <key>Label</key><string>com.omni.launcher</string>
-  <key>ProgramArguments</key><array><string>$BIN/omni-start</string></array>
+  <key>ProgramArguments</key><array><string>$BIN/omni-start</string><string>--restart</string></array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><false/>
 </dict>

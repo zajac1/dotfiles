@@ -1,6 +1,9 @@
 #!/bin/bash
 set -u
 
+# Spawned by LaunchServices or launchd, this process inherits a bare
+# /usr/bin:/bin PATH and every sibling call fails. Children inherit this.
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"; export PATH
 . "$HOME/.config/omni/config.sh"
 
 if [ "$OMNI_FRAME" = "boxed" ]; then
@@ -10,6 +13,9 @@ else
   OPACITY=$OMNI_OPACITY
   BLUR=$OMNI_BLUR
 fi
+
+SHADER_LINE=""
+[ -n "${OMNI_SHADER:-}" ] && SHADER_LINE="custom-shader = $HOME/.config/ghostty/shaders/$OMNI_SHADER"
 
 CONFIG="$HOME/.cache/omni/ghostty.conf"
 mkdir -p "$(dirname "$CONFIG")"
@@ -40,6 +46,7 @@ selection-foreground = $OMNI_BASE
 
 background-opacity = $OPACITY
 background-blur = $BLUR
+$SHADER_LINE
 adjust-cell-height = ${OMNI_ROW_PAD:-0}
 window-padding-x = 2
 window-padding-y = 1

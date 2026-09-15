@@ -20,7 +20,14 @@ case "$kind" in
     echo 'become(omni --menu)' ;;
   font)
     sed -i '' "s|^OMNI_FONT=\".*\"|OMNI_FONT=\"$payload\"|" "$HOME/.config/omni/config.sh"
-    nohup bash -c 'sleep 0.3; omni-start --restart' >/dev/null 2>&1 &
+    launchctl kickstart -k "gui/$(id -u)/com.omni.launcher" >/dev/null 2>&1
+    echo 'abort' ;;
+  shader)
+    # A backgrounded child does not survive fzf aborting inside the launcher
+    # surface, so the restart is handed to launchd, which is outside this
+    # process tree. Needs com.omni.launcher to run omni-start --restart.
+    sed -i '' "s|^OMNI_SHADER=\".*\"|OMNI_SHADER=\"$payload\"|" "$HOME/.config/omni/config.sh"
+    launchctl kickstart -k "gui/$(id -u)/com.omni.launcher" >/dev/null 2>&1
     echo 'abort' ;;
   act)
     printf '%s' "$line" > "$PENDING"

@@ -33,6 +33,9 @@ OMNI_FRAME="boxed"
 OMNI_OPACITY=0.95
 OMNI_BLUR=20
 OMNI_ANIMATION=0
+# Ghostty shader for the launcher window only, a filename in
+# ~/.config/ghostty/shaders. Empty means none. Style > Shader sets it.
+OMNI_SHADER=""
 OMNI_BORDER_STYLE="rounded"
 # Input box border, separate from the outer box. "rounded" is a 3-row box;
 # "bottom" is a 2-row underline, the only shorter option fzf offers.
