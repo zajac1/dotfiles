@@ -474,3 +474,13 @@ under the same gate, which reads as a bug and is not one.
 
 `c.channelBand === 2` is false while `"" + c.channelBand` is `"2"`. Compare
 `String(value)`, or every band reads as unknown.
+
+## 52. The `Last login:` flash belongs to login(1), not to omni
+
+Ghostty on macOS runs every command through `/usr/bin/login`, which prints
+`Last login: <date> on ttysNNN` before the command starts. omni clears the
+screen, but that clear lands a frame later. The banner therefore flashes on
+every open. Each toggle builds a fresh surface with a fresh login, so it is not
+only the first one. Ghostty exposes no option to skip login or to pass it `-q`.
+The only fix is an empty `~/.hushlogin`, and it is global: the banner goes from
+every terminal on the machine.
