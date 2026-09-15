@@ -83,6 +83,8 @@ case "$kind" in
       audio)       settings "com.apple.Sound-Settings.extension" ;;
       displays)    settings "com.apple.Displays-Settings.extension" ;;
       screenshot)  screencapture -i -c ;;
+      screenrecord) osascript -e 'tell application "QuickTime Player" to activate' \
+                             -e 'tell application "QuickTime Player" to new screen recording' ;;
       colorpicker) open -a "Digital Color Meter" ;;
       lock)        pmset displaysleepnow ;;
       saver)       open -a ScreenSaverEngine ;;

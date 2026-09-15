@@ -212,6 +212,7 @@ case "$lvl" in
     ;;
   capture)
     printf 'run\t  Screenshot\tscreenshot\n'
+    printf 'run\t  Screen Recording\tscreenrecord\n'
     printf 'run\t  Color Picker\tcolorpicker\n'
     ;;
   system)
