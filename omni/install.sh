@@ -132,6 +132,20 @@ for f in "$SRC"/config/looks/*.sh; do
   [ -f "$f" ] || continue
   [ -f "$CFG/looks/$(basename "$f")" ] || cp "$f" "$CFG/looks/"
 done
+# `default` is generated from config.sh, never shipped: a static copy names a
+# theme and a font that the config it is meant to restore may not use.
+if [ ! -f "$CFG/looks/default.sh" ]; then
+  {
+    echo "# default - what omni is configured with; a look restores you to this."
+    for k in OMNI_THEME OMNI_FONT OMNI_FONT_SIZE OMNI_MENU_COLS OMNI_FILL_INSET \
+             OMNI_ROW_PAD OMNI_PADDING OMNI_BORDER_STYLE OMNI_BORDER_SLOT \
+             OMNI_INPUT_BORDER OMNI_SHADER OMNI_FRAME OMNI_OPACITY OMNI_BLUR \
+             OMNI_TERM_SIZE; do
+      grep -m1 "^$k=" "$CFG/config.sh"
+    done
+  } > "$CFG/looks/default.sh"
+  echo "    looks/default.sh generated from config.sh"
+fi
 [ -f "$CFG/favorites" ] || : > "$CFG/favorites"
 [ -f "$CFG/glyphs" ] || cp "$SRC/config/glyphs.example" "$CFG/glyphs"
 [ -f "$CFG/sections" ] || cp "$SRC/config/sections.example" "$CFG/sections"

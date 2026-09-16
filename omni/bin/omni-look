@@ -17,21 +17,23 @@ case "${1-}" in
   current)
     # Derived, not stored. A stored name goes stale the moment Font or Shader
     # writes one of the values a look owns.
-    for f in "$DIR"/*.sh; do
-      [ -f "$f" ] || continue
-      match=1
-      while IFS= read -r line; do
-        case "$line" in OMNI_*=*) ;; *) continue ;; esac
-        grep -qxF "$line" "$CONF" || { match=0; break; }
-      done < "$f"
-      [ "$match" = 1 ] && { basename "$f" .sh; exit 0; }
-    done
+    # One awk over every look file. A grep per key per file was 52 processes
+    # and 178 ms, and the root render calls this on every keystroke.
+    awk -v conf="$CONF" '
+      BEGIN { while ((getline l < conf) > 0) if (l ~ /^OMNI_[A-Z_]+=/) c[l] = 1 }
+      FNR == 1 {
+        if (name != "" && ok) { print name; found = 1; exit }
+        name = FILENAME; sub(/.*\//, "", name); sub(/\.sh$/, "", name); ok = 1
+      }
+      /^OMNI_[A-Z_]+=/ { if (!($0 in c)) ok = 0 }
+      END { if (!found && name != "" && ok) print name }
+    ' "$DIR"/*.sh
     ;;
   list)
     for f in "$DIR"/*.sh; do
       [ -f "$f" ] || continue
-      n=$(basename "$f" .sh)
-      printf '%s\n' "$n"
+      n="${f##*/}"
+      printf '%s\n' "${n%.sh}"
     done
     ;;
   --preview)

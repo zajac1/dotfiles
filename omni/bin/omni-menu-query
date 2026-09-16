@@ -92,7 +92,9 @@ case "$lvl" in
   look)
     # A look is colours plus type, density, frame and shader. Colours, type,
     # density and shader preview live; the box geometry follows on Enter.
-    cur=$(omni-look current)
+    # The flat search renders this level on every root keystroke, and nothing
+    # is "current" while searching, so skip the derivation there.
+    cur=""; [ "${SEARCHING:-0}" = 1 ] || cur=$(omni-look current)
     omni-look list | while IFS= read -r n; do
       [ -n "$n" ] || continue
       if [ "$n" = "$cur" ]; then
