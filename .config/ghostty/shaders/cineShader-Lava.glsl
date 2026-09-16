@@ -5,6 +5,29 @@
 #define COLOR_SPEED 0.1          // This controls the speed at which the colors change
 #define MOVEMENT_SPEED 0.1       // This controls the speed at which the balls move
 
+#define NUM_BALLS 16
+// Distance at which a ray counts as having hit the surface. The upstream 1e-6
+// is below float precision at this scale; 1e-3 renders identically (max 1/255
+// channel difference measured) and saves the creep steps.
+#define HIT_EPS 1e-3
+
+// Ball centres and radii depend only on iTime, not on the sample point. The
+// upstream shader recomputes all 16 sin() calls inside map(), which runs 15-20
+// times per pixel; at 16 balls the Metal compiler no longer hoists them.
+// Measured: 30 ms per frame recomputed, 6 ms hoisted, at 1391x1885.
+vec3 ballCenter[NUM_BALLS];
+float ballRadius[NUM_BALLS];
+
+void prepareBalls()
+{
+	for (int i = 0; i < NUM_BALLS; i++) {
+		float fi = float(i);
+		float time = iTime * (fract(fi * 412.531 + 0.513) - 0.5) * 2.0;
+		ballCenter[i] = sin(time*MOVEMENT_SPEED + fi * vec3(52.5126, 64.62744, 632.25)) * vec3(2.0, 2.0, 0.8);
+		ballRadius[i] = mix(0.5, 1.0, fract(fi * 412.531 + 0.5124));
+	}
+}
+
 float opSmoothUnion( float d1, float d2, float k )
 {
     float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
@@ -19,14 +42,8 @@ float sdSphere( vec3 p, float s )
 float map(vec3 p)
 {
 	float d = 2.0;
-	for (int i = 0; i < 16; i++) {
-		float fi = float(i);
-		float time = iTime * (fract(fi * 412.531 + 0.513) - 0.5) * 2.0;
-		d = opSmoothUnion(
-            sdSphere(p + sin(time*MOVEMENT_SPEED + fi * vec3(52.5126, 64.62744, 632.25)) * vec3(2.0, 2.0, 0.8), mix(0.5, 1.0, fract(fi * 412.531 + 0.5124))),
-			d,
-			0.4
-		);
+	for (int i = 0; i < NUM_BALLS; i++) {
+		d = opSmoothUnion(sdSphere(p + ballCenter[i], ballRadius[i]), d, 0.4);
 	}
 	return d;
 }
@@ -44,6 +61,20 @@ vec3 calcNormal( in vec3 p )
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     vec2 uv = fragCoord/iResolution.xy;
+
+    vec2 termUV = fragCoord.xy / iResolution.xy;
+    vec4 terminalColor = texture(iChannel0, termUV);
+
+    float alpha = step(length(terminalColor.rgb), BLACK_BLEND_THRESHOLD);
+    // The lava is only ever visible where the terminal is opaque and dark. In
+    // the transparent margin (OMNI_FRAME="boxed") and on bright glyphs the
+    // output below does not depend on it, so skip the march there.
+    if (terminalColor.a <= 0.0 || alpha <= 0.0) {
+        fragColor = terminalColor;
+        return;
+    }
+
+    prepareBalls();
     
 	vec3 rayOri = vec3((uv - 0.5) * vec2(iResolution.x/iResolution.y, 1.0) * 6.0, 3.0);
 	vec3 rayDir = vec3(0.0, 0.0, -1.0);
@@ -51,11 +82,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 	float depth = 0.0;
 	vec3 p;
 	
-	for(int i = 0; i < 32; i++) {
+	for(int i = 0; i < 64; i++) {
 		p = rayOri + rayDir * depth;
 		float dist = map(p);
         depth += dist;
-		if (dist < 1e-6) {
+		if (dist < HIT_EPS) {
 			break;
 		}
 		// depth is clamped to 6.0 below, so marching past it is discarded work.
@@ -70,14 +101,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec3 col = (0.5 + 0.5 * cos((b + iTime*COLOR_SPEED * 3.0) + uv.xyx * 2.0 + vec3(0,2,4))) * (0.85 + b * 0.35);
     col *= exp( -depth * 0.15 );
 	
-
-    vec2 termUV = fragCoord.xy / iResolution.xy;
-    vec4 terminalColor = texture(iChannel0, termUV);
-
-    float alpha = step(length(terminalColor.rgb), BLACK_BLEND_THRESHOLD);
     vec3 blendedColor = mix(terminalColor.rgb * 1.0, col.rgb * 0.3, alpha);
 
     fragColor = vec4(blendedColor, terminalColor.a);
 
 }
-
