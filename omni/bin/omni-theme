@@ -30,9 +30,6 @@ fi
 
 omni-theme-build "$name" || exit 1
 sed -i '' "s/^OMNI_THEME=\".*\"/OMNI_THEME=\"$name\"/" "$CONF"
-# A theme is colours only, so choosing one on its own leaves the look behind.
-# omni-look sets OMNI_LOOK again after it calls this.
-sed -i '' 's/^OMNI_LOOK=".*"/OMNI_LOOK=""/' "$CONF"
 # Every consumer is optional and silent when its half is not installed, so the
 # same switch works on a machine that has only the launcher and an editor.
 omni-ghostty-theme "$name" >/dev/null 2>&1 || true          # terminal

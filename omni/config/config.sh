@@ -1,6 +1,3 @@
-# The active look, set by Style > Look. A look is a complete set of
-# values; a theme is colours only. Empty means no look has been applied.
-OMNI_LOOK=""
 OMNI_THEME="everforest"
 
 OMNI_FONT="CaskaydiaCove Nerd Font Mono"

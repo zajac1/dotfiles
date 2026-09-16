@@ -102,6 +102,7 @@ printf 'pid=%s tty=%s rows=%s cols=%s want_rows=%s want_cols=%s top=%s side=%s l
 
 set -- \
   --style=minimal \
+  --with-shell='/bin/bash --noprofile --norc -c' \
   --ansi \
   --layout=reverse \
   --cycle \

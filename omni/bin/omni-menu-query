@@ -93,7 +93,7 @@ case "$lvl" in
   look)
     # A look is colours plus type, density, frame and shader. Like Font and
     # Shader it cannot preview live, so Enter writes config.sh and restarts.
-    cur="${OMNI_LOOK:-}"
+    cur=$(omni-look current)
     omni-look list | while IFS= read -r n; do
       [ -n "$n" ] || continue
       if [ "$n" = "$cur" ]; then
@@ -114,7 +114,10 @@ case "$lvl" in
       "Dither	dither.glsl" \
       "Glow RGB Split	glow-rgbsplit-twitchy.glsl" \
       "Mnoise	mnoise.glsl" \
-      "Retro Terminal	retro-terminal.glsl" |
+      "Retro Terminal	retro-terminal.glsl" \
+      "Halftone	np-halftone-dark.glsl" \
+      "Vellum	np-vellum-dark.glsl" \
+      "Tessera	np-tessera.glsl" |
     while IFS="	" read -r label file; do
       if [ "$file" = "$cur" ]; then
         printf 'shader\t%s  %s\t%s\n' "$(printf '\xef\x80\x8c')" "$label" "$file"
@@ -230,7 +233,9 @@ if [ -z "$level" ]; then
   rows ""
   for id in $ids; do
     case "$id" in
-      style)   rows style; rows theme ;;
+      # look before theme: they share names by design, the dedupe keeps the
+      # first, and a look applies everything where its theme is colours only.
+      style)   rows style; rows look; rows theme; rows shader ;;
       setup)   rows setup ;;
       capture) rows capture ;;
       update)  rows update ;;
