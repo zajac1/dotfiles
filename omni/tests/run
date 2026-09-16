@@ -21,13 +21,17 @@ failures=0
 for f in "${files[@]}"; do
   [ -f "$f" ] || { printf '%s: no such test file\n' "$f" >&2; failures=$((failures + 1)); continue; }
   printf '%s\n' "${f#t/}"
-  FAILED=0; CHECKS=0
-  sandbox
-  # shellcheck disable=SC1090
-  . "./$f"
-  teardown
-  total=$((total + CHECKS))
-  failures=$((failures + FAILED))
+  # A subshell per file: sourcing them all into one shell let a helper or a
+  # variable from one file make another pass. The counts come back on fd 3.
+  counts=$( { FAILED=0; CHECKS=0
+              sandbox
+              # shellcheck disable=SC1090
+              . "./$f"
+              teardown
+              printf '%s %s\n' "$CHECKS" "$FAILED" >&3
+            } 3>&1 1>&2 )
+  total=$((total + ${counts%% *}))
+  failures=$((failures + ${counts##* }))
 done
 
 [ -n "${THEME_CACHE:-}" ] && /bin/rm -rf "$THEME_CACHE"

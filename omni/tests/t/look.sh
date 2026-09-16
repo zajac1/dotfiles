@@ -3,7 +3,6 @@ L="$HOME/.config/omni/looks"
 C="$HOME/.config/omni/config.sh"
 /bin/rm -f "$L"/*.sh
 
-mk() { printf '# %s\n' "$1" > "$L/$1.sh"; shift; for kv in "$@"; do printf '%s\n' "$kv" >> "$L/$(/bin/ls -t "$L" | /usr/bin/head -1 | /usr/bin/sed 's/\.sh$//').sh"; done; }
 
 # written by hand so the order is explicit, since `current` returns the first match
 /bin/cat > "$L/alpha.sh" <<EOF
@@ -38,7 +37,7 @@ checkeq "apply leaves a key the look omits alone" "$before_hotkey"    "$(/usr/bi
 /bin/cat > "$L/evil.sh" <<EOF
 OMNI_MENU_COLS=\$(touch "$HOME/pwned")
 EOF
-omni-look evil >/dev/null 2>&1
+checkrc "a look with a substitution is refused" 1 omni-look evil
 if [ -e "$HOME/pwned" ]; then
   checkeq "a look file cannot execute anything" "no pwned file" "pwned file created"
 else

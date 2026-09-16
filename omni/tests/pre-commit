@@ -9,7 +9,7 @@
 # Skip it once with: git commit --no-verify
 set -u
 
-git diff --cached --name-only --diff-filter=ACMR | grep -q '^omni/' || exit 0
+git diff --cached --name-only | grep -q '^omni/' || exit 0
 
 root=$(git rev-parse --show-toplevel)
 [ -x "$root/omni/tests/run" ] || exit 0

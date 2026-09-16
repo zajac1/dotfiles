@@ -5,8 +5,7 @@ C="$HOME/.config/omni/config.sh"
 
 # With no launcher running it must refuse, and change nothing.
 /bin/rm -f "$CONF" "$MARK"; : > "$HOME/calls.log"
-omni-reload OMNI_FONT=Menlo >/dev/null 2>&1
-checkeq "no launcher means exit 1"            "1" "$?"
+checkrc "no launcher means exit 1" 1 omni-reload OMNI_FONT=Menlo
 checkeq "no launcher means no Apple event"    "0" "$(/usr/bin/grep -c '^osascript' "$HOME/calls.log")"
 checkeq "no launcher leaves no marker"        "absent" "$([ -e "$MARK" ] && echo present || echo absent)"
 
@@ -48,8 +47,14 @@ printf 'touch "$HOME/OWNED"\n' > "$HOME/evil/x.sh"
 omni-start --conf-only 'OMNI_THEME=../../../evil/x' >/dev/null 2>&1
 checkeq "a theme value cannot escape its directory" "absent" "$([ -e "$HOME/OWNED" ] && echo present || echo absent)"
 
-omni-start --conf-only 'OMNI_THEME=everforest' >/dev/null 2>&1
-checkeq "a real theme name still applies" "yes" "$(/usr/bin/grep -qc '^background = ' "$CONF" >/dev/null && echo yes || echo no)"
+# Against a theme that differs from the sandbox default, so the assertion can
+# fail. Comparing everforest to everforest proved nothing.
+omni-start --conf-only >/dev/null 2>&1
+bg_default=$(/usr/bin/grep -m1 '^background = ' "$CONF")
+omni-start --conf-only 'OMNI_THEME=gruvbox' >/dev/null 2>&1
+bg_gruvbox=$(/usr/bin/grep -m1 '^background = ' "$CONF")
+checkeq "a real theme name changes the background" "changed" \
+        "$([ "$bg_default" != "$bg_gruvbox" ] && echo changed || echo "same: $bg_default")"
 
 # With a launcher reachable, Font and Shader must reload rather than restart.
 # This is the assertion menu-state.sh cannot make: without a launcher every

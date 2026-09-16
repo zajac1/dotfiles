@@ -84,6 +84,15 @@ checkeq() {
   fi
 }
 
+# checkrc <name> <expected-status> <cmd...>
+# check() compares stdout only, so a script that prints the right thing and
+# exits 1 passes it. Use this where the status is the contract.
+checkrc() {
+  local name="$1" want="$2"; shift 2
+  "$@" >/dev/null 2>&1
+  checkeq "$name" "$want" "$?"
+}
+
 # procs <runs> <cmd...>  -- minimum processes spawned, load-independent.
 # macOS allocates PIDs sequentially, so other activity can only inflate the
 # gap, never shrink it. The minimum over N runs is therefore the true count.

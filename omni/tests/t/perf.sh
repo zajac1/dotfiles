@@ -7,7 +7,7 @@
 #
 # Counted by PID arithmetic, which is load-independent. macOS allocates PIDs
 # sequentially, so other activity can only inflate the gap, never shrink it,
-# and the minimum over 20 runs is the true count. Milliseconds are reported but
+# and the minimum over 8 runs is the true count. Milliseconds are reported but
 # never asserted, because they move with load by more than any regression would.
 
 pin() {  # pin <expected> <name> <cmd...>
@@ -31,7 +31,7 @@ ratio() {
   local S E t f
   S=$(/bin/date +%s.%N); for i in $(/usr/bin/seq 20); do "$@" >/dev/null 2>&1; done; E=$(/bin/date +%s.%N)
   t=$(/usr/bin/awk -v s="$S" -v e="$E" 'BEGIN{print (e-s)/20}')
-  f="$1"; f="$FLOOR"
+  f="$FLOOR"
   /usr/bin/awk -v t="$t" -v f="$f" -v n="$name" 'BEGIN{printf "  ---  %-34s %5.1f ms, %4.1fx floor\n", n, t*1000, t/f}'
 }
 FLOOR=$(floor)
