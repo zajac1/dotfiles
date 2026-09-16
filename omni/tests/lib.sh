@@ -33,7 +33,17 @@ sandbox() {
   /bin/cp "$SRC"/config/looks/*.sh "$SB/.config/omni/looks/" 2>/dev/null || true
   /bin/mkdir -p "$SB/.config/omni/themes"
   /bin/cp -R "$SRC"/config/themes/* "$SB/.config/omni/themes/"
-  "$SB/.local/bin/omni-theme-build" --all >/dev/null 2>&1
+  # Compiling 25 themes costs 2 s, and it is identical for every file. Build it
+  # once per run and copy it in.
+  if [ -z "${THEME_CACHE:-}" ]; then
+    THEME_CACHE="$BASE_TMP/omni-test-themes.$$"
+    /bin/mkdir -p "$THEME_CACHE"
+    HOME="$SB" "$SB/.local/bin/omni-theme-build" --all >/dev/null 2>&1
+    /bin/cp "$SB/.cache/omni/themes/"*.sh "$THEME_CACHE/" 2>/dev/null
+  else
+    /bin/mkdir -p "$SB/.cache/omni/themes"
+    /bin/cp "$THEME_CACHE/"*.sh "$SB/.cache/omni/themes/" 2>/dev/null
+  fi
 
   # Seeded so omni-query never falls through to omni-index, which scans /Applications.
   printf 'app\t  Calendar\t/System/Applications/Calendar.app\n' >  "$SB/.cache/omni/index.tsv"

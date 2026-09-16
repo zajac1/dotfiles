@@ -184,6 +184,20 @@ echo "==> Ghostty terminal theme (optional)"
 echo "    add this line to ~/.config/ghostty/config to theme all your terminals:"
 echo "        config-file = omni-theme"
 
+# The git hook is repo-local, so it is only offered when installing from a
+# clone. An existing hook is never replaced.
+HOOK_DIR="$(cd "$SRC" && git rev-parse --git-path hooks 2>/dev/null)"
+if [ -n "$HOOK_DIR" ] && [ -d "$HOOK_DIR" ]; then
+  echo "==> pre-commit hook"
+  if [ -e "$HOOK_DIR/pre-commit" ]; then
+    echo "    a pre-commit hook already exists, left alone"
+    echo "    to use omni's: ln -sf $SRC/tests/pre-commit $HOOK_DIR/pre-commit"
+  else
+    ln -sf "$SRC/tests/pre-commit" "$HOOK_DIR/pre-commit"
+    echo "    linked; omni tests run when a commit touches omni/"
+  fi
+fi
+
 echo "==> launch agent"
 mkdir -p "$(dirname "$AGENT")"
 cat > "$AGENT" <<PLIST

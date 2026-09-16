@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# Runs the omni suite when a commit touches omni/, and nothing otherwise.
+#
+# It tests the WORKING TREE, not the staged content. With unstaged changes in
+# omni/ the two differ, and the gate can pass while the commit is broken. The
+# alternative is stashing inside a hook, which is how people lose work.
+#
+# Skip it once with: git commit --no-verify
+set -u
+
+git diff --cached --name-only --diff-filter=ACMR | grep -q '^omni/' || exit 0
+
+root=$(git rev-parse --show-toplevel)
+[ -x "$root/omni/tests/run" ] || exit 0
+
+if ! git diff --quiet -- omni/; then
+  printf 'omni tests: unstaged changes in omni/, so this tests the working tree\n' >&2
+fi
+
+printf 'omni tests: running\n' >&2
+if "$root/omni/tests/run" >/tmp/omni-precommit.$$ 2>&1; then
+  tail -1 /tmp/omni-precommit.$$ >&2
+  rm -f /tmp/omni-precommit.$$
+  exit 0
+fi
+
+grep -E 'FAIL|checks,' /tmp/omni-precommit.$$ >&2
+printf '\nfull output: /tmp/omni-precommit.%s\n' "$$" >&2
+printf 'commit anyway with: git commit --no-verify\n' >&2
+exit 1

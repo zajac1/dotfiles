@@ -30,5 +30,7 @@ for f in "${files[@]}"; do
   failures=$((failures + FAILED))
 done
 
+[ -n "${THEME_CACHE:-}" ] && /bin/rm -rf "$THEME_CACHE"
+
 printf '\n%s checks, %s failed\n' "$total" "$failures"
 [ "$failures" = 0 ]

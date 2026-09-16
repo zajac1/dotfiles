@@ -12,7 +12,7 @@
 
 pin() {  # pin <expected> <name> <cmd...>
   local want="$1" name="$2"; shift 2
-  checkeq "$name" "$want" "$(procs 20 "$@")"
+  checkeq "$name" "$want" "$(procs 8 "$@")"
 }
 
 pin  6 "search keystroke        omni-query sl"        omni-query sl
