@@ -91,6 +91,9 @@ OMNI_MAIL_PROVIDER="hey"
 OMNI_CALENDAR_VIEW="app"
 OMNI_CALENDAR_TTL=60
 OMNI_CALENDAR_LEAD=300
+# How long a meeting stays in the root row after it starts. By then you have
+# joined or you are not going.
+OMNI_CALENDAR_HOLD=1200
 # Extra hosts that `url` rows may open, besides the Jira and GitLab hosts.
 OMNI_URL_HOSTS="meet.google.com calendar.google.com"
 

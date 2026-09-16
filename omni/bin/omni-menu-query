@@ -46,8 +46,12 @@ emit_now() {
     ( omni-calendar refresh ) >/dev/null 2>&1 </dev/null &
   fi
   [ -f "$tsv" ] || return 0
-  awk -F'\t' -v now="$now" -v lead="${OMNI_CALENDAR_LEAD:-300}" -v g="󰃰" '
-    NF >= 5 && $1 - lead <= now && now < $2 && ++n <= 2 {
+  awk -F'\t' -v now="$now" -v lead="${OMNI_CALENDAR_LEAD:-300}" \
+      -v hold="${OMNI_CALENDAR_HOLD:-1200}" -v g="󰃰" '
+    # A row lives from lead before the start until hold after it, or until the
+    # event ends, whichever comes first. Without the hold a nine-hour focus
+    # block owns the row all day and crowds out the meetings.
+    NF >= 5 && $1 - lead <= now && now < ($1 + hold < $2 ? $1 + hold : $2) && ++n <= 2 {
       if ($3 != "") printf "url\t%s  %s %s\t%s\n", g, $4, $5, $3
       else          printf "run\t%s  %s %s\tcalendar-open\n", g, $4, $5
       shown = 1 }
