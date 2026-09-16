@@ -39,6 +39,12 @@ OMNI_ANIMATION=0
 # Ghostty shader for the launcher window only, a filename in
 # ~/.config/ghostty/shaders. Empty means none. Style > Shader sets it.
 OMNI_SHADER=""
+# Space between the panel edge and its content, as fzf --padding
+# "rows,cols". A look with no border usually wants more than 0,1.
+OMNI_PADDING="0,1"
+# Palette slot the outer border is drawn in. 18 is the border colour;
+# 16 is the background, which keeps the border's spacing and hides its line.
+OMNI_BORDER_SLOT=18
 OMNI_BORDER_STYLE="rounded"
 # Input box border, separate from the outer box. "rounded" is a 3-row box;
 # "bottom" is a 2-row underline, the only shorter option fzf offers.

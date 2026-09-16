@@ -107,7 +107,7 @@ set -- \
   --cycle \
   --border="$OMNI_BORDER_STYLE" \
   --input-border="${OMNI_INPUT_BORDER:-$OMNI_BORDER_STYLE}" \
-  --padding=0,1 \
+  --padding="${OMNI_PADDING:-0,1}" \
   --margin="$margin" \
   --prompt='' \
   --ghost="$ghost" \
@@ -130,7 +130,7 @@ set -- \
   --bind 'shift-down:execute-silent(omni-fav-move {} down)+become(omni --menu)' \
   --bind 'ctrl-k:up+transform(omni-skip {} up)' \
   --bind 'enter:transform(omni-enter {})' \
-  --color="bg:${bg},fg:17,current-bg:23,current-fg:19:regular,hl:17,hl+:19,border:18,input-border:18,input-bg:${bg},list-bg:${bg},header-bg:${bg},selected-bg:${bg},preview-bg:${bg},query:17,ghost:20,gutter:${bg}"
+  --color="bg:${bg},fg:17,current-bg:23,current-fg:19:regular,hl:17,hl+:19,border:${OMNI_BORDER_SLOT:-18},input-border:18,input-bg:${bg},list-bg:${bg},header-bg:${bg},selected-bg:${bg},preview-bg:${bg},query:17,ghost:20,gutter:${bg}"
 
 if [ "$mode" = search ]; then
   fzf --disabled \
