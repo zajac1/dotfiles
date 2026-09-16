@@ -72,6 +72,9 @@ EOF
 fi
 
 omni-osc 2>/dev/null
+# A shader, font or look left previewed in the Ghostty config is reverted the
+# same way the colours are: by reloading from config.sh whenever the menu starts.
+[ -f "$CACHE/preview" ] && omni-reload >/dev/null 2>&1
 # The launcher surface is created when Ghostty launches, hidden, with a pty
 # still at the default 24x80; Ghostty sizes it only when the window is first
 # shown. The margin that centres the box is computed ONCE, so computing it now
@@ -147,17 +150,28 @@ else
   # there - the position has to be set on `load`.
   startacts="transform(omni-skip {} down)"
   extra+=("--bind=load:transform(omni-skip {} down)")
-  if [ "$level" = theme ]; then
-    if [ -z "$at" ]; then
-      at=$(omni-menu-query theme | awk -F'\t' -v c="$OMNI_THEME" '$3==c{print NR-1; exit}')
-    fi
-    extra+=("--bind=focus:execute-silent(omni-osc {3})")
+  # Style pickers preview on focus and commit on Enter. Colours travel as OSC;
+  # anything that lives in the Ghostty config travels through omni-reload. The
+  # cursor starts on the current value, so the focus that fires on load
+  # previews what is already applied and omni-reload finds nothing to do.
+  case "$level" in
+    theme)  current=$OMNI_THEME;          preview="omni-osc {3}" ;;
+    shader) current=${OMNI_SHADER:-};     preview="omni-reload OMNI_SHADER={3}" ;;
+    font)   current=$OMNI_FONT;           preview="omni-reload OMNI_FONT={3}" ;;
+    look)   current=$(omni-look current); preview="omni-look --preview {3}" ;;
+    *)      preview="" ;;
+  esac
+  if [ -n "$preview" ]; then
+    at=$(printf '%s\n' "$ITEMS" | awk -F'\t' -v c="$current" '$3==c{print NR-1; exit}')
+    extra+=("--bind=focus:execute-silent($preview)")
   fi
   case "$at" in ""|*[!0-9]*) : ;; *) startacts="pos($((at+1)))+$startacts" ;; esac
   extra+=("--bind=start:$startacts")
   extra+=("--bind=change:reload(omni-menu-query '$level' {q})+first")
+  # --sync: the list is already in hand, and without it `start` fires before
+  # the first row is loaded, so the pos() above lands on row 0 (GOTCHAS 16).
   printf '%s\n' "$ITEMS" | \
-    fzf --disabled \
+    fzf --disabled --sync \
         --bind 'ctrl-p:execute-silent(omni-toggle-pin {})+become(omni --menu)' \
         ${extra[@]+"${extra[@]}"} "$@"
 fi

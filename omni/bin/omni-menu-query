@@ -73,8 +73,7 @@ case "$lvl" in
     printf 'act\t󰸉  Next wallpaper\twallpaper-next\n'
     ;;
   font)
-    # Ghostty has no escape sequence for changing font, so unlike themes this
-    # cannot preview live - Enter writes the config and restarts the instance.
+    # Previews live through omni-reload (see bin/omni); Enter writes config.sh.
     FONTS="$HOME/.cache/omni/fonts.txt"
     if [ ! -s "$FONTS" ] || [ -n "$(find "$FONTS" -mtime +7 2>/dev/null)" ]; then
       /Applications/Ghostty.app/Contents/MacOS/ghostty +list-fonts 2>/dev/null |
@@ -91,8 +90,8 @@ case "$lvl" in
     done < "$FONTS"
     ;;
   look)
-    # A look is colours plus type, density, frame and shader. Like Font and
-    # Shader it cannot preview live, so Enter writes config.sh and restarts.
+    # A look is colours plus type, density, frame and shader. Colours, type,
+    # density and shader preview live; the box geometry follows on Enter.
     cur=$(omni-look current)
     omni-look list | while IFS= read -r n; do
       [ -n "$n" ] || continue
@@ -104,8 +103,7 @@ case "$lvl" in
     done
     ;;
   shader)
-    # Ghostty cannot reload a shader live (GOTCHAS 17), so Enter writes the
-    # config and restarts the instance, exactly like Font.
+    # Previews live through omni-reload (see bin/omni); Enter writes config.sh.
     cur="${OMNI_SHADER:-}"
     printf '%s\n' \
       "None	" \

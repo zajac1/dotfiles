@@ -6,6 +6,20 @@ set -u
 PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"; export PATH
 . "$HOME/.config/omni/config.sh"
 
+# `--conf-only KEY=VALUE...` writes the config with those values in place of
+# config.sh's and stops. omni-reload uses it to preview a shader, font or look
+# in the running launcher. printf -v assigns without eval, so a value is data.
+conf_only=0
+if [ "${1-}" = "--conf-only" ]; then
+  conf_only=1; shift
+  for kv in "$@"; do
+    key="${kv%%=*}"
+    case "$key" in OMNI_[A-Z_]*) case "$key" in *[!A-Z_]*) continue ;; esac ;; *) continue ;; esac
+    printf -v "$key" '%s' "${kv#*=}"
+    [ "$key" = OMNI_THEME ] && [ -f "$HOME/.cache/omni/themes/$OMNI_THEME.sh" ] && . "$HOME/.cache/omni/themes/$OMNI_THEME.sh"
+  done
+fi
+
 if [ "$OMNI_FRAME" = "boxed" ]; then
   OPACITY=0
   BLUR=false
@@ -78,6 +92,8 @@ window-decoration = false
 
 keybind = global:$OMNI_HOTKEY=toggle_quick_terminal
 CONF
+
+[ "$conf_only" = 1 ] && exit 0
 
 if [ "${1-}" = "--restart" ]; then
   pkill -f "ghostty .*--config-file=$CONFIG" 2>/dev/null

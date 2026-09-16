@@ -171,14 +171,16 @@ restarts `WallpaperAgent` and then sets, which re-seeds all Spaces. Set
 Style → Theme previews **live** as you arrow through the list, and reverts on
 `Esc`. Preview never writes to disk, so backing out is free.
 
-Style → Font lists the monospace families Ghostty can see. **Applying one closes
-the launcher**, and there is no way around it: the font lives in Ghostty's
-config, which can only be reloaded by a keybind (no CLI, no signal). Colours
-escape this because they can be pushed into a running terminal as OSC sequences.
-The instance restarts in the background, so the next `Alt+Space` is already in
-the new font. For the same reason fonts cannot preview live the way themes do. Fonts are
-deliberately left out of the flat menu search — half of them contain the words
-"Mono" or "Nerd" and would match almost anything.
+Style → Font lists the monospace families Ghostty can see. Font, Shader and
+Look preview live as well: they live in Ghostty's config, which `omni-reload`
+regenerates and then reloads in the running instance through Ghostty's
+AppleScript `perform action` (Ghostty 1.3+, no key press involved). `Esc`
+reverts. A Look previews its colours, font, row padding and shader; the box
+geometry (columns, padding, borders) follows on `Enter`, and a Look that
+changes the window size still restarts the launcher, because Ghostty reads
+`quick-terminal-size` only at start. Fonts are deliberately left out of the
+flat menu search — half of them contain the words "Mono" or "Nerd" and would
+match almost anything.
 
 Theme switching also writes `~/.config/ghostty/omni-theme`, a real Ghostty theme
 file with all 16 palette colours. Add `config-file = omni-theme` to
@@ -217,10 +219,11 @@ for colour but none for shaders or fonts.
 
 ### Restarting
 
-Font, Shader and Look cannot preview live, so applying one writes `config.sh`
-and restarts the launcher. The restart runs through launchd, not through a
-backgrounded child: a child of `omni-enter` does not survive fzf aborting inside
-the launcher surface, so it is killed before it can exec.
+Font, Shader and Look apply live through `omni-reload`, so the launcher only
+restarts when a Look changes the window size, or when the AppleScript reload is
+refused. That restart runs through launchd, not through a backgrounded child: a
+child of `omni-enter` does not survive fzf aborting inside the launcher surface,
+so it is killed before it can exec.
 
 `install.sh` therefore bootstraps `com.omni.launcher`, which also starts omni at
 login. `omni-restart` falls back to calling `omni-start --restart` directly if

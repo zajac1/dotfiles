@@ -1,0 +1,53 @@
+#!/bin/bash
+# omni-reload [KEY=VALUE...] - regenerate the launcher's Ghostty config and
+# make the running instance pick it up, without a restart.
+#
+# Ghostty 1.3 lets AppleScript run any keybind action ("perform action"), so
+# reload_config is reachable from a script. The event is addressed to the
+# launcher's pid: the launcher and the main terminal share one bundle id, and
+# `tell application "Ghostty"` lands on whichever one LaunchServices
+# registered first, which is the main terminal (see GOTCHAS, the pid gotcha).
+#
+# With KEY=VALUE arguments the config is generated with those values instead
+# of config.sh's, and a marker is left so that `omni` reloads from config.sh
+# the next time it starts. That is how Esc reverts a preview. Without
+# arguments the config is regenerated from config.sh and the marker removed.
+set -u
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"; export PATH
+
+CACHE="$HOME/.cache/omni"
+CONF="$CACHE/ghostty.conf"
+MARK="$CACHE/preview"
+
+pid=$(/bin/ps -ax -o pid=,command= | grep -- "[g]hostty .*--config-file=$CONF" | awk '{print $1; exit}')
+[ -n "$pid" ] || exit 1
+
+cp "$CONF" "$CONF.prev" 2>/dev/null || : > "$CONF.prev"
+omni-start --conf-only "$@" >/dev/null || { rm -f "$CONF.prev"; exit 1; }
+changed=1
+cmp -s "$CONF" "$CONF.prev" && changed=0
+rm -f "$CONF.prev"
+
+if [ $# -gt 0 ]; then : > "$MARK"; else rm -f "$MARK"; fi
+[ "$changed" = 1 ] || exit 0
+
+osascript -l JavaScript - "$pid" reload_config <<'JS' >/dev/null
+ObjC.import('Cocoa');
+function code(s) { var n = 0; for (var i = 0; i < 4; i++) n = n * 256 + s.charCodeAt(i); return n; }
+function run(argv) {
+  var target = $.NSAppleEventDescriptor.descriptorWithProcessIdentifier(parseInt(argv[0], 10));
+  var event = $.NSAppleEventDescriptor.appleEventWithEventClassEventIDTargetDescriptorReturnIDTransactionID(
+    code('Ghst'), code('PfAc'), target, -1, 0);
+  event.setParamDescriptorForKeyword($.NSAppleEventDescriptor.descriptorWithString($(argv[1])), code('----'));
+  // "perform action" needs a target terminal; reload_config is app-wide, so the first one will do
+  var terminal = $.NSAppleEventDescriptor.recordDescriptor;
+  terminal.setDescriptorForKeyword($.NSAppleEventDescriptor.descriptorWithTypeCode(code('Gtrm')), code('want'));
+  terminal.setDescriptorForKeyword($.NSAppleEventDescriptor.descriptorWithEnumCode(code('indx')), code('form'));
+  terminal.setDescriptorForKeyword($.NSAppleEventDescriptor.descriptorWithInt32(1), code('seld'));
+  terminal.setDescriptorForKeyword($.NSAppleEventDescriptor.nullDescriptor, code('from'));
+  event.setParamDescriptorForKeyword(terminal.coerceToDescriptorType(code('obj ')), code('GonT'));
+  var error = Ref();
+  var reply = event.sendEventWithOptionsTimeoutError(3, 5, error);
+  if (reply.isNil()) throw new Error(error[0].localizedDescription.js);
+}
+JS

@@ -9,6 +9,19 @@ line="${1-}"
 kind=$(printf '%s' "$line" | cut -f1)
 payload=$(printf '%s' "$line" | cut -f3)
 
+# Ghostty picks a config change up live (omni-reload); the preview already
+# showed it, so this is the commit. The restart is the fallback for a machine
+# where the AppleScript route is refused.
+apply_config() {
+  if omni-reload >/dev/null 2>&1; then
+    sed -i '' -e '$d' "$STACK" 2>/dev/null
+    echo 'become(omni --menu)'
+  else
+    omni-restart
+    echo 'abort'
+  fi
+}
+
 case "$kind" in
   sep)    echo 'ignore' ;;
   theme)
@@ -20,18 +33,17 @@ case "$kind" in
     echo 'become(omni --menu)' ;;
   font)
     sed -i '' "s|^OMNI_FONT=\".*\"|OMNI_FONT=\"$payload\"|" "$HOME/.config/omni/config.sh"
-    omni-restart
-    echo 'abort' ;;
+    apply_config ;;
   look)
-    omni-look "$payload" >/dev/null 2>&1
-    echo 'abort' ;;
+    # omni-look restarts the launcher itself when the look changes the window
+    # size, which Ghostty reads only at start; the menu is gone by then.
+    case "$(omni-look "$payload" 2>/dev/null)" in
+      restart) echo 'abort' ;;
+      *) sed -i '' -e '$d' "$STACK" 2>/dev/null; echo 'become(omni --menu)' ;;
+    esac ;;
   shader)
-    # A backgrounded child does not survive fzf aborting inside the launcher
-    # surface, so the restart is handed to launchd, which is outside this
-    # process tree. Needs com.omni.launcher to run omni-start --restart.
     sed -i '' "s|^OMNI_SHADER=\".*\"|OMNI_SHADER=\"$payload\"|" "$HOME/.config/omni/config.sh"
-    omni-restart
-    echo 'abort' ;;
+    apply_config ;;
   act)
     printf '%s' "$line" > "$PENDING"
     case "$payload" in

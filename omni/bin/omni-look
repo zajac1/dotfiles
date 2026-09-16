@@ -34,8 +34,28 @@ case "${1-}" in
       printf '%s\n' "$n"
     done
     ;;
+  --preview)
+    # Show a look in the running launcher without writing config.sh: colours
+    # as OSC, the rest through the Ghostty config. Parsed, not sourced, like
+    # the apply path; values are shell literals, so the quotes come off. The
+    # fzf geometry (columns, padding, borders) only follows on Enter.
+    name="${2-}"
+    case "$name" in ''|*[!a-z0-9-]*) exit 1 ;; esac
+    f="$DIR/$name.sh"
+    [ -f "$f" ] || exit 1
+    theme=""
+    set --
+    while IFS= read -r line; do
+      case "$line" in OMNI_[A-Z_]*=*) ;; *) continue ;; esac
+      key="${line%%=*}"; value="${line#*=}"; value="${value#\"}"; value="${value%\"}"
+      [ "$key" = OMNI_THEME ] && theme="$value"
+      set -- "$@" "$key=$value"
+    done < "$f"
+    [ -n "$theme" ] && omni-osc "$theme"
+    omni-reload "$@"
+    ;;
   ''|-*)
-    echo "usage: omni-look list | omni-look <name>" >&2; exit 1 ;;
+    echo "usage: omni-look list | omni-look current | omni-look --preview <name> | omni-look <name>" >&2; exit 1 ;;
   *)
     name="$1"
     case "$name" in *[!a-z0-9-]*) exit 1 ;; esac
@@ -44,6 +64,7 @@ case "${1-}" in
 
     # awk, not sed: a value can hold %, comma or slash, and awk needs no
     # escaping. Only keys the look names are touched.
+    size_before=$(sed -n 's/^OMNI_TERM_SIZE=//p' "$CONF")
     tmp="$CONF.new"
     awk -v lf="$f" '
       BEGIN {
@@ -70,9 +91,14 @@ case "${1-}" in
     theme=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$CONF")
     omni-theme --no-restart "$theme" >/dev/null 2>&1
 
-
-    # launchd owns the restart: a backgrounded child does not survive fzf
-    # aborting inside the launcher surface.
+    # Everything in a look reloads live except the window size, which Ghostty
+    # reads only at start (verified: quick-terminal-size ignores reload_config,
+    # even across a hide and show). That one still restarts, and says so.
+    size_after=$(sed -n 's/^OMNI_TERM_SIZE=//p' "$CONF")
+    if [ "$size_before" = "$size_after" ] && omni-reload >/dev/null 2>&1; then
+      exit 0
+    fi
     omni-restart
+    echo restart
     ;;
 esac

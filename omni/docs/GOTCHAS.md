@@ -169,16 +169,24 @@ are no-ops there. Anything that needs to inspect or move to a row must bind
 row even though `start:pos(2)` was in the argv. The Favorites box that
 originally caused it is gone; the rule is not.
 
-## 17. Ghostty config cannot be reloaded programmatically
+## 17. Ghostty config reloads only through AppleScript
 
-`reload_config` exists only as a **keybind action** (default `super+shift+,`).
-There is no CLI for it, and no signal: `SIGUSR1` terminates the process
-(verified). Config is read at app start.
+`reload_config` is a keybind action (default `super+shift+,`). There is no
+CLI for it and no signal: `SIGUSR1` terminates the process (verified).
+`ghostty +new-window` answers "not supported on this platform" on macOS.
 
-Consequence: anything that lives in the Ghostty config - the font, chiefly -
-cannot be changed live. Colours escape this because they can be pushed into a
-running terminal as OSC sequences; fonts have no equivalent. Applying a font
-therefore has to restart the instance, which closes the launcher window.
+What does exist, since 1.3: `Ghostty.app/Contents/Resources/Ghostty.sdef`,
+with `perform action "<action>" on terminal 1`. bin/omni-reload uses it to
+fire `reload_config`, which re-reads the `--config-file` from the command line
+(`--config-default-files=false` is honoured on reload) and applies
+`font-family`, `font-size`, `custom-shader`, `adjust-cell-height` and
+`background-opacity` to the open surface in about 0.25s. Verified on 1.3.1.
+`quick-terminal-size` is NOT applied, not even across a hide and show; a look
+that changes it still restarts.
+
+Apple events sent from inside the launcher to the launcher are
+Ghostty-to-Ghostty for TCC and raised no Automation prompt. See the last
+gotcha for why the event must be addressed by pid.
 
 ## 18. Do not right-align anything
 
@@ -560,3 +568,17 @@ cache as it was a moment ago). It emits `reload-sync(fetch; render)`, which keep
 the old rows and the query on screen and swaps the list when the fetch lands.
 Nested placeholders such as `{q}` DO expand inside a transform result; omni-skip
 has relied on `{}` there since the start.
+
+## 58. Two Ghostty instances, one bundle id: address Apple events by pid
+
+The launcher and the main terminal are both `com.mitchellh.ghostty`.
+`tell application "Ghostty"`, `Application("com.mitchellh.ghostty")` and even
+JXA's `Application(pid)` all resolve through LaunchServices to the instance it
+registered first, which is the main terminal. A `toggle_quick_terminal` meant
+for the launcher opened the main terminal's quick terminal instead.
+
+The only addressing that lands on the launcher is a raw Apple event built on
+`NSAppleEventDescriptor.descriptorWithProcessIdentifier`, which is why
+`omni-reload` constructs the `perform action` event by hand rather than going
+through the scripting bridge. Find the pid the way `omni-start` does, with
+`/bin/ps` for `ghostty .*--config-file=~/.cache/omni/ghostty.conf`.
