@@ -49,10 +49,16 @@ case "${1-}" in
     ' "$CONF" > "$tmp" || { rm -f "$tmp"; exit 1; }
     mv "$tmp" "$CONF"
 
+
+    # omni-theme owns everything a theme switch touches: the compiled cache,
+    # the terminal palette file the launcher loads, the editor, the bar and the
+    # system appearance. Writing OMNI_THEME alone leaves the launcher on the
+    # previous palette.
+    theme=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$CONF")
+    omni-theme --no-restart "$theme" >/dev/null 2>&1
+
     sed -i '' "s|^OMNI_LOOK=\".*\"|OMNI_LOOK=\"$name\"|" "$CONF"
 
-    theme=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$CONF")
-    [ -f "$HOME/.cache/omni/themes/$theme.sh" ] || omni-theme-build "$theme" >/dev/null 2>&1
 
     # launchd owns the restart: a backgrounded child does not survive fzf
     # aborting inside the launcher surface.
