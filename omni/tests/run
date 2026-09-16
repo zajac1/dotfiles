@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# tests/run            every file in t/
+# tests/run favs look  only those
+#
+# Each file gets its own sandbox HOME, so a test can never see another's state
+# and a crashed test cannot leave the next one in a strange place.
+set -u
+cd "$(dirname "$0")"
+. ./lib.sh
+
+files=()
+if [ "$#" -gt 0 ]; then
+  for a in "$@"; do files+=("t/$a.sh"); done
+else
+  for f in t/*.sh; do files+=("$f"); done
+fi
+
+total=0
+failures=0
+for f in "${files[@]}"; do
+  [ -f "$f" ] || { printf '%s: no such test file\n' "$f" >&2; failures=$((failures + 1)); continue; }
+  printf '%s\n' "${f#t/}"
+  FAILED=0; CHECKS=0
+  sandbox
+  # shellcheck disable=SC1090
+  . "./$f"
+  teardown
+  total=$((total + CHECKS))
+  failures=$((failures + FAILED))
+done
+
+printf '\n%s checks, %s failed\n' "$total" "$failures"
+[ "$failures" = 0 ]

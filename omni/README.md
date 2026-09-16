@@ -472,6 +472,29 @@ style, prompt text and glyph-per-entry come from omarchy's own config and CSS.
 What a terminal cannot reproduce: real app icons (fzf cannot draw images in list
 rows), true 2px borders, sub-cell padding, per-pixel corner radius.
 
+## Tests
+
+```sh
+tests/run              # everything, about 30 s
+tests/run favs look    # only those files
+tests/run perf         # the process pins alone
+```
+
+Every file gets a throwaway `HOME`, because each script resolves its state as
+`$HOME/.config/omni` with no override. Anything reaching outside it is stubbed
+and logged, so a test can never touch your launcher, vault, calendar or
+clipboard.
+
+`t/perf.sh` pins the exact number of processes each hot path spawns, counted by
+PID arithmetic rather than by clock, so the numbers do not move with machine
+load. They are exact, not ceilings: when one fails, decide whether the change
+earned it and update the number in the same commit. That is what turns a fork
+added to a keystroke path into a line in the diff.
+
+What is deliberately not tested: the fzf screen grid or any dimension (see
+gotchas 1, 2, 5 and 47), Ghostty rendering, shaders, the global hotkey and
+launchd. Those are checked by hand.
+
 ## Before you change anything
 
 Read [`docs/GOTCHAS.md`](docs/GOTCHAS.md). This looks like ordinary shell but

@@ -67,6 +67,14 @@ case "${1-}" in
     # awk, not sed: a value can hold %, comma or slash, and awk needs no
     # escaping. Only keys the look names are touched.
     size_before=$(sed -n 's/^OMNI_TERM_SIZE=//p' "$CONF")
+    # A look is parsed, not sourced, but its values land in config.sh, which IS
+    # sourced. So the value has to be inert too, or the invariant only holds
+    # halfway. Same class as GOTCHAS 7.
+    if grep -qE '^OMNI_[A-Z_]+=.*(\$\(|`|\$\{)' "$f"; then
+      omni-notify omni "Look $name has a substitution in a value" 2>/dev/null
+      exit 1
+    fi
+
     tmp="$CONF.new"
     awk -v lf="$f" '
       BEGIN {
