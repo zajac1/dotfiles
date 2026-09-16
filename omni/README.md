@@ -12,9 +12,6 @@ It does **not** replace Raycast. It sits on its own hotkey alongside it.
  │   ╭──────────────────────────────╮   │
  │   │ Go…                          │   │
  │   ╰──────────────────────────────╯   │
- │    Favorites                        │   <- dimmed-accent band, not selectable
- │    Ghostty                          │
- │                                      │   <- spacer, arrow keys skip it
  │    Apps                             │
  │    Style                            │
  │    Setup                            │
@@ -28,7 +25,7 @@ It does **not** replace Raycast. It sits on its own hotkey alongside it.
 
 Two surfaces on one hotkey, mirroring how omarchy splits them:
 
-- **Menu** (`Alt+Space`) — pinned favourites plus categories: Apps, Style,
+- **Menu** (`Alt+Space`) — categories: Apps, Style,
   Setup, Capture, Utilities, Update, System.
 - **Search** — reached from *Apps*. Fuzzy app and project search, with prefixes:
 
@@ -113,7 +110,6 @@ theme's directory, omarchy-style, for anything else that wants to follow.
 | `Enter` | run, or descend into a submenu |
 | `Esc` | back one level, then close |
 | `Ctrl+P` | pin / unpin the highlighted row (apps *or* menu actions) |
-| `Shift+↑` `Shift+↓` | reorder a favourite |
 | `↑ ↓` / `Ctrl+K` `Ctrl+J` | move (spacers are skipped) |
 
 ## Theming
@@ -198,6 +194,7 @@ Everything lives in `~/.config/omni/config.sh`. The values worth knowing:
 | `OMNI_THEME` | active palette |
 | `OMNI_MENU_COLS` / `OMNI_COLS` | menu and search widths, in columns |
 | `OMNI_CHROME` | rows fzf spends on borders/padding — **measured, see docs** |
+| `OMNI_FILL_INSET` | subtracted from `OMNI_MENU_COLS` to give `OMNI_ROW_WIDTH`, the width the weather art is centred in |
 | `OMNI_FRAME` | `boxed` (exact size, opaque) or `full` (translucent + blur) |
 | `OMNI_HOTKEY` | Ghostty global keybind |
 | `OMNI_SEARCH_URL` | search engine prefix (Google by default) |
@@ -210,26 +207,13 @@ Everything lives in `~/.config/omni/config.sh`. The values worth knowing:
 
 ### Favourites
 
-`Ctrl+P` pins whatever is highlighted — an app, or a menu action like *Sleep*.
-Pinned entries appear under a `FAVORITES` heading at the top of the menu, and
-carry a ★ in their own section so you can see what is pinned. `Shift+↑/↓`
-reorders them; the file order in `~/.config/omni/favorites` is the display
-order, so you can also just edit it.
-
-omarchy has no equivalent — I checked both the quattro menu (336 entries, no
-`section`/`group`/`header` keys) and the v3 Walker CSS. This is ours, so the
-heading is drawn as an open bracket with the label on the top rule:
-
-```
-╭─ Favorites ─────────╮
-│   Ghostty          │
-│   Sleep            │
-╰─────────────────────╯
-```
-
-The box is drawn at a deliberately conservative width rather than spanning the
-full interior — see GOTCHAS 5 for why chasing the exact width is a trap.
-`OMNI_FILL_INSET` controls it.
+`Ctrl+P` pins whatever is highlighted - an app, or a menu action like *Sleep*.
+A pin is a ranking boost, not a section: the row carries a trailing ★
+wherever it is listed, leads the empty Apps search, and sorts above every
+other match while you type, so it reaches the top in fewer keystrokes. Within
+the pinned group the order is fzf's match order (use count in the empty
+list). `~/.config/omni/favorites` holds one `kind<TAB>payload` per line and
+can be edited by hand; line order does not matter.
 
 ### Weather
 

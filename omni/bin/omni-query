@@ -6,7 +6,6 @@ set -u
 
 TAB=$(printf '\t')
 INDEX="$HOME/.cache/omni/index.tsv"
-FAVS="$HOME/.config/omni/favorites"
 USES="$HOME/.cache/omni/uses"
 q="${1-}"
 
@@ -27,15 +26,6 @@ emit_files() {
   done
 }
 
-emit_favorites() {
-  [ -s "$FAVS" ] || return 0
-  while IFS= read -r fav; do
-    [ -n "$fav" ] || continue
-    grep -F "$TAB$fav" "$INDEX" 2>/dev/null | head -1
-  done < "$FAVS"
-}
-
-
 if [ -z "$q" ]; then
   if [ -s "$USES" ]; then
     awk -F'\t' -v OFS='\t' '
@@ -44,7 +34,7 @@ if [ -z "$q" ]; then
     ' "$USES" "$INDEX" | sort -t "$TAB" -k1,1nr -s | cut -f2-
   else
     grep "^app$TAB" "$INDEX"
-  fi
+  fi | mark_favs rank
   exit 0
 fi
 
@@ -56,5 +46,5 @@ esac
 
 emit_ticket "$q"
 looks_like_math "$q" && emit_calc "$q"
-fzf --ansi -i --filter="$q" --delimiter="$TAB" --nth=2 < "$INDEX" 2>/dev/null | head -40
+fzf --ansi -i --filter="$q" --delimiter="$TAB" --nth=2 < "$INDEX" 2>/dev/null | mark_favs rank 40
 emit_web "$q"

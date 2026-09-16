@@ -5,30 +5,9 @@ set -u
 . "$HOME/.local/bin/omni-lib"
 
 INDEX="$HOME/.cache/omni/index.tsv"
-FAVS="$HOME/.config/omni/favorites"
-touch "$FAVS" 2>/dev/null
 TAB=$(printf '\t')
 level="${1-}"
 q="${2-}"
-
-# Favourites can now hold ANY menu row, not just apps. The file stores
-# "kind<TAB>payload" per line; a line with no tab is a legacy bare app path.
-# The display text is resolved at render time so it follows theme and glyph
-# changes instead of going stale.
-FAV_LEVELS="style theme setup capture update system utilities work"
-BOXTOP=$(printf "\xe2\x95\xad"); BOXBOT=$(printf "\xe2\x95\xb0")
-BOXTR=$(printf "\xe2\x95\xae");  BOXBR=$(printf "\xe2\x95\xaf")
-VERT=$(printf "\xe2\x94\x82");   HR=$(printf "\xe2\x94\x80")
-
-fav_lines() { grep -vE '^[[:space:]]*(#|$)' "$FAVS" 2>/dev/null; }
-
-resolve_fav() {
-  case "$1" in
-    app|project) grep -F "$TAB$2" "$INDEX" 2>/dev/null | head -1 ;;
-    *) for lvl in $FAV_LEVELS; do rows "$lvl"; done |
-         awk -F'\t' -v k="$1" -v p="$2" '$1==k && $3==p {print; exit}' ;;
-  esac
-}
 
 # A meeting shows at the top of the root menu from OMNI_CALENDAR_LEAD seconds
 # before it starts until it ends. Rendered from the provider-agnostic cache
@@ -38,7 +17,7 @@ resolve_fav() {
 # fresh as the last visit to Utilities > Calendar.
 emit_now() {
   [ "${OMNI_CALENDAR_VIEW:-app}" = list ] || return 0
-  [ "${NO_FAVS:-0}" = 1 ] && return 0
+  [ "${SEARCHING:-0}" = 1 ] && return 0
   tsv="$HOME/.cache/omni/calendar.tsv"; st="$HOME/.cache/omni/calendar.status"
   now=$(date +%s)
   age=$(( now - $(stat -f %m "$st" 2>/dev/null || echo 0) ))
@@ -58,61 +37,11 @@ emit_now() {
     END { if (shown) printf "sep\t\t\n" }' "$tsv"
 }
 
-emit_favorites() {
-  [ "${NO_FAVS:-0}" = 1 ] && return 0
-  case " $ids " in *" favorites "*) ;; *) return 0 ;; esac
-  [ -s "$FAVS" ] || return 0
-  w=${OMNI_ROW_WIDTH:-23}
-  # top rule: "╭─ Favorites ───────╮" padded to exactly w cells
-  lbl=" Favorites "
-  n=$(( w - 3 - ${#lbl} ))
-  [ "$n" -lt 0 ] && n=0
-  rule=""; i=0; while [ "$i" -lt "$n" ]; do rule="$rule$HR"; i=$((i+1)); done
-  printf 'sep\t\033[38;5;20m%s%s%s%s%s\033[0m\t\n' "$BOXTOP" "$HR" "$lbl" "$rule" "$BOXTR"
-  fav_lines | head -5 | while IFS= read -r line; do
-    case "$line" in
-      *"$TAB"*) k=${line%%	*}; v=${line#*	} ;;
-      *)        k=app; v=$line ;;
-    esac
-    [ -n "$v" ] || continue
-    # pad to a fixed inner width so the right edge lines up. Width is measured
-    # in CELLS: strip ANSI, then subtract 2 per Nerd Font glyph (3 bytes, 1 cell).
-    resolve_fav "$k" "$v" | awk -F'\t' -v OFS='\t' -v v="$VERT" -v w="$w" '{
-      plain = $2; gsub(/\033\[[0-9;]*m/, "", plain)
-      # macOS awk length() counts BYTES. Every row carries exactly one leading
-      # Nerd Font glyph: 3 bytes, 1 cell. So cells = bytes - 2.
-      cells = length(plain) - 2
-      pad = w - 3 - cells
-      if (pad < 0) pad = 0
-      $2 = v " " $2 sprintf("%*s", pad, "") v
-      print
-    }'
-  done
-  n=$(( w - 2 )); [ "$n" -lt 0 ] && n=0
-  rule=""; i=0; while [ "$i" -lt "$n" ]; do rule="$rule$HR"; i=$((i+1)); done
-  printf 'sep\t\033[38;5;20m%s%s%s\033[0m\t\n' "$BOXBOT" "$rule" "$BOXBR"
-  printf 'sep\t\t\n'
-}
-
-# A row that is already pinned gets a trailing star in its home section - the
-# only visual confirmation that ctrl-p worked. Appended, never right-aligned:
-# right-alignment needs padding, and padding is what kept truncating/wrapping.
-mark_favs() {
-  awk -F'\t' -v OFS='\t' -v star=" " '
-    FILENAME==ARGV[1] {
-      if ($0 ~ /\t/) { split($0, a, "\t"); fav[a[1] SUBSEP a[2]]=1 }
-      else if (length($0)) fav["app" SUBSEP $0]=1
-      next
-    }
-    { if (NF>=3 && (($1 SUBSEP $3) in fav)) $2 = $2 star; print }
-  ' "$FAVS" -
-}
-
 SECTIONS="$HOME/.config/omni/sections"
 if [ -s "$SECTIONS" ]; then
   ids=$(grep -vE '^[[:space:]]*(#|$)' "$SECTIONS" | tr -d ' ' | tr '\n' ' ')
 else
-  ids="favorites apps style setup capture utilities passwords update system"
+  ids="apps style setup capture utilities passwords update system"
 fi
 
 rows() {
@@ -120,7 +49,6 @@ lvl="${1-$level}"
 case "$lvl" in
   "")
     emit_now
-    emit_favorites
     # Root entries are listed in ~/.config/omni/sections, one id per line.
     # Comment a line out to hide that section; reorder lines to reorder the menu.
     for id in $ids; do
@@ -278,7 +206,7 @@ esac
 }
 
 if [ -z "$q" ]; then
-  if [ -z "$level" ]; then rows; else rows | mark_favs; fi
+  rows | mark_favs
   exit 0
 fi
 
@@ -294,9 +222,8 @@ emit_ticket "$q"
 looks_like_math "$q" && emit_calc "$q"
 
 if [ -z "$level" ]; then
-  # 2. favourites are already reachable via their own sections; emitting the
-  #    boxed copies here produced duplicate hits for every pinned item.
-  NO_FAVS=1
+  # The meeting row is not part of the searchable tree.
+  SEARCHING=1
   # Flatten only the sections that are actually enabled, so hiding one in
   # ~/.config/omni/sections also removes it from search. `font` is left out on
   # purpose: half the family names contain "Mono"/"Nerd" and match everything.
@@ -316,6 +243,6 @@ else
   rows "$level"
 fi | { if [ -z "$level" ]; then grep -v "^sep$TAB"; else cat; fi; } |
   { if [ -z "$level" ]; then awk -F'\t' -v OFS='\t' '!seen[$2]++'; else cat; fi; } |
-  mark_favs | fzf --ansi -i --filter="$q" --delimiter="$TAB" --nth=2 2>/dev/null
+  fzf --ansi -i --filter="$q" --delimiter="$TAB" --nth=2 2>/dev/null | mark_favs rank
 
 emit_web "$q"
