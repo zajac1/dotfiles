@@ -10,7 +10,13 @@ CHECKS=0
 BASE_TMP="${TMPDIR:-/tmp}"
 
 sandbox() {
-  SB="$(/usr/bin/mktemp -d "$BASE_TMP/omni-test.XXXXXX")"
+  sandbox_files
+  /bin/mkdir -p "$SB/.cache/omni/themes"
+  /bin/cp "$THEME_CACHE/"*.sh "$SB/.cache/omni/themes/" 2>/dev/null
+}
+
+sandbox_files() {
+  : "${SB:?sandbox dir must be set by the runner}"
   export HOME="$SB"
   export TMPDIR="$SB/tmp"
   /bin/mkdir -p "$SB/.local/bin" "$SB/.config/omni/looks" "$SB/.cache/omni" "$SB/tmp"
@@ -33,17 +39,6 @@ sandbox() {
   /bin/cp "$SRC"/config/looks/*.sh "$SB/.config/omni/looks/" 2>/dev/null || true
   /bin/mkdir -p "$SB/.config/omni/themes"
   /bin/cp -R "$SRC"/config/themes/* "$SB/.config/omni/themes/"
-  # Compiling 25 themes costs 2 s, and it is identical for every file. Build it
-  # once per run and copy it in.
-  if [ -z "${THEME_CACHE:-}" ]; then
-    THEME_CACHE="$BASE_TMP/omni-test-themes.$$"
-    /bin/mkdir -p "$THEME_CACHE"
-    HOME="$SB" "$SB/.local/bin/omni-theme-build" --all >/dev/null 2>&1
-    /bin/cp "$SB/.cache/omni/themes/"*.sh "$THEME_CACHE/" 2>/dev/null
-  else
-    /bin/mkdir -p "$SB/.cache/omni/themes"
-    /bin/cp "$THEME_CACHE/"*.sh "$SB/.cache/omni/themes/" 2>/dev/null
-  fi
 
   # Seeded so omni-query never falls through to omni-index, which scans /Applications.
   printf 'app\t  Calendar\t/System/Applications/Calendar.app\n' >  "$SB/.cache/omni/index.tsv"
@@ -101,7 +96,8 @@ procs() {
   local best=99999 a b d i
   for i in $(/usr/bin/seq 1 "$n"); do
     a=$(/bin/sh -c 'echo $$'); "$@" >/dev/null 2>&1; b=$(/bin/sh -c 'echo $$')
-    d=$((b - a - 1))
+    # The second probe costs two pids of its own on bash 3.2, so subtract them.
+    d=$((b - a - 2))
     [ "$d" -ge 0 ] && [ "$d" -lt "$best" ] && best="$d"
   done
   printf '%s' "$best"

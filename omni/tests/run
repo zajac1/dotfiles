@@ -3,8 +3,9 @@
 # tests/run            every file in t/
 # tests/run favs look  only those
 #
-# Each file gets its own sandbox HOME, so a test can never see another's state
-# and a crashed test cannot leave the next one in a strange place.
+# The runner owns the sandbox and the theme cache, so a test file that crashes
+# still gets cleaned up and still counts as a failure. A file that exits early,
+# hits set -e, or has a syntax error used to print "0 checks" and pass.
 set -u
 cd "$(dirname "$0")"
 . ./lib.sh
@@ -16,25 +17,45 @@ else
   for f in t/*.sh; do files+=("$f"); done
 fi
 
+# Compiled once for the whole run. Building it per file cost 2 s each.
+THEME_CACHE="$(/usr/bin/mktemp -d "$BASE_TMP/omni-themes.XXXXXX")"
+SB="$(/usr/bin/mktemp -d "$BASE_TMP/omni-test.XXXXXX")"
+sandbox_files
+HOME="$SB" "$SB/.local/bin/omni-theme-build" --all >/dev/null 2>&1
+/bin/cp "$SB/.cache/omni/themes/"*.sh "$THEME_CACHE/" 2>/dev/null
+/bin/rm -rf "$SB"
+trap '/bin/rm -rf "$THEME_CACHE" "${SB:-}"' EXIT
+
 total=0
 failures=0
 for f in "${files[@]}"; do
-  [ -f "$f" ] || { printf '%s: no such test file\n' "$f" >&2; failures=$((failures + 1)); continue; }
+  if [ ! -f "$f" ]; then
+    printf '%s: no such test file\n' "$f" >&2
+    failures=$((failures + 1)); continue
+  fi
   printf '%s\n' "${f#t/}"
-  # A subshell per file: sourcing them all into one shell let a helper or a
-  # variable from one file make another pass. The counts come back on fd 3.
+  SB="$(/usr/bin/mktemp -d "$BASE_TMP/omni-test.XXXXXX")"
+  # A subshell per file: sourcing them into one shell let a helper from one
+  # make another pass. Counts come back on fd 3.
   counts=$( { FAILED=0; CHECKS=0
               sandbox
               # shellcheck disable=SC1090
               . "./$f"
-              teardown
               printf '%s %s\n' "$CHECKS" "$FAILED" >&3
             } 3>&1 1>&2 )
-  total=$((total + ${counts%% *}))
-  failures=$((failures + ${counts##* }))
+  /bin/rm -rf "$SB"; SB=""
+  # A file that ran but asserted nothing is treated as a crash. A syntax error
+  # aborts the source and still reports "0 0", which used to pass.
+  case "$counts" in
+    0' '*|'') printf '  FAIL %s ran no checks; it crashed or exited early\n' "${f#t/}"
+              failures=$((failures + 1)) ;;
+    [0-9]*' '[0-9]*)
+      total=$((total + ${counts%% *}))
+      failures=$((failures + ${counts##* })) ;;
+    *)  printf '  FAIL %s produced no count\n' "${f#t/}"
+        failures=$((failures + 1)) ;;
+  esac
 done
-
-[ -n "${THEME_CACHE:-}" ] && /bin/rm -rf "$THEME_CACHE"
 
 printf '\n%s checks, %s failed\n' "$total" "$failures"
 [ "$failures" = 0 ]

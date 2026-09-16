@@ -15,15 +15,14 @@ pin() {  # pin <expected> <name> <cmd...>
   checkeq "$name" "$want" "$(procs 8 "$@")"
 }
 
-pin  6 "search keystroke        omni-query sl"        omni-query sl
-pin  7 "search render           omni-query ''"        omni-query ""
-pin 25 "root keystroke          omni-menu-query '' sl" omni-menu-query "" sl
-pin 10 "root render             omni-menu-query ''"   omni-menu-query ""
-pin 14 "style level             omni-menu-query style" omni-menu-query style
-pin 14 "look level              omni-menu-query look" omni-menu-query look
-pin  3 "omni-look current"                            omni-look current
-pin  5 "omni-skip on a sep row"                       omni-skip "$(printf 'sep\t  x\t')" down
-
+pin  5 "search keystroke        omni-query sl"        omni-query sl
+pin  6 "search render           omni-query ''"        omni-query ""
+pin 24 "root keystroke          omni-menu-query '' sl" omni-menu-query "" sl
+pin  9 "root render             omni-menu-query ''"   omni-menu-query ""
+pin 13 "style level             omni-menu-query style" omni-menu-query style
+pin 13 "look level              omni-menu-query look" omni-menu-query look
+pin  2 "omni-look current"                            omni-look current
+pin  4 "omni-skip on a sep row"                       omni-skip "$(printf 'sep\t  x\t')" down
 # Wall time, reported against the floor every path pays. Advisory only.
 floor() { local S E i; S=$(/bin/date +%s.%N); for i in $(/usr/bin/seq 20); do /bin/bash -c true; done; E=$(/bin/date +%s.%N); /usr/bin/awk -v s="$S" -v e="$E" 'BEGIN{print (e-s)/20}'; }
 ratio() {

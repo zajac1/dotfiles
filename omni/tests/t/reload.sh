@@ -39,8 +39,12 @@ checkeq "an unchanged conf fires no event" "0" "$(/usr/bin/grep -c '^osascript' 
 
 # --conf-only takes only real keys, and only safe values. The key check alone
 # is not enough: OMNI_THEME becomes part of a path that gets sourced.
-omni-start --conf-only 'NOT_AN_OMNI_KEY=x; touch $HOME/pwned' >/dev/null 2>&1
-checkeq "a key that is not OMNI_ is ignored" "absent" "$([ -e "$HOME/pwned" ] && echo present || echo absent)"
+# The value must be data, not code. A bad KEY never executed anything either
+# way, so testing the key proved nothing; the payload has to be in the VALUE.
+omni-start --conf-only 'OMNI_FONT=x; touch $HOME/pwned' >/dev/null 2>&1
+checkeq "a value is data, never code" "absent" "$([ -e "$HOME/pwned" ] && echo present || echo absent)"
+omni-start --conf-only 'NOT_AN_OMNI_KEY=Menlo' >/dev/null 2>&1
+checkeq "a key that is not OMNI_ is ignored" "" "$(/usr/bin/grep -m1 '^font-family = Menlo$' "$CONF")"
 
 /bin/mkdir -p "$HOME/evil"
 printf 'touch "$HOME/OWNED"\n' > "$HOME/evil/x.sh"

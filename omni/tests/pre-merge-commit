@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# Runs the omni suite when a commit touches omni/, and nothing otherwise.
+# Same gate for a merge commit. git calls pre-merge-commit, never pre-commit,
+# so a merge that brings omni/ changes in used to skip the suite entirely.
 #
 # It tests the WORKING TREE, not the staged content. With unstaged changes in
 # omni/ the two differ, and the gate can pass while the commit is broken. The

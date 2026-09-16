@@ -194,6 +194,8 @@ if [ -n "$HOOK_DIR" ] && [ -d "$HOOK_DIR" ]; then
     echo "    to use omni's: ln -sf $SRC/tests/pre-commit $HOOK_DIR/pre-commit"
   else
     ln -sf "$SRC/tests/pre-commit" "$HOOK_DIR/pre-commit"
+    # git calls pre-merge-commit for a merge, never pre-commit
+    [ -e "$HOOK_DIR/pre-merge-commit" ] || ln -sf "$SRC/tests/pre-merge-commit" "$HOOK_DIR/pre-merge-commit"
     echo "    linked; omni tests run when a commit touches omni/"
   fi
 fi
