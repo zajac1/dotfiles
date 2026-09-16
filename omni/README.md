@@ -56,11 +56,11 @@ git clone <this repo> ~/git/omni
 cd ~/git/omni && ./install.sh
 ```
 
-Requires `fzf`, `libqalculate`, `jq`, Ghostty, and CaskaydiaMono Nerd Font:
+Requires `fzf`, `libqalculate`, `jq`, Ghostty, and CaskaydiaCove Nerd Font:
 
 ```sh
 brew install fzf libqalculate jq
-brew install --cask ghostty font-caskaydia-mono-nerd-font
+brew install --cask ghostty font-caskaydia-cove-nerd-font
 ```
 
 `~/.local/bin` must be on your `PATH`.
@@ -185,6 +185,48 @@ file with all 16 palette colours. Add `config-file = omni-theme` to
 `~/.config/ghostty/config` to theme every terminal you open. Set
 `OMNI_THEME_TERMINALS=true` to also retint already-open terminals live, via OSC.
 
+### Looks
+
+A theme is colours. A look is everything: which theme, plus font, size, columns,
+row padding, fzf padding, border style, border colour slot, frame and shader.
+`Style > Look` lists `~/.config/omni/looks/*.sh`, and picking one writes every
+key the file names into `config.sh` and restarts.
+
+A look file is parsed, not sourced, so it can never execute anything. Keys it
+omits are left alone. `default.sh` holds what omni ships with, so picking it
+puts everything back through the same path as any other look.
+
+The active look is derived, not stored: `omni-look current` reports the look
+whose every key still matches `config.sh`, and reports nothing once `Style >
+Font` or `Style > Shader` has moved one of them.
+
+### Shaders
+
+`Style > Shader` sets `OMNI_SHADER`, a Ghostty shader drawn behind the launcher
+window only. The launcher runs with `--config-default-files=false`, so it never
+reads `~/.config/ghostty/config` and a shader here cannot leak into your
+terminal.
+
+A shader must end by carrying the terminal's own alpha, not a constant. Under
+`OMNI_FRAME="boxed"` the window runs at `background-opacity = 0`, so a constant
+alpha turns the invisible window into a visible rectangle with the box floating
+inside it.
+
+Like Font, a shader cannot preview live, because Ghostty has escape sequences
+for colour but none for shaders or fonts.
+
+### Restarting
+
+Font, Shader and Look cannot preview live, so applying one writes `config.sh`
+and restarts the launcher. The restart runs through launchd, not through a
+backgrounded child: a child of `omni-enter` does not survive fzf aborting inside
+the launcher surface, so it is killed before it can exec.
+
+`install.sh` therefore bootstraps `com.omni.launcher`, which also starts omni at
+login. `omni-restart` falls back to calling `omni-start --restart` directly if
+the agent is not loaded, so those menus still work on a machine where launchd
+was never set up.
+
 ## Configuration
 
 Everything lives in `~/.config/omni/config.sh`. The values worth knowing:
@@ -197,6 +239,10 @@ Everything lives in `~/.config/omni/config.sh`. The values worth knowing:
 | `OMNI_FILL_INSET` | subtracted from `OMNI_MENU_COLS` to give `OMNI_ROW_WIDTH`, the width the weather art is centred in |
 | `OMNI_FRAME` | `boxed` (exact size, opaque) or `full` (translucent + blur) |
 | `OMNI_HOTKEY` | Ghostty global keybind |
+| `OMNI_SHADER` | Ghostty shader for the launcher window, a filename in `~/.config/ghostty/shaders`; empty for none |
+| `OMNI_PADDING` | fzf `--padding` as `rows,cols`; a look with no visible border usually wants more than `0,1` |
+| `OMNI_BORDER_SLOT` | palette slot the outer border draws in; `18` is the border colour, `16` is the background, which keeps the spacing and hides the line |
+| `OMNI_CALENDAR_HOLD` | seconds a meeting stays in the root row after it starts, default 1200 |
 | `OMNI_SEARCH_URL` | search engine prefix (Google by default) |
 | `OMNI_PROJECT_ROOT` | directory scanned for project entries |
 | `OMNI_APP_COLORS` | tint each app glyph with its icon's dominant colour |
@@ -309,7 +355,9 @@ OMNI_MAIL_PROVIDER="gmail"        # opens Gmail in the browser
 
 With `list`, Calendar is a level: the next 8 timed events in 24 hours, Enter
 opens the Meet link. And from `OMNI_CALENDAR_LEAD` seconds (300) before a
-meeting until it ends, the meeting sits at the very top of the root menu, so
+meeting until `OMNI_CALENDAR_HOLD` seconds (1200) after it starts, or until
+the event ends if that comes first, the meeting sits at the top of the root
+menu, so
 `Alt+Space`, `Enter` joins the call. The reader is a 60-line Swift program that
 `install.sh` compiles with the Command Line Tools (EventKit needs a completion
 block, which osascript cannot express); macOS asks for Calendar access once,
@@ -388,7 +436,7 @@ system
 ```
 
 Hiding a section also removes its entries from the flat search, so a hidden
-*Capture* takes *Screenshot* with it.
+*Capture* takes *Screenshot* and *Screen Recording* with it.
 
 ### Icons
 

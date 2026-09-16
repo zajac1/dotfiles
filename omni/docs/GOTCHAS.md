@@ -15,7 +15,8 @@ real Ghostty quick terminal.
 
 ## 2. The quick terminal is always 80x24
 
-Ghostty 1.3.1 has no `quick-terminal-size`. `window-width` / `window-height` are
+Ghostty 1.3.1 DOES have `quick-terminal-size`, which is what `omni-start`
+uses now; this entry predates it. `window-width` / `window-height` are
 silently ignored for it. The only options are position, screen,
 animation-duration, autohide, space-behavior, keyboard-interactivity.
 
@@ -164,8 +165,9 @@ nothing but a web search.
 
 fzf's `start` event runs before any item is loaded, so both `{}` and `pos(N)`
 are no-ops there. Anything that needs to inspect or move to a row must bind
-`load` instead. This is why the menu kept opening with the cursor on the
-Favorites title even though `start:pos(2)` was in the argv.
+`load` instead. This is why the menu kept opening with the cursor on a header
+row even though `start:pos(2)` was in the argv. The Favorites box that
+originally caused it is gone; the rule is not.
 
 ## 17. Ghostty config cannot be reloaded programmatically
 
@@ -183,9 +185,10 @@ therefore has to restart the instance, which closes the launcher window.
 A filled section band has to be padded to an exact width, and fzf and Ghostty
 disagree about what that width is (see 5). Padded to the edge it truncated;
 after `--wrap` landed it wrapped into a stray coloured fragment on the next
-line. The fix was to stop needing the width: the `FAVORITES` heading is a dim
-label with no fill, and the pinned-item marker is appended after the text rather
-than right-aligned. Only `--highlight-line` fills a row, and fzf sizes that.
+line. The fix was to stop needing the width: nothing is filled to an exact
+width, and the pinned marker is appended after the text rather than
+right-aligned. The `FAVORITES` heading that prompted this is gone, but the
+marker rule is still what `mark_favs` in `omni-lib` relies on. Only `--highlight-line` fills a row, and fzf sizes that.
 
 ## 19. An emitted move does not re-fire its own binding
 
@@ -484,3 +487,53 @@ every open. Each toggle builds a fresh surface with a fresh login, so it is not
 only the first one. Ghostty exposes no option to skip login or to pass it `-q`.
 The only fix is an empty `~/.hushlogin`, and it is global: the banner goes from
 every terminal on the machine.
+
+## 53. A backgrounded child does not survive fzf aborting
+
+`omni-enter` used `nohup bash -c 'sleep 0.3; omni-start --restart' &` to restart
+after a font change. The child never ran a single command. Logging from inside
+it proved it: the parent's lines appear, the child's first line never does, and
+the identical line works from a normal shell. When fzf aborts, the surface's
+command exits, the process group is torn down, and the child is killed before it
+is scheduled.
+
+Font changes were silently doing nothing for as long as that code existed.
+
+The restart therefore belongs to launchd, which is outside the process tree:
+`launchctl kickstart -k gui/$(id -u)/com.omni.launcher`. Two kickstarts four
+seconds apart both restart cleanly, so there is no throttle to design around.
+`omni-restart` wraps it and falls back to the direct call when the agent is not
+bootstrapped, because kickstart against a missing service is a silent no-op.
+
+## 54. A launchd-spawned launcher has almost no PATH
+
+`PATH=/usr/bin:/bin:/usr/sbin:/sbin`. No `~/.local/bin`, no Homebrew. Every bare
+`omni-*` call fails, and so does `fzf`, `glab` and `qalc`.
+
+The symptom is not an error message: the hotkey fires, the window opens, `omni`
+dies on line 160 with `fzf: command not found`, and Ghostty closes the surface.
+It reads as a dead hotkey, which is the wrong thing to debug.
+
+`omni` and `omni-start` both set PATH themselves. Two copies, because they are
+two real spawn boundaries: `open` does not pass the caller's environment.
+
+## 55. A shader must carry the terminal's alpha
+
+A launcher shader has to end `fragColor = vec4(col, terminalColor.a)`. Write a
+constant alpha and the invisible window at `background-opacity = 0` becomes a
+visible rectangle with the fzf box floating inside it, which is what `boxed`
+exists to avoid.
+
+Of 49 shaders in the wild, 35 carry it and 14 do not. Each of the 14 is a
+one-line fix on its final `fragColor`, and `retro-terminal` needs two because it
+writes `fragColor` twice.
+
+## 56. A debounce can cost more than the thing it defers
+
+`change:reload(sleep 0.08; omni-query {q})` looks like it costs 80 ms. It costs
+115 to 130, because `sleep` is `/bin/sleep` and the fork is charged on top.
+Against a 75 ms render that is more than half the keystroke.
+
+fzf's own manual runs ripgrep across a repository through `change:reload` with
+no debounce at all. Removing it entirely was smooth. Measure the debounce before
+assuming it is cheaper than what it defers.
