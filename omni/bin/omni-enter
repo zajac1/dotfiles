@@ -34,8 +34,19 @@ case "$kind" in
     echo 'abort' ;;
   act)
     printf '%s' "$line" > "$PENDING"
-    omni-exec >/dev/null 2>&1
-    echo 'become(omni --menu)' ;;
+    case "$payload" in
+      *-refresh)
+        # Not here: transform blocks fzf, so a network round-trip in it freezes
+        # the launcher, and become() re-renders from whatever the cache held a
+        # moment ago. reload-sync runs the fetch with the UI live, keeps the old
+        # rows and the query on screen, and swaps the list when the new rows
+        # land. The box keeps its height until the next level change.
+        level=$(tail -1 "$STACK" 2>/dev/null)
+        echo "reload-sync(omni-exec >/dev/null 2>&1; omni-menu-query '${level:-}' {q})" ;;
+      *)
+        omni-exec >/dev/null 2>&1
+        echo 'become(omni --menu)' ;;
+    esac ;;
   menu)   printf '%s\n' "$payload" >> "$STACK"; echo 'become(omni --menu)' ;;
   search) echo 'become(omni --search)' ;;
   back)   sed -i '' -e '$d' "$STACK" 2>/dev/null; echo 'become(omni --menu)' ;;

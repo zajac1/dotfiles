@@ -2,6 +2,7 @@
 set -u
 
 . "$HOME/.config/omni/config.sh"
+. "$HOME/.local/bin/omni-work-lib"
 PENDING="$HOME/.cache/omni/pending"
 USES="$HOME/.cache/omni/uses"
 
@@ -58,10 +59,16 @@ case "$kind" in
       # command finishes so the next render re-probes instead of still saying locked.
       pass-login)   open -na Ghostty.app --args $GHOSTTY_ONESHOT -e bash -c "'$HOME/.local/bin/omni-pass' login; rm -f '$HOME/.cache/omni/pass.status'" ;;
       pass-unlock)  open -na Ghostty.app --args $GHOSTTY_ONESHOT -e bash -c "'$HOME/.local/bin/omni-pass' unlock; rm -f '$HOME/.cache/omni/pass.status'" ;;
-      pass-refresh) rm -f "$HOME/.cache/omni/pass.status"; omni-pass-rows >/dev/null 2>&1 ;;
-      jira-view)     omni-jira toggle ;;
-      jira-refresh)  rm -f "$HOME/.cache/omni/jira.tsv"; ( omni-jira refresh >/dev/null 2>&1 & ) ;;
-      gitlab-refresh) rm -f "$HOME/.cache/omni/gitlab.tsv"; ( omni-gitlab refresh >/dev/null 2>&1 & ) ;;
+      # The *-refresh payloads run inside fzf's reload-sync (omni-enter), so
+      # they block here until the new rows are on disk and the old rows stay on
+      # screen meanwhile. Nothing is deleted first: a second press used to throw
+      # away the result the first one had just fetched and show Loading again,
+      # and the unlocked child it spawned raced the locked one from rows() for
+      # the same temp files, which is where "Could not reach GitLab" came from.
+      pass-refresh)   omni-pass-rows --refresh-wait ;;
+      jira-view)      omni-jira toggle ;;
+      jira-refresh)   work_refresh_wait jira ;;
+      gitlab-refresh) work_refresh_wait gitlab ;;
       btop-cpu)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" cpu ;;
       btop-mem)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" mem ;;
       btop-net)    open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" net ;;
@@ -71,7 +78,7 @@ case "$kind" in
       monitor)     open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-btop" "cpu mem net proc" ;;
       calendar)    omni-calendar ;;
       calendar-open)    omni-calendar open ;;
-      calendar-refresh) rm -f "$HOME/.cache/omni/calendar.tsv"; ( omni-calendar refresh ) >/dev/null 2>&1 </dev/null & ;;
+      calendar-refresh) work_refresh_wait calendar ;;
       mail)        omni-mail ;;
       weather-report) open -na Ghostty.app --args $GHOSTTY_ONESHOT -e "$HOME/.local/bin/omni-weather-report" ;;
       weather-refresh) rm -f "$HOME/.cache/omni/weather.json"; omni-weather >/dev/null 2>&1 ;;

@@ -34,6 +34,8 @@ work_fresh() {
 
 # A trap EXIT inside a backgrounded subshell did not fire reliably for
 # omni-pass-rows, so the lock is released explicitly and reaped after 120s.
+# The spawner takes the lock and the child releases it, so `-d lock` means
+# "a refresh is in flight" from the moment this returns (work_refresh_wait).
 work_refresh_detached() {
   local lock age
   lock="$WORK_CACHE/$1.lock"
@@ -42,10 +44,25 @@ work_refresh_detached() {
     [ "$age" -gt 120 ] && rmdir "$lock" 2>/dev/null
   fi
   mkdir "$lock" 2>/dev/null || return 0
-  # The whole subshell is redirected, not just the command inside it: a child
-  # that inherits the render's stdout keeps fzf's reload pipe open until the
-  # fetch ends, and the menu waits the full network round-trip for nothing.
-  ( "omni-$1" refresh; rmdir "$lock" ) >/dev/null 2>&1 </dev/null &
+  # setsid, the omni-pass-rows lesson: fzf SIGKILLs the whole process group of
+  # a reload command when the next keystroke starts another, and the surface
+  # SIGHUPs its foreground group when the launcher closes. A plain `&` child
+  # dies either way and leaves the lock held for 120 s. A new session survives
+  # both; perl because macOS has no setsid(1) and it starts in half python's time.
+  # The child is redirected, not just the command inside it: one that inherits
+  # the render's stdout keeps fzf's reload pipe open until the fetch ends.
+  /usr/bin/perl -MPOSIX -e 'setsid; exec @ARGV' \
+    /bin/sh -c '"$1" refresh; rmdir "$2"' _ "omni-$1" "$lock" >/dev/null 2>&1 </dev/null &
+}
+
+# Start a refresh unless one is running, then block until it has landed - for
+# the Refresh row, which runs inside fzf's reload-sync so the old rows stay up
+# and the launcher stays live meanwhile. Capped at 30 s; the fetch itself is
+# bounded by its own alarm, so the cap is only for a lock nobody released.
+work_refresh_wait() {
+  local i=0
+  work_refresh_detached "$1"
+  while [ -d "$WORK_CACHE/$1.lock" ] && [ "$i" -lt 300 ]; do sleep 0.1; i=$((i+1)); done
 }
 
 work_view_get() { local v; v=$(cat "$WORK_CACHE/$1.view" 2>/dev/null); printf '%s' "${v:-$2}"; }

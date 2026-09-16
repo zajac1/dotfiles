@@ -24,21 +24,24 @@ LOCK="$HOME/.cache/omni/pass.lock"
 
 # `( refresh & )` only detaches from the parent, not from the process group,
 # and the group is what gets killed when the row list is rebuilt - which left a
-# 0-byte status file and a lock nobody would release. A new session survives.
+# 0-byte status file and a lock nobody would release. A new session survives;
+# perl because macOS has no setsid(1) and it starts in half python's time.
+# The spawner takes the lock and the child releases it, so `-d $LOCK` means "a
+# refresh is in flight" from the moment this returns, which is what lets
+# --refresh-wait block on it. A trap EXIT inside the child did not fire
+# reliably, so the release is explicit, and a lock older than 120 s is reaped
+# in case a refresh was killed outright.
 spawn_refresh() {
-  python3 -c 'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' \
-    "$HOME/.local/bin/omni-pass-rows" --refresh >/dev/null 2>&1 &
-}
-
-refresh() {
-  # A trap EXIT inside a backgrounded subshell did not fire reliably, leaving a
-  # stale lock that would block every future refresh. Release explicitly, and
-  # reap a lock older than 120s in case a refresh is killed outright.
   if [ -d "$LOCK" ]; then
     age=$(( $(date +%s) - $(stat -f %m "$LOCK" 2>/dev/null || echo 0) ))
     [ "$age" -gt 120 ] && rmdir "$LOCK" 2>/dev/null
   fi
   mkdir "$LOCK" 2>/dev/null || return 0
+  /usr/bin/perl -MPOSIX -e 'setsid; exec @ARGV' \
+    "$HOME/.local/bin/omni-pass-rows" --refresh >/dev/null 2>&1 </dev/null &
+}
+
+refresh() {
   omni-pass status > "$STAT.new" 2>/dev/null
   mv "$STAT.new" "$STAT" 2>/dev/null
   if [ "$(cat "$STAT" 2>/dev/null)" = unlocked ]; then
@@ -49,11 +52,22 @@ refresh() {
   rmdir "$LOCK" 2>/dev/null
 }
 
+# The Refresh row: start a refresh unless one is running, then block until it
+# has landed. Runs inside fzf's reload-sync, so the old rows stay on screen and
+# the launcher stays live for the 4 s pass-cli takes. Capped at 30 s.
+wait_refresh() {
+  spawn_refresh
+  i=0
+  while [ -d "$LOCK" ] && [ "$i" -lt 300 ]; do sleep 0.1; i=$((i+1)); done
+}
+
 [ "${1-}" = --refresh ] && { refresh; exit 0; }
+[ "${1-}" = --refresh-wait ] && { wait_refresh; exit 0; }
 
 if [ ! -s "$STAT" ]; then
   spawn_refresh
-  printf 'sep\t  Loading vault… reopen soon\t\n'
+  printf 'sep\t  Loading vault…\t\n'
+  printf 'act\t  Refresh\tpass-refresh\n'
   printf 'back\t  Back\t\n'
   exit 0
 else

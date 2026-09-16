@@ -381,7 +381,9 @@ Weather, these rows are live data and stay out of the flat menu search.
 
 Both levels render from a 0600 cache and refresh detached every `OMNI_WORK_TTL`
 seconds (300), so opening the menu never waits on the network; a cold cache shows
-*Loading…* and fills in on the next visit.
+*Loading…* until the first fetch lands. *Refresh* re-fetches in place: the rows
+stay up while it runs and swap when the new ones arrive, one round trip, no
+Loading. The same goes for Passwords and Calendar.
 
 Setup, once. Only hosts go in `config.sh`; nothing secret does:
 

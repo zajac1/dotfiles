@@ -537,3 +537,26 @@ Against a 75 ms render that is more than half the keystroke.
 fzf's own manual runs ripgrep across a repository through `change:reload` with
 no debounce at all. Removing it entirely was smooth. Measure the debounce before
 assuming it is cheaper than what it defers.
+
+## 57. fzf kills the reload command's whole process group
+
+The other half of 53. When a `change:reload` starts, fzf SIGKILLs the process
+group of the previous reload command. A `&` child spawned from a render inside
+one dies on the next keystroke, and the lock it took is held until the 120 s
+reap - which is how *Loading…* lasted two minutes in GitLab. `nohup` and
+`( cmd & )` do not change the group. A new session does:
+`/usr/bin/perl -MPOSIX -e 'setsid; exec @ARGV' cmd ...` (macOS has no
+`setsid(1)`; perl starts in half the time python does). Measured on 0.74.3:
+the plain child died on the next reload, the setsid one survived.
+
+Related: perl's `alarm; exec` (the qalc pattern) does not bound a Go binary.
+Go installs its own handler and ignores a SIGALRM nobody subscribed to, so
+`glab` ran its full 10 s under `alarm 1`. Keep perl as the parent and `kill`
+the child from the ALRM handler - `bounded()` in `omni-gitlab`.
+
+Also: the Refresh row must not run its fetch inside `transform` (it blocks fzf)
+nor rely on `become(omni --menu)` to show the result (that re-renders from the
+cache as it was a moment ago). It emits `reload-sync(fetch; render)`, which keeps
+the old rows and the query on screen and swaps the list when the fetch lands.
+Nested placeholders such as `{q}` DO expand inside a transform result; omni-skip
+has relied on `{}` there since the start.
