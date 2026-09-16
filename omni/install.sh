@@ -101,7 +101,25 @@ for d in "$SRC"/config/themes/*/; do
 done
 "$BIN/omni-theme-build" --all
 if [ -f "$CFG/config.sh" ]; then
-  echo "    config.sh exists, left untouched"
+  # Values are the user's, but a key added since their install has to arrive or
+  # the menus that write it silently no-op. Insert before the trailing sourcing
+  # lines, which must stay last.
+  added=0
+  while IFS= read -r line; do
+    case "$line" in
+      OMNI_*=*) ;;
+      *) continue ;;
+    esac
+    k="${line%%=*}"
+    grep -q "^$k=" "$CFG/config.sh" && continue
+    awk -v ins="$line" '
+      /^\[ -f "\$HOME\/\.cache\/omni\/themes/ && !done { print ins; done = 1 }
+      { print }
+    ' "$CFG/config.sh" > "$CFG/config.sh.new" && mv "$CFG/config.sh.new" "$CFG/config.sh"
+    echo "    config.sh: added $k"
+    added=$((added+1))
+  done < "$SRC/config/config.sh"
+  [ "$added" = 0 ] && echo "    config.sh exists, nothing to add"
 else
   cp "$SRC/config/config.sh" "$CFG/config.sh"
   [ "$WANT_WALLPAPER" = 1 ] || sed -i '' 's/^OMNI_WALLPAPER=1/OMNI_WALLPAPER=0/; s/^OMNI_WALLPAPER_ROTATE=.*/OMNI_WALLPAPER_ROTATE=0/' "$CFG/config.sh"
@@ -166,8 +184,15 @@ cat > "$AGENT" <<PLIST
 </dict>
 </plist>
 PLIST
-echo "    written (NOT loaded). To start at login:"
-echo "        launchctl load $AGENT"
+# Font, Shader and Look restart the launcher through this agent, so an
+# unloaded one makes those menus close the launcher and never bring it back.
+launchctl bootout "gui/$(id -u)/com.omni.launcher" 2>/dev/null
+if launchctl bootstrap "gui/$(id -u)" "$AGENT" 2>/dev/null; then
+  echo "    written and loaded; omni starts at login"
+else
+  echo "    written but NOT loaded. Load it with:"
+  echo "        launchctl bootstrap gui/$(id -u) $AGENT"
+fi
 
 if [ "$NO_START" = 1 ]; then
   echo "==> skipping start (--no-start)"

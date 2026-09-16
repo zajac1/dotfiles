@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# omni-restart - restart the launcher from inside the launcher.
+#
+# A backgrounded child does not survive fzf aborting inside the launcher
+# surface, so launchd owns the restart. It sits outside this process tree.
+# If the agent was never bootstrapped, kickstart is a silent no-op, so fall
+# back to the direct path rather than leaving the user with no launcher.
+set -u
+
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"; export PATH
+
+launchctl kickstart -k "gui/$(id -u)/com.omni.launcher" 2>/dev/null && exit 0
+omni-start --restart >/dev/null 2>&1 &

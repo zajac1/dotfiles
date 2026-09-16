@@ -14,6 +14,19 @@ CONF="$HOME/.config/omni/config.sh"
 DIR="$HOME/.config/omni/looks"
 
 case "${1-}" in
+  current)
+    # Derived, not stored. A stored name goes stale the moment Font or Shader
+    # writes one of the values a look owns.
+    for f in "$DIR"/*.sh; do
+      [ -f "$f" ] || continue
+      match=1
+      while IFS= read -r line; do
+        case "$line" in OMNI_*=*) ;; *) continue ;; esac
+        grep -qxF "$line" "$CONF" || { match=0; break; }
+      done < "$f"
+      [ "$match" = 1 ] && { basename "$f" .sh; exit 0; }
+    done
+    ;;
   list)
     for f in "$DIR"/*.sh; do
       [ -f "$f" ] || continue
@@ -57,11 +70,9 @@ case "${1-}" in
     theme=$(sed -n 's/^OMNI_THEME="\(.*\)"/\1/p' "$CONF")
     omni-theme --no-restart "$theme" >/dev/null 2>&1
 
-    sed -i '' "s|^OMNI_LOOK=\".*\"|OMNI_LOOK=\"$name\"|" "$CONF"
-
 
     # launchd owns the restart: a backgrounded child does not survive fzf
     # aborting inside the launcher surface.
-    launchctl kickstart -k "gui/$(id -u)/com.omni.launcher" >/dev/null 2>&1
+    omni-restart
     ;;
 esac
