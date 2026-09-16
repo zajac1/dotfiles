@@ -38,9 +38,18 @@ checkeq "revert removes the marker"   "absent" "$([ -e "$MARK" ] && echo present
 omni-reload >/dev/null 2>&1
 checkeq "an unchanged conf fires no event" "0" "$(/usr/bin/grep -c '^osascript' "$HOME/calls.log")"
 
-# --conf-only takes only real keys.
+# --conf-only takes only real keys, and only safe values. The key check alone
+# is not enough: OMNI_THEME becomes part of a path that gets sourced.
 omni-start --conf-only 'NOT_AN_OMNI_KEY=x; touch $HOME/pwned' >/dev/null 2>&1
 checkeq "a key that is not OMNI_ is ignored" "absent" "$([ -e "$HOME/pwned" ] && echo present || echo absent)"
+
+/bin/mkdir -p "$HOME/evil"
+printf 'touch "$HOME/OWNED"\n' > "$HOME/evil/x.sh"
+omni-start --conf-only 'OMNI_THEME=../../../evil/x' >/dev/null 2>&1
+checkeq "a theme value cannot escape its directory" "absent" "$([ -e "$HOME/OWNED" ] && echo present || echo absent)"
+
+omni-start --conf-only 'OMNI_THEME=everforest' >/dev/null 2>&1
+checkeq "a real theme name still applies" "yes" "$(/usr/bin/grep -qc '^background = ' "$CONF" >/dev/null && echo yes || echo no)"
 
 # With a launcher reachable, Font and Shader must reload rather than restart.
 # This is the assertion menu-state.sh cannot make: without a launcher every

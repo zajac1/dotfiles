@@ -16,7 +16,15 @@ if [ "${1-}" = "--conf-only" ]; then
     key="${kv%%=*}"
     case "$key" in OMNI_[A-Z_]*) case "$key" in *[!A-Z_]*) continue ;; esac ;; *) continue ;; esac
     printf -v "$key" '%s' "${kv#*=}"
-    [ "$key" = OMNI_THEME ] && [ -f "$HOME/.cache/omni/themes/$OMNI_THEME.sh" ] && . "$HOME/.cache/omni/themes/$OMNI_THEME.sh"
+    # The value becomes part of a path that is then sourced, so it needs the
+    # same guard omni-osc uses. Without it OMNI_THEME=../../../x sources any
+    # file on disk.
+    if [ "$key" = OMNI_THEME ]; then
+      case "$OMNI_THEME" in
+        *[!a-zA-Z0-9._-]*) continue ;;
+      esac
+      [ -f "$HOME/.cache/omni/themes/$OMNI_THEME.sh" ] && . "$HOME/.cache/omni/themes/$OMNI_THEME.sh"
+    fi
   done
 fi
 
