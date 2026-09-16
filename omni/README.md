@@ -480,6 +480,10 @@ tests/run favs look    # only those files
 tests/run perf         # the process pins alone
 ```
 
+`tests/CHECKLIST.md` is the part that stays by hand: sixteen things that
+only exist with the real process tree. Run it after touching `omni-start`,
+`omni-reload`, `omni-restart`, `omni-look`, or the fzf arguments in `omni`.
+
 Every file gets a throwaway `HOME`, because each script resolves its state as
 `$HOME/.config/omni` with no override. Anything reaching outside it is stubbed
 and logged, so a test can never touch your launcher, vault, calendar or
