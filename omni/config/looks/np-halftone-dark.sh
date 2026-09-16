@@ -1,7 +1,7 @@
 # Halftone dark - a screen print on black stock.
 OMNI_THEME="np-halftone-dark"
 OMNI_FONT="BlexMono Nerd Font Mono"
-OMNI_FONT_SIZE=18
+OMNI_FONT_SIZE=21
 OMNI_MENU_COLS=38
 OMNI_FILL_INSET=10
 OMNI_ROW_PAD="30%"

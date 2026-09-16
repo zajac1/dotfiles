@@ -1,7 +1,7 @@
 # Tessera - mnoise's mosaic in neutral greys, teal selection.
 OMNI_THEME="np-tessera"
 OMNI_FONT="SauceCodePro Nerd Font Mono"
-OMNI_FONT_SIZE=18
+OMNI_FONT_SIZE=21
 OMNI_MENU_COLS=38
 OMNI_FILL_INSET=11
 OMNI_ROW_PAD="30%"
