@@ -45,3 +45,38 @@ checkeq "shader rewrites its key"      'OMNI_SHADER="dither.glsl"' "$(/usr/bin/g
 checkeq "skip past a sep row"   "down+transform(omni-skip {} down 2)" "$(omni-skip "$(row sep x '')" down)"
 checkeq "a normal row is not skipped" "ignore" "$(omni-skip "$(row menu Style style)" down)"
 checkeq "skip gives up at depth 40"   "ignore" "$(omni-skip "$(row sep x '')" down 40)"
+
+# omni-back is the Esc key, the most used key in the launcher, and nothing
+# tested it. Replacing the whole script with `echo garbage` used to pass.
+M="$HOME/.cache/omni/mode"
+: > "$S"; printf 'menu\n' > "$M"
+checkeq "esc with a query clears the query"   "clear-query"        "$(omni-back 'sl')"
+checkeq "esc in search returns to the menu"   "become(omni --menu)" "$(printf 'search\n' > "$M"; omni-back '')"
+printf 'menu\n' > "$M"; printf 'style\n' > "$S"
+checkeq "esc in a level pops the stack"       "become(omni --menu)" "$(omni-back '')"
+checkeq "the stack is empty after the pop"    ""                    "$(/usr/bin/tail -1 "$S")"
+checkeq "esc at the root closes the launcher" "abort"               "$(omni-back '')"
+
+# The look row through omni-enter: abort when omni-look had to restart,
+# otherwise pop and re-render. Swapping the two used to pass.
+printf 'look\n' > "$S"
+cat > "$HOME/.local/bin/omni-look" <<'STUB'
+#!/bin/bash
+[ "$1" = current ] && exit 0
+echo restart
+STUB
+chmod 755 "$HOME/.local/bin/omni-look"
+checkeq "a look that restarts aborts the menu" "abort" "$(omni-enter "$(row look x np-tessera)")"
+cat > "$HOME/.local/bin/omni-look" <<'STUB'
+#!/bin/bash
+[ "$1" = current ] && exit 0
+exit 0
+STUB
+chmod 755 "$HOME/.local/bin/omni-look"
+printf 'look\n' > "$S"
+checkeq "a look that reloads returns to the menu" "become(omni --menu)" "$(omni-enter "$(row look x np-tessera)")"
+
+# GOTCHAS 25: the cap has to clear the longest run of sep rows, which is 8.
+checkeq "the skip cap is above the longest sep run" "ignore" "$(omni-skip "$(row sep x '')" down 40)"
+checkeq "the cap has not dropped below 9"           "down+transform(omni-skip {} down 10)" "$(omni-skip "$(row sep x '')" down 9)"
+

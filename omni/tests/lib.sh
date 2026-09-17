@@ -79,6 +79,16 @@ checkeq() {
   fi
 }
 
+# machine_is_quiet -- can the process counter be trusted right now?
+#
+# The counter takes the smallest of N readings, which only works if one reading
+# lands in a quiet moment. Under something that forks non-stop, like a build in
+# another window, every reading is high and every pin fails. So measure a
+# command whose true count is known, and say so when the answer is wrong.
+machine_is_quiet() {
+  [ "$(procs 8 /usr/bin/true)" = 1 ]
+}
+
 # checkrc <name> <expected-status> <cmd...>
 # check() compares stdout only, so a script that prints the right thing and
 # exits 1 passes it. Use this where the status is the contract.

@@ -10,8 +10,20 @@
 # and the minimum over 8 runs is the true count. Milliseconds are reported but
 # never asserted, because they move with load by more than any regression would.
 
+# Two checks that do not depend on counting, so this file is never empty even
+# when the pins are skipped. An empty file is treated as a crash, correctly.
+checkeq "the search path produces rows"  "yes" "$([ -n "$(omni-query sl)" ] && echo yes || echo no)"
+checkeq "the root path produces rows"    "yes" "$([ -n "$(omni-menu-query '')" ] && echo yes || echo no)"
+
+if ! machine_is_quiet; then
+  printf '  ---  machine too busy to count processes, pins skipped\n'
+  printf '  ---  run tests/run perf again when it is idle\n'
+  SKIP_PINS=1
+fi
+
 pin() {  # pin <expected> <name> <cmd...>
   local want="$1" name="$2"; shift 2
+  [ "${SKIP_PINS:-0}" = 1 ] && return 0
   checkeq "$name" "$want" "$(procs 8 "$@")"
 }
 
