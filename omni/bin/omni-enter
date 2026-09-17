@@ -12,6 +12,17 @@ payload=$(printf '%s' "$line" | cut -f3)
 # Ghostty picks a config change up live (omni-reload); the preview already
 # showed it, so this is the commit. The restart is the fallback for a machine
 # where the AppleScript route is refused.
+# config.sh is sourced everywhere, so a value written into it has to be inert.
+# The payload comes from a menu row, and a row can carry a font family or a
+# filename that omni did not choose. Same rule as omni-look:73.
+set_key() {  # set_key KEY VALUE
+  case "$2" in
+    *[\"\$\`\;\&\|\<\>\\]*|*'$('*)
+      omni-notify omni "Refusing an unsafe value for $1" 2>/dev/null; return 1 ;;
+  esac
+  sed -i '' "s|^$1=\".*\"|$1=\"$2\"|" "$HOME/.config/omni/config.sh"
+}
+
 apply_config() {
   if omni-reload >/dev/null 2>&1; then
     sed -i '' -e '$d' "$STACK" 2>/dev/null
@@ -32,7 +43,7 @@ case "$kind" in
     sed -i '' -e '$d' "$STACK" 2>/dev/null
     echo 'become(omni --menu)' ;;
   font)
-    sed -i '' "s|^OMNI_FONT=\".*\"|OMNI_FONT=\"$payload\"|" "$HOME/.config/omni/config.sh"
+    set_key OMNI_FONT "$payload" || { echo 'abort'; exit 0; }
     apply_config ;;
   look)
     # omni-look restarts the launcher itself when the look changes the window
@@ -42,7 +53,7 @@ case "$kind" in
       *) sed -i '' -e '$d' "$STACK" 2>/dev/null; echo 'become(omni --menu)' ;;
     esac ;;
   shader)
-    sed -i '' "s|^OMNI_SHADER=\".*\"|OMNI_SHADER=\"$payload\"|" "$HOME/.config/omni/config.sh"
+    set_key OMNI_SHADER "$payload" || { echo 'abort'; exit 0; }
     apply_config ;;
   act)
     printf '%s' "$line" > "$PENDING"

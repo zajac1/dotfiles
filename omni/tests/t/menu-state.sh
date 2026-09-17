@@ -30,6 +30,15 @@ checkeq "font rewrites its key"        'OMNI_FONT="Menlo"' "$(/usr/bin/grep -m1 
 checkeq "font changes no other line"   "$before" "$(/usr/bin/wc -l < "$C" | /usr/bin/tr -d ' ')"
 
 omni-enter "$(row shader 'Dither' 'dither.glsl')" >/dev/null 2>&1
+
+# config.sh is sourced everywhere, so a row payload must never reach it as code.
+before_font=$(/usr/bin/grep -m1 '^OMNI_FONT=' "$C")
+omni-enter "$(row font 'x' 'Menlo"; touch "$HOME/pwned"; echo "')" >/dev/null 2>&1
+omni-query sl >/dev/null 2>&1
+checkeq "a hostile font name never executes" "absent" "$([ -e "$HOME/pwned" ] && echo present || echo absent)"
+checkeq "and it is not written at all"       "$before_font" "$(/usr/bin/grep -m1 '^OMNI_FONT=' "$C")"
+omni-enter "$(row font 'x' 'Menlo')" >/dev/null 2>&1
+checkeq "a normal font name still applies"   'OMNI_FONT="Menlo"' "$(/usr/bin/grep -m1 '^OMNI_FONT=' "$C")"
 checkeq "shader rewrites its key"      'OMNI_SHADER="dither.glsl"' "$(/usr/bin/grep -m1 '^OMNI_SHADER=' "$C")"
 
 # omni-skip moves the cursor past rows that cannot be selected.
